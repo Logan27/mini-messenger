@@ -1,0 +1,4 @@
+-- Add deletedAt columns to tables for soft delete support
+ALTER TABLE calls ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP WITH TIME ZONE;
+ALTER TABLE devices ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP WITH TIME ZONE;
+ALTER TABLE reports ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP WITH TIME ZONE;

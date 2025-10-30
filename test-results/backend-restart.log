@@ -1,0 +1,64 @@
+
+> messenger-backend@1.0.0 restart
+> npm stop --if-present && npm start
+
+
+> messenger-backend@1.0.0 start
+> node src/server.js
+
+✅ Sequelize instance created for development environment
+2025-10-21T15:02:52.947Z [[32minfo[39m]: Notification settings cache cleanup initialized
+2025-10-21T15:02:52.949Z [[32minfo[39m]: Auto cleanup for expired notifications started
+2025-10-21T15:02:53.311Z [[32minfo[39m]: Data retention job scheduled.
+📚 Swagger UI will be available at /api-docs
+🔧 Starting server initialization...
+📝 Initializing logger...
+✅ Logger initialized
+💾 Initializing database...
+Executing (default): SELECT 1
+✅ Database connection established successfully.
+⚠️  Database sync disabled (models have naming inconsistencies)
+✅ Database initialized
+🔴 Initializing Redis...
+✅ Redis connection established successfully
+✅ Redis initialized
+📦 Loading app.js...
+📦 App.js loaded, initializing services...
+2025-10-21T15:02:53.459Z [[32minfo[39m]: Upload directories created successfully
+{
+  "uploadDir": "./uploads",
+  "tempDir": "./uploads/temp"
+}
+2025-10-21T15:02:53.460Z [[33mwarn[39m]: ⚠️  ClamAV not available on Windows - virus scanning disabled for development
+2025-10-21T15:02:53.461Z [[32minfo[39m]: File upload service initialized successfully
+✅ File upload service initialized
+2025-10-21T15:02:53.461Z [[33mwarn[39m]: ⚠️  Virus update service skipped on Windows (ClamAV not available)
+2025-10-21T15:02:53.466Z [[32minfo[39m]: Generated fallback icon for document:
+2025-10-21T15:02:53.469Z [[32minfo[39m]: Generated fallback icon for video:
+2025-10-21T15:02:53.474Z [[32minfo[39m]: Generated fallback icon for audio:
+2025-10-21T15:02:53.476Z [[32minfo[39m]: Generated fallback icon for archive:
+2025-10-21T15:02:53.478Z [[32minfo[39m]: Generated fallback icon for code:
+2025-10-21T15:02:53.480Z [[32minfo[39m]: Generated fallback icon for default:
+2025-10-21T15:02:53.496Z [[32minfo[39m]: Daily thumbnail cleanup scheduled for 2:00 AM
+2025-10-21T15:02:53.496Z [[32minfo[39m]: Thumbnail service initialized successfully
+2025-10-21T15:02:53.498Z [[32minfo[39m]: File cleanup jobs scheduled
+2025-10-21T15:02:53.499Z [[32minfo[39m]: File cleanup service initialized successfully
+✅ Services initialized
+🚀 Creating server...
+🚀 =====================================
+🚀 Messenger Backend Server
+🚀 =====================================
+📍 Environment: development
+🌐 Server: http://0.0.0.0:4000
+📚 API Docs: http://localhost:4000/api-docs
+🏥 Health: http://localhost:4000/health
+⏱️  Started at: 2025-10-21T15:02:53.501Z
+🚀 =====================================
+
+🔧 Development Mode Features:
+  • Hot reload enabled
+  • Detailed error messages
+  • Request logging enabled
+  • CORS configured for local development
+🚀 =====================================
+❌ Port 4000 is already in use

@@ -1,0 +1,172 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: messenger-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-messenger}
+      POSTGRES_USER: ${DB_USER:-messenger}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-messenger_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    networks:
+      - messenger-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-messenger} -d ${DB_NAME:-messenger}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: messenger-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-messenger_redis_password}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - messenger-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --raw incr ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ClamAV for file scanning
+  clamav:
+    image: mkodockx/docker-clamav:latest
+    container_name: messenger-clamav
+    restart: unless-stopped
+    ports:
+      - "3310:3310"
+    volumes:
+      - clamav_data:/var/lib/clamav
+    networks:
+      - messenger-network
+    environment:
+      - CLAMAV_NO_FRESHCLAMD=true
+
+  # Backend Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: messenger-backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-4000}:${PORT:-4000}"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-4000}
+      HOST: ${HOST:-0.0.0.0}
+      DATABASE_URL: postgresql://${DB_USER:-messenger}:${DB_PASSWORD:-messenger_password}@postgres:5432/${DB_NAME:-messenger}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-messenger_redis_password}@redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-messenger_redis_password}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
+      SESSION_SECRET: ${SESSION_SECRET}
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: 3310
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+    volumes:
+      - ./src:/app/src
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clamav:
+        condition: service_started
+    networks:
+      - messenger-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${PORT:-3000}/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis Commander (for development)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: messenger-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379:${REDIS_PASSWORD:-messenger_redis_password}
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - messenger-network
+    profiles:
+      - dev
+
+  # pgAdmin (for development)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: messenger-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@messenger.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin_password}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - messenger-network
+    profiles:
+      - dev
+
+  # Coturn STUN/TURN Server
+  # coturn:
+  #   image: coturn/coturn
+  #   container_name: messenger-coturn
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./docker/coturn/turnserver.conf:/etc/coturn/turnserver.conf
+  #   ports:
+  #     - "3478:3478"
+  #     - "3478:3478/udp"
+  #     - "49152-65535:49152-65535/udp"
+  #   networks:
+  #     - messenger-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  clamav_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  messenger-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -1,0 +1,134 @@
+{
+  "passed": 0,
+  "failed": 13,
+  "skipped": 8,
+  "total": 21,
+  "tests": [
+    {
+      "name": "Mark Message as Read",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No message ID available"
+    },
+    {
+      "name": "Mark Message as Delivered",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No message ID available"
+    },
+    {
+      "name": "Edit Message",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No message ID available"
+    },
+    {
+      "name": "Delete Message",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No message ID available"
+    },
+    {
+      "name": "Get Message Edit History",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No message ID available"
+    },
+    {
+      "name": "Remove Contact",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No contact ID available"
+    },
+    {
+      "name": "Get Group Details",
+      "status": "FAIL",
+      "duration": 3,
+      "details": "{\"error\":\"Too many requests from this IP, please try again later.\"}"
+    },
+    {
+      "name": "Update Group",
+      "status": "FAIL",
+      "duration": 4,
+      "details": "{\"error\":\"Too many requests from this IP, please try again later.\"}"
+    },
+    {
+      "name": "Delete Group",
+      "status": "FAIL",
+      "duration": 3,
+      "details": "{\"error\":\"Too many requests from this IP, please try again later.\"}"
+    },
+    {
+      "name": "Add Group Member",
+      "status": "FAIL",
+      "duration": 4,
+      "details": "{\"error\":\"Too many requests from this IP, please try again later.\"}"
+    },
+    {
+      "name": "Get Group Members",
+      "status": "FAIL",
+      "duration": 3,
+      "details": "{\"error\":\"Too many requests from this IP, please try again later.\"}"
+    },
+    {
+      "name": "Update Member Role",
+      "status": "FAIL",
+      "duration": 3,
+      "details": "{\"error\":\"Too many requests from this IP, please try again later.\"}"
+    },
+    {
+      "name": "Remove Group Member",
+      "status": "FAIL",
+      "duration": 2,
+      "details": "{\"error\":\"Too many requests from this IP, please try again later.\"}"
+    },
+    {
+      "name": "Download File",
+      "status": "FAIL",
+      "duration": 3,
+      "details": "{\"type\":\"Buffer\",\"data\":[123,34,101,114,114,111,114,34,58,34,84,111,111,32,109,97,110,121,32,114,101,113,117,101,115,116,115,32,102,114,111,109,32,116,104,105,115,32,73,80,44,32,112,108,101,97,115,101,32,116,114,121,32,97,103,97,105,110,32,108,97,116,101,114,46,34,125]}"
+    },
+    {
+      "name": "Get File Info",
+      "status": "FAIL",
+      "duration": 3,
+      "details": "{\"error\":\"Too many requests from this IP, please try again later.\"}"
+    },
+    {
+      "name": "Get File Thumbnail",
+      "status": "FAIL",
+      "duration": 3,
+      "details": "{\"type\":\"Buffer\",\"data\":[123,34,101,114,114,111,114,34,58,34,84,111,111,32,109,97,110,121,32,114,101,113,117,101,115,116,115,32,102,114,111,109,32,116,104,105,115,32,73,80,44,32,112,108,101,97,115,101,32,116,114,121,32,97,103,97,105,110,32,108,97,116,101,114,46,34,125]}"
+    },
+    {
+      "name": "Delete File",
+      "status": "FAIL",
+      "duration": 3,
+      "details": "{\"error\":\"Too many requests from this IP, please try again later.\"}"
+    },
+    {
+      "name": "Admin List All Files",
+      "status": "FAIL",
+      "duration": 12,
+      "details": "Failed to list admin files: Request failed with status code 429"
+    },
+    {
+      "name": "Admin Delete File",
+      "status": "FAIL",
+      "duration": 3,
+      "details": "{\"error\":\"Too many requests from this IP, please try again later.\"}"
+    },
+    {
+      "name": "Mark Notification as Read",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No notification ID available"
+    },
+    {
+      "name": "Delete Notification",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No notification ID available"
+    }
+  ]
+}

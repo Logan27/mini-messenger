@@ -1,0 +1,283 @@
+import React, { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Phone, Video, MoreVertical, Wifi, WifiOff, MessageCircle } from 'lucide-react'
+import { useMessageStore } from '@/app/stores/messageStore'
+import { useAuthStore } from '@/app/stores/authStore'
+import { ConversationsList } from '@/features/messaging/components/ConversationsList'
+import { MessageList } from '@/features/messaging/components/MessageList'
+import { MessageInput } from '@/features/messaging/components/MessageInput'
+import { TypingIndicator } from '@/features/messaging/components/TypingIndicator'
+import { useWebSocketIntegration } from '@/features/messaging/lib/websocketIntegration'
+import { ResponsiveNavigation } from '@/components/ui/responsive-navigation'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { cn } from '@/lib/utils'
+
+const Chat: React.FC = () => {
+  const { conversationId } = useParams<{ conversationId: string }>()
+  const navigate = useNavigate()
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
+
+  const {
+    conversations,
+    currentConversationId,
+    messages,
+    isLoading,
+    error,
+    loadConversations,
+    loadMessages,
+    sendMessage,
+    setTyping,
+    joinConversation,
+    leaveConversation
+  } = useMessageStore()
+
+  const { user } = useAuthStore()
+
+  // WebSocket integration
+  const {
+    isConnected,
+    connectionState,
+    sendTypingIndicator,
+    joinConversation: wsJoinConversation,
+    leaveConversation: wsLeaveConversation,
+    markMessageAsRead
+  } = useWebSocketIntegration()
+
+  // Load conversations on mount
+  useEffect(() => {
+    loadConversations()
+  }, [])
+
+  const currentConversation = conversations.find(c => c.id === conversationId)
+  const conversationMessages = conversationId ? messages[conversationId] || [] : []
+
+  // Handle mobile responsive behavior
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+
+      // On mobile, hide sidebar when conversation is selected
+      if (mobile && conversationId) {
+        setSidebarOpen(false)
+      } else if (!mobile) {
+        setSidebarOpen(true)
+      }
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [conversationId])
+
+  // Load messages when conversation changes
+  useEffect(() => {
+    if (conversationId && conversationId !== currentConversationId) {
+      loadMessages(conversationId)
+      joinConversation(conversationId)
+      wsJoinConversation(conversationId)
+    }
+
+    return () => {
+      if (currentConversationId) {
+        leaveConversation(currentConversationId)
+        wsLeaveConversation(currentConversationId)
+      }
+    }
+  }, [conversationId, currentConversationId, loadMessages, joinConversation, leaveConversation, wsJoinConversation, wsLeaveConversation])
+
+  const handleSendMessage = async (content: string, type: 'text' | 'file' | 'image' = 'text') => {
+    if (!conversationId || !content.trim()) return
+
+    try {
+      await sendMessage(conversationId, content, type)
+    } catch (error) {
+      console.error('Failed to send message:', error)
+    }
+  }
+
+  const handleTyping = (isTyping: boolean) => {
+    if (conversationId) {
+      setTyping(conversationId, isTyping)
+      sendTypingIndicator(conversationId, isTyping)
+    }
+  }
+
+  const getConversationDisplayName = () => {
+    if (!currentConversation) return 'Chat'
+
+    if (currentConversation.name) return currentConversation.name
+
+    // For direct messages, show the other participant's name
+    const otherParticipant = currentConversation.participants.find(p => p.id !== user?.id)
+    return otherParticipant?.name || otherParticipant?.username || 'Unknown User'
+  }
+
+  const getConversationAvatar = () => {
+    if (!currentConversation) return null
+
+    if (currentConversation.avatar) return currentConversation.avatar
+
+    // For direct messages, use the other participant's avatar
+    const otherParticipant = currentConversation.participants.find(p => p.id !== user?.id)
+    return otherParticipant?.avatar
+  }
+
+  const getOnlineParticipants = () => {
+    if (!currentConversation) return []
+
+    return currentConversation.participants.filter(p =>
+      p.id !== user?.id // Exclude current user
+    )
+  }
+
+  if (!conversationId) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <MessageCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-foreground mb-2">Select a conversation</h2>
+          <p className="text-muted-foreground">Choose a conversation from the sidebar to start messaging</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col xs:flex-row">
+      {/* Conversations Sidebar */}
+      {sidebarOpen && (
+        <div className={cn(
+          'w-full xs:w-80 md:w-96 border-r border bg-card',
+          isMobile ? 'fixed inset-0 z-50' : 'flex-shrink-0'
+        )}>
+          <ConversationsList
+            onConversationSelect={(id) => {
+              navigate(`/chat/${id}`)
+              if (isMobile) setSidebarOpen(false)
+            }}
+            selectedConversationId={conversationId}
+          />
+        </div>
+      )}
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Chat Header */}
+        <header className="bg-card border-b border px-3 xs:px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center space-x-2 xs:space-x-3 flex-1 min-w-0">
+            {/* Mobile back button */}
+            {isMobile && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSidebarOpen(true)}
+                className="h-10 w-10 p-0 flex-shrink-0"
+                aria-label="Back to conversations"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            )}
+
+            {/* Conversation info */}
+            <Avatar className="h-9 w-9 xs:h-10 xs:w-10 flex-shrink-0">
+              <AvatarImage src={getConversationAvatar()} alt={getConversationDisplayName()} />
+              <AvatarFallback>
+                {currentConversation?.type === 'group' ? 'G' : getConversationDisplayName().charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-medium text-foreground truncate">
+                {getConversationDisplayName()}
+              </h3>
+              <div className="flex items-center space-x-2">
+                <p className="text-xs text-muted-foreground truncate">
+                  {currentConversation?.type === 'group' ? (
+                    `${currentConversation.participants.length} members`
+                  ) : (
+                    <>
+                      {getOnlineParticipants().map(p => p.name).join(', ')}
+                      {getOnlineParticipants().length > 0 && (
+                        <span className="flex items-center flex-shrink-0">
+                          <div className="h-2 w-2 bg-green-500 rounded-full mr-1"></div>
+                          <span className="hidden xs:inline">Online</span>
+                        </span>
+                      )}
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Header actions */}
+          <div className="flex items-center space-x-1 xs:space-x-2 flex-shrink-0">
+            {/* Connection status */}
+            <div className="flex items-center space-x-1">
+              {isConnected ? (
+                <Wifi className="h-4 w-4 text-green-500" />
+              ) : (
+                <WifiOff className="h-4 w-4 text-destructive" />
+              )}
+              <span className="text-xs text-muted-foreground hidden sm:block">
+                {isConnected ? 'Connected' : 'Disconnected'}
+              </span>
+            </div>
+
+            <Button variant="ghost" size="sm" className="h-9 w-9 xs:h-10 xs:w-10 p-0">
+              <Phone className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-9 w-9 xs:h-10 xs:w-10 p-0">
+              <Video className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-9 w-9 xs:h-10 xs:w-10 p-0">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </div>
+        </header>
+
+        {/* Messages Area */}
+        <div className="flex-1 flex flex-col relative">
+          {error && (
+            <div className="p-3 xs:p-4 bg-destructive/10 border-b border-destructive/20">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
+
+          <MessageList
+            messages={conversationMessages}
+            currentUserId={user?.id || ''}
+            isLoading={isLoading}
+            hasMore={false} // TODO: Implement pagination
+            onLoadMore={() => {}} // TODO: Implement pagination
+          />
+
+          <TypingIndicator conversationId={conversationId} />
+        </div>
+
+        {/* Message Input */}
+        <div className="bg-card border-t border p-3 xs:p-4">
+          <MessageInput
+            onSendMessage={handleSendMessage}
+            onTyping={handleTyping}
+            disabled={!conversationId || isLoading}
+            placeholder={`Message ${getConversationDisplayName()}...`}
+          />
+        </div>
+      </div>
+
+      {/* Mobile overlay */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+export default Chat

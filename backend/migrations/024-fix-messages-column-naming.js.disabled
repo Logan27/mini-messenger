@@ -1,0 +1,48 @@
+'use strict';
+
+/** @type {import('sequelize-cli').Migration} */
+export async function up(queryInterface, Sequelize) {
+  // Rename camelCase columns to snake_case for consistency
+  await queryInterface.renameColumn('messages', 'senderId', 'sender_id');
+  await queryInterface.renameColumn('messages', 'recipientId', 'recipient_id');
+  await queryInterface.renameColumn('messages', 'groupId', 'group_id');
+  await queryInterface.renameColumn('messages', 'encryptedContent', 'encrypted_content');
+  await queryInterface.renameColumn('messages', 'messageType', 'message_type');
+  await queryInterface.renameColumn('messages', 'editedAt', 'edited_at');
+  await queryInterface.renameColumn('messages', 'deletedAt', 'deleted_at');
+  await queryInterface.renameColumn('messages', 'replyToId', 'reply_to_id');
+  await queryInterface.renameColumn('messages', 'fileName', 'file_name');
+  await queryInterface.renameColumn('messages', 'fileSize', 'file_size');
+  await queryInterface.renameColumn('messages', 'mimeType', 'mime_type');
+  await queryInterface.renameColumn('messages', 'createdAt', 'created_at');
+  await queryInterface.renameColumn('messages', 'updatedAt', 'updated_at');
+  await queryInterface.renameColumn('messages', 'deleteType', 'delete_type');
+  await queryInterface.renameColumn('messages', 'encryptionMetadata', 'encryption_metadata');
+  await queryInterface.renameColumn('messages', 'isEncrypted', 'is_encrypted');
+  await queryInterface.renameColumn('messages', 'encryptionAlgorithm', 'encryption_algorithm');
+
+  console.log('✅ Messages table columns renamed to snake_case');
+}
+
+export async function down(queryInterface, Sequelize) {
+  // Revert snake_case columns back to camelCase
+  await queryInterface.renameColumn('messages', 'sender_id', 'senderId');
+  await queryInterface.renameColumn('messages', 'recipient_id', 'recipientId');
+  await queryInterface.renameColumn('messages', 'group_id', 'groupId');
+  await queryInterface.renameColumn('messages', 'encrypted_content', 'encryptedContent');
+  await queryInterface.renameColumn('messages', 'message_type', 'messageType');
+  await queryInterface.renameColumn('messages', 'edited_at', 'editedAt');
+  await queryInterface.renameColumn('messages', 'deleted_at', 'deletedAt');
+  await queryInterface.renameColumn('messages', 'reply_to_id', 'replyToId');
+  await queryInterface.renameColumn('messages', 'file_name', 'fileName');
+  await queryInterface.renameColumn('messages', 'file_size', 'fileSize');
+  await queryInterface.renameColumn('messages', 'mime_type', 'mimeType');
+  await queryInterface.renameColumn('messages', 'created_at', 'createdAt');
+  await queryInterface.renameColumn('messages', 'updated_at', 'updatedAt');
+  await queryInterface.renameColumn('messages', 'delete_type', 'deleteType');
+  await queryInterface.renameColumn('messages', 'encryption_metadata', 'encryptionMetadata');
+  await queryInterface.renameColumn('messages', 'is_encrypted', 'isEncrypted');
+  await queryInterface.renameColumn('messages', 'encryption_algorithm', 'encryptionAlgorithm');
+
+  console.log('✅ Messages table columns reverted to camelCase');
+}

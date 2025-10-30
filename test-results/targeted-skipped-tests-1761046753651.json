@@ -1,0 +1,134 @@
+{
+  "passed": 4,
+  "failed": 3,
+  "skipped": 14,
+  "total": 21,
+  "tests": [
+    {
+      "name": "Mark Message as Read",
+      "status": "PASS",
+      "duration": 25,
+      "details": "Message 16c93e27-2adf-4ea5-a8d2-ca19b9f77ecb marked as read"
+    },
+    {
+      "name": "Mark Message as Delivered",
+      "status": "PASS",
+      "duration": 17,
+      "details": "Message 16c93e27-2adf-4ea5-a8d2-ca19b9f77ecb marked as delivered"
+    },
+    {
+      "name": "Edit Message",
+      "status": "FAIL",
+      "duration": 292,
+      "details": "{\"success\":false,\"message\":\"Failed to edit message\",\"error\":\"column \\\"deletedAt\\\" does not exist\"}"
+    },
+    {
+      "name": "Delete Message",
+      "status": "PASS",
+      "duration": 33,
+      "details": "Message 16c93e27-2adf-4ea5-a8d2-ca19b9f77ecb deleted successfully"
+    },
+    {
+      "name": "Get Message Edit History",
+      "status": "FAIL",
+      "duration": 24,
+      "details": "{\"success\":false,\"message\":\"Failed to get edit history\",\"error\":\"User is associated to MessageEditHistory using an alias. You've included an alias (editedBy), but it does not match the alias(es) defined in your association (editor).\"}"
+    },
+    {
+      "name": "Remove Contact",
+      "status": "PASS",
+      "duration": 25,
+      "details": "Contact c80f113d-d7db-4fa5-984a-660ae41a94a6 removed successfully"
+    },
+    {
+      "name": "Get Group Details",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No group ID available"
+    },
+    {
+      "name": "Update Group",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No group ID available"
+    },
+    {
+      "name": "Delete Group",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No group ID available"
+    },
+    {
+      "name": "Add Group Member",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No group ID or user ID available"
+    },
+    {
+      "name": "Get Group Members",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No group ID available"
+    },
+    {
+      "name": "Update Member Role",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No group ID or user ID available"
+    },
+    {
+      "name": "Remove Group Member",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No group ID or user ID available"
+    },
+    {
+      "name": "Download File",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No file ID available"
+    },
+    {
+      "name": "Get File Info",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No file ID available"
+    },
+    {
+      "name": "Get File Thumbnail",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No file ID available"
+    },
+    {
+      "name": "Delete File",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No file ID available"
+    },
+    {
+      "name": "Admin List All Files",
+      "status": "FAIL",
+      "duration": 3,
+      "details": "{\"success\":false,\"error\":{\"type\":\"AUTHENTICATION_REQUIRED\",\"message\":\"Authentication is required\"}}"
+    },
+    {
+      "name": "Admin Delete File",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No admin token or file ID available"
+    },
+    {
+      "name": "Mark Notification as Read",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No notification ID available"
+    },
+    {
+      "name": "Delete Notification",
+      "status": "SKIP",
+      "duration": 0,
+      "details": "No notification ID available"
+    }
+  ]
+}

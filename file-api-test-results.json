@@ -1,0 +1,99 @@
+{
+  "upload": [
+    {
+      "test": "Upload Text File",
+      "success": false,
+      "timestamp": "2025-10-23T12:09:00.208Z",
+      "data": null,
+      "error": "Request failed with status code 500",
+      "responseTime": null
+    },
+    {
+      "test": "Upload PNG Image",
+      "success": false,
+      "timestamp": "2025-10-23T12:09:00.325Z",
+      "data": null,
+      "error": "Request failed with status code 500",
+      "responseTime": null
+    },
+    {
+      "test": "Upload PDF Document",
+      "success": false,
+      "timestamp": "2025-10-23T12:09:00.370Z",
+      "data": null,
+      "error": "Request failed with status code 500",
+      "responseTime": null
+    },
+    {
+      "test": "Upload JSON Data",
+      "success": false,
+      "timestamp": "2025-10-23T12:09:00.386Z",
+      "data": null,
+      "error": "Request failed with status code 400",
+      "responseTime": null
+    }
+  ],
+  "download": [],
+  "list": [],
+  "thumbnail": [],
+  "delete": [],
+  "errors": [
+    {
+      "test": "Invalid Download ID",
+      "success": false,
+      "timestamp": "2025-10-23T12:09:00.406Z",
+      "data": {
+        "error": "Validation failed",
+        "details": [
+          {
+            "type": "field",
+            "value": "invalid-uuid-download",
+            "msg": "File ID must be a valid UUID",
+            "path": "id",
+            "location": "params"
+          }
+        ]
+      },
+      "error": "Should have failed",
+      "responseTime": null
+    },
+    {
+      "test": "Invalid Info ID",
+      "success": false,
+      "timestamp": "2025-10-23T12:09:00.417Z",
+      "data": {
+        "error": "Validation failed",
+        "details": [
+          {
+            "type": "field",
+            "value": "invalid-uuid-info",
+            "msg": "File ID must be a valid UUID",
+            "path": "id",
+            "location": "params"
+          }
+        ]
+      },
+      "error": "Should have failed",
+      "responseTime": null
+    },
+    {
+      "test": "Invalid Thumbnail ID",
+      "success": false,
+      "timestamp": "2025-10-23T12:09:00.430Z",
+      "data": {
+        "error": "Validation failed",
+        "details": [
+          {
+            "type": "field",
+            "value": "invalid-uuid-thumbnail",
+            "msg": "File ID must be a valid UUID",
+            "path": "id",
+            "location": "params"
+          }
+        ]
+      },
+      "error": "Should have failed",
+      "responseTime": null
+    }
+  ]
+}

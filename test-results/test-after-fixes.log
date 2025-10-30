@@ -1,0 +1,400 @@
+
+[94m============================================================================[0m
+[94m         ENHANCED MESSENGER API COMPREHENSIVE TEST SUITE[0m
+[94m============================================================================[0m
+
+Starting enhanced API tests at 21/10/2025 17:03:31.61
+API URL: http://localhost:4000
+
+[96m============================================================================[0m
+[96mSECTION 1: HEALTH CHECK ENDPOINTS (4 endpoints)[0m
+[96m============================================================================[0m
+
+[1] Testing GET /health - Health Check
+[92m✓ PASS[0m - Health check endpoint accessible
+
+[2] Testing GET /health/detailed - Detailed Health Check
+[92m✓ PASS[0m - Detailed health check accessible
+
+[3] Testing GET /health/ready - Readiness Check
+[92m✓ PASS[0m - Readiness check accessible
+
+[4] Testing GET /health/live - Liveness Check
+[92m✓ PASS[0m - Liveness check accessible
+
+[96m============================================================================[0m
+[96mSECTION 2: AUTHENTICATION ENDPOINTS (9 endpoints)[0m
+[96m============================================================================[0m
+
+[5] Testing POST /api/auth/register - User Registration
+[92m✓ PASS[0m - User registration successful
+  New User ID: 
+
+[6] Testing POST /api/auth/login - User Login
+[92m✓ PASS[0m - User login successful
+  Access Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiO...
+  User ID: 6ee36bd6-22d5-4798-92a2-7d4d2ff49768
+
+[7] Testing GET /api/auth/me - Get Current User Profile
+[92m✓ PASS[0m - User profile retrieved
+
+[8] Testing POST /api/auth/refresh - Refresh Access Token
+[92m✓ PASS[0m - Token refresh successful
+
+[9] Testing POST /api/auth/forgot-password - Request Password Reset
+[92m✓ PASS[0m - Password reset request processed
+
+[10] Testing POST /api/auth/verify-email - Verify Email
+[93m⚠ CONDITIONAL[0m - Email verification endpoint accessible (expected to fail with dummy token
+[92m✓ PASS[0m - Email verification correctly rejected invalid token
+
+[11] Testing POST /api/auth/reset-password - Reset Password
+[93m⚠ CONDITIONAL[0m - Password reset endpoint accessible (expected to fail with dummy token
+[92m✓ PASS[0m - Password reset correctly rejected invalid token
+
+[12] Testing POST /api/auth/change-password - Change Password
+[92m✓ PASS[0m - Password change successful
+
+[13] Testing POST /api/auth/resend-verification - Resend Verification
+[92m✓ PASS[0m - Verification resend processed
+
+[96m============================================================================[0m
+[96mSECTION 3: USER MANAGEMENT ENDPOINTS (10 endpoints)[0m
+[96m============================================================================[0m
+
+[14] Testing GET /api/users/me - Get Current User Profile
+[92m✓ PASS[0m - User profile retrieved
+
+[15] Testing PUT /api/users/me - Update User Profile
+[92m✓ PASS[0m - User profile updated
+
+[16] Testing GET /api/users/search?q=test - Search Users
+[92m✓ PASS[0m - User search successful
+
+[17] Testing GET /api/users - List Users with Pagination
+[92m✓ PASS[0m - User list retrieved
+
+[18] Testing POST /api/users/me/avatar - Upload User Avatar
+[92m✓ PASS[0m - Avatar uploaded successfully
+
+[19] Testing DELETE /api/users/me - Delete User Account
+[92m✓ PASS[0m - User account deleted successfully
+
+[20] Testing POST /api/users/me/device-token - Add Device Token
+[92m✓ PASS[0m - Device token added successfully
+
+[21] Testing DELETE /api/users/me/device-token - Remove Device Token
+[92m✓ PASS[0m - Device token removed successfully
+
+[22] Testing GET /api/users/me/export - Export User Data
+[92m✓ PASS[0m - User data exported successfully
+
+[23] Testing GET /api/users/{id} - Get User by ID
+[92m✓ PASS[0m - User retrieved by ID
+
+[96m============================================================================[0m
+[96mSECTION 4: MESSAGING ENDPOINTS (9 endpoints)[0m
+[96m============================================================================[0m
+
+[24] Testing POST /api/messages - Send New Message
+[92m✓ PASS[0m - Message sent successfully
+  Message ID: invalid"}}
+
+[25] Testing GET /api/messages?conversationWith={userId} - Get Conversation
+[92m✓ PASS[0m - Conversation messages retrieved
+
+[26] Testing GET /api/messages/search?q=test - Search Messages
+[92m✓ PASS[0m - Message search successful
+
+[27] Testing GET /api/messages/conversations - Get Conversations List
+[92m✓ PASS[0m - Conversations list retrieved
+
+[28] Testing POST /api/messages/{id}/read - Mark Message as Read
+FINDSTR: Cannot open temp_read.json
+[91m✗ FAIL[0m - Failed to mark message as read
+
+[29] Testing POST /api/messages/{id}/delivered - Mark Message as Delivered
+FINDSTR: Cannot open temp_delivered.json
+[91m✗ FAIL[0m - Failed to mark message as delivered
+
+[30] Testing PUT /api/messages/{id} - Edit Message
+FINDSTR: Cannot open temp_edit.json
+[91m✗ FAIL[0m - Failed to edit message
+
+[31] Testing DELETE /api/messages/{id} - Delete Message
+FINDSTR: Cannot open temp_delete_msg.json
+[91m✗ FAIL[0m - Failed to delete message
+
+[32] Testing GET /api/messages/{id}/edit-history - Get Edit History
+FINDSTR: Cannot open temp_history.json
+[91m✗ FAIL[0m - Failed to get edit history
+
+[96m============================================================================[0m
+[96mSECTION 5: CONTACTS ENDPOINTS (6 endpoints)[0m
+[96m============================================================================[0m
+
+[33] Testing GET /api/contacts - Get Contacts List
+[92m✓ PASS[0m - Contacts list retrieved
+
+[34] Testing GET /api/contacts/search?q=test - Search Contacts
+[92m✓ PASS[0m - Contact search successful
+
+[35] Testing POST /api/contacts - Add Contact
+[92m✓ PASS[0m - Contact added successfully
+  Contact ID: invalid"}}
+
+[36] Testing DELETE /api/contacts/{id} - Remove Contact
+FINDSTR: Cannot open temp_remove_contact.json
+[91m✗ FAIL[0m - Failed to remove contact
+
+[37] Testing POST /api/contacts/{id}/block - Block Contact
+[92m✓ PASS[0m - Contact blocked successfully
+
+[38] Testing POST /api/contacts/{id}/unblock - Unblock Contact
+[92m✓ PASS[0m - Contact unblocked successfully
+
+[96m============================================================================[0m
+[96mSECTION 6: GROUPS ENDPOINTS (9 endpoints)[0m
+[96m============================================================================[0m
+
+[39] Testing GET /api/groups - Get User's Groups
+[92m✓ PASS[0m - Groups list retrieved
+
+[40] Testing POST /api/groups - Create New Group
+[92m✓ PASS[0m - Group created successfully
+  [93mWarning: Could not extract group ID[0m
+
+[41] Testing GET /api/groups/{id} - Get Group Details
+[93m⊘ SKIP[0m - No group ID available
+
+[42] Testing PUT /api/groups/{id} - Update Group
+[93m⊘ SKIP[0m - No group ID available
+
+[43] Testing DELETE /api/groups/{id} - Delete Group
+[93m⊘ SKIP[0m - No group ID available
+
+[44] Testing POST /api/groups/{id}/members - Add Group Member
+[93m⊘ SKIP[0m - No group ID available
+
+[45] Testing GET /api/groups/{id}/members - Get Group Members
+[93m⊘ SKIP[0m - No group ID available
+
+[46] Testing PUT /api/groups/{id}/members/{userId} - Update Member Role
+[93m⊘ SKIP[0m - No group ID available
+
+[47] Testing DELETE /api/groups/{id}/members/{userId} - Remove Group Member
+[93m⊘ SKIP[0m - No group ID available
+
+[96m============================================================================[0m
+[96mSECTION 7: CALLS ENDPOINTS (4 endpoints)[0m
+[96m============================================================================[0m
+
+[48] Testing POST /api/calls - Initiate Call
+[92m✓ PASS[0m - Call initiated successfully
+
+[49] Testing POST /api/calls/{id}/respond - Respond to Call
+[92m✓ PASS[0m - Call response successful
+
+[50] Testing GET /api/calls/{id} - Get Call Details
+[92m✓ PASS[0m - Call details retrieved
+
+[51] Testing POST /api/calls/{id}/end - End Call
+[92m✓ PASS[0m - Call ended successfully
+
+[96m============================================================================[0m
+[96mSECTION 8: FILES ENDPOINTS (8 endpoints)[0m
+[96m============================================================================[0m
+
+[52] Testing GET /api/files - List User's Files
+[92m✓ PASS[0m - Files list retrieved
+
+[53] Testing POST /api/files/upload - Upload File
+[92m✓ PASS[0m - File uploaded successfully
+  [93mWarning: Could not extract file ID[0m
+
+[54] Testing GET /api/files/{id} - Download File
+[93m⊘ SKIP[0m - No file ID available
+
+[55] Testing GET /api/files/{id}/info - Get File Info
+[93m⊘ SKIP[0m - No file ID available
+
+[56] Testing GET /api/files/{id}/thumbnail - Get File Thumbnail
+[93m⊘ SKIP[0m - No file ID available
+
+[57] Testing DELETE /api/files/{id} - Delete File
+[93m⊘ SKIP[0m - No file ID available
+
+[58] Testing GET /api/admin/files - List All Files (Admin)
+[93m⊘ SKIP[0m - No admin token available
+
+[59] Testing DELETE /api/admin/files/{id} - Delete File (Admin)
+[93m⊘ SKIP[0m - No admin token available
+
+[96m============================================================================[0m
+[96mSECTION 9: ENCRYPTION ENDPOINTS (4 endpoints)[0m
+[96m============================================================================[0m
+
+[60] Testing POST /api/encryption/keypair - Generate E2E Key Pair
+[92m✓ PASS[0m - Key pair generated
+
+[61] Testing GET /api/encryption/publickey/{userId} - Get Public Key
+[92m✓ PASS[0m - Public key retrieved
+
+[62] Testing POST /api/encryption/publickeys/batch - Get Batch Public Keys
+[92m✓ PASS[0m - Batch public keys retrieved
+
+[63] Testing PUT /api/encryption/keypair - Update Key Pair
+[92m✓ PASS[0m - Key pair updated
+
+[96m============================================================================[0m
+[96mSECTION 10: NOTIFICATIONS ENDPOINTS (7 endpoints)[0m
+[96m============================================================================[0m
+
+[64] Testing GET /api/notifications - Get User Notifications
+[92m✓ PASS[0m - Notifications retrieved
+  [93mWarning: Could not extract notification ID - may have no notifications[0m
+
+[65] Testing GET /api/notifications/unread-count - Get Unread Count
+[92m✓ PASS[0m - Unread count retrieved
+
+[66] Testing PUT /api/notifications/mark-all-read - Mark All as Read
+[92m✓ PASS[0m - All notifications marked as read
+
+[67] Testing PUT /api/notifications/{id}/read - Mark Single as Read
+[93m⊘ SKIP[0m - No notification ID available
+
+[68] Testing DELETE /api/notifications/{id} - Delete Notification
+[93m⊘ SKIP[0m - No notification ID available
+
+[69] Testing POST /api/admin/notifications - Create Notification (Admin)
+[93m⊘ SKIP[0m - No admin token available
+
+[70] Testing DELETE /api/admin/notifications/cleanup - Cleanup Old Notifications
+[93m⊘ SKIP[0m - No admin token available
+
+[96m============================================================================[0m
+[96mSECTION 11: NOTIFICATION SETTINGS ENDPOINTS (4 endpoints)[0m
+[96m============================================================================[0m
+
+[71] Testing GET /api/notification-settings - Get Settings
+[92m✓ PASS[0m - Notification settings retrieved
+
+[72] Testing PUT /api/notification-settings - Update Settings
+[92m✓ PASS[0m - Notification settings updated
+
+[73] Testing POST /api/notification-settings/reset - Reset Settings
+[92m✓ PASS[0m - Notification settings reset
+
+[74] Testing GET /api/notification-settings/preview - Preview Settings
+[92m✓ PASS[0m - Notification settings preview retrieved
+
+[96m============================================================================[0m
+[96mSECTION 12: ANNOUNCEMENTS ENDPOINTS (1 endpoint)[0m
+[96m============================================================================[0m
+
+[75] Testing GET /api/announcements - Get Active Announcements
+[92m✓ PASS[0m - Announcements retrieved
+
+[96m============================================================================[0m
+[96mSECTION 13: ADMIN ENDPOINTS (30 endpoints - Requires Admin Access)[0m
+[96m============================================================================[0m
+
+[Admin] Testing POST /api/auth/login - Admin Login
+[92m✓ PASS[0m - Admin login successful
+  Admin Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiO...
+  Admin User ID: 77b663e0-a4b6-4e36-ac18-c37aaf615162
+
+[76] Testing GET /api/admin/stats - Get System Statistics
+[92m✓ PASS[0m - System stats retrieved
+
+[77] Testing GET /api/admin/users/pending - Get Pending Users
+[92m✓ PASS[0m - Pending users retrieved
+
+[78] Testing GET /api/admin/users - Get All Users
+[92m✓ PASS[0m - All users retrieved
+
+[79] Testing GET /api/admin/audit-logs - Get Audit Logs
+[92m✓ PASS[0m - Audit logs retrieved
+
+[80] Testing GET /api/admin/reports - Get Reports
+[92m✓ PASS[0m - Reports retrieved
+
+[81] Testing GET /api/admin/settings - Get System Settings
+[92m✓ PASS[0m - System settings retrieved
+
+[82] Testing GET /api/admin/announcements - Get Announcements (Admin View)
+[92m✓ PASS[0m - Admin announcements retrieved
+
+[83] Testing GET /api/admin/monitoring - Get Monitoring Data
+[92m✓ PASS[0m - Monitoring data retrieved
+
+[84-105] Testing additional admin endpoints...
+[84] Testing POST /api/admin/users/{id}/approve - Approve User
+[92m✓ PASS[0m - User approved
+[85] Testing admin endpoint 85 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 85 accessible
+[86] Testing admin endpoint 86 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 86 accessible
+[87] Testing admin endpoint 87 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 87 accessible
+[88] Testing admin endpoint 88 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 88 accessible
+[89] Testing admin endpoint 89 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 89 accessible
+[90] Testing admin endpoint 90 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 90 accessible
+[91] Testing admin endpoint 91 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 91 accessible
+[92] Testing admin endpoint 92 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 92 accessible
+[93] Testing admin endpoint 93 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 93 accessible
+[94] Testing admin endpoint 94 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 94 accessible
+[95] Testing admin endpoint 95 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 95 accessible
+[96] Testing admin endpoint 96 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 96 accessible
+[97] Testing admin endpoint 97 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 97 accessible
+[98] Testing admin endpoint 98 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 98 accessible
+[99] Testing admin endpoint 99 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 99 accessible
+[100] Testing admin endpoint 100 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 100 accessible
+[101] Testing admin endpoint 101 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 101 accessible
+[102] Testing admin endpoint 102 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 102 accessible
+[103] Testing admin endpoint 103 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 103 accessible
+[104] Testing admin endpoint 104 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 104 accessible
+[105] Testing admin endpoint 105 - Simplified test
+[92m✓ PASS[0m - Admin endpoint 105 accessible
+
+[96m============================================================================[0m
+[96mLOGOUT AND CLEANUP[0m
+[96m============================================================================[0m
+
+[Final] Testing POST /api/auth/logout - User Logout
+[92m✓ PASS[0m - User logged out successfully
+
+[Admin Final] Testing POST /api/auth/logout - Admin Logout
+[92m✓ PASS[0m - Admin logged out successfully
+
+
+[94m============================================================================[0m
+[94m                        ENHANCED TEST SUMMARY[0m
+[94m============================================================================[0m
+
+Total Tests:    108
+[92mPassed:         87[0m
+[91mFailed:         6[0m
+[93mSkipped:        17[0m
+Success Rate:   80%
+
+Test completed at 21/10/2025 17:04:02.60
+
+[91m⚠ WARNING: Some tests failed. Review the output above.[0m

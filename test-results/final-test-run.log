@@ -1,0 +1,242 @@
+
+[94m============================================================================[0m
+[94m         MESSENGER API COMPREHENSIVE TEST SUITE[0m
+[94m============================================================================[0m
+
+Starting API tests at 21/10/2025 12:46:34.75
+API URL: http://localhost:4000
+
+[93m============================================================================[0m
+[93mSECTION 1: HEALTH CHECK ENDPOINTS (4 endpoints)[0m
+[93m============================================================================[0m
+
+[1] Testing GET /health - Health Check
+[92m✓ PASS[0m - Health check endpoint accessible
+
+[2] Testing GET /health/detailed - Detailed Health Check
+[92m✓ PASS[0m - Detailed health check accessible
+
+[3] Testing GET /health/ready - Readiness Check
+[92m✓ PASS[0m - Readiness check accessible
+
+[4] Testing GET /health/live - Liveness Check
+[92m✓ PASS[0m - Liveness check accessible
+
+[93m============================================================================[0m
+[93mSECTION 2: AUTHENTICATION ENDPOINTS (9 endpoints)[0m
+[93m============================================================================[0m
+
+[5] Testing POST /api/auth/register - User Registration
+[93m⊘ SKIP[0m - Using existing test user instead
+
+[6] Testing POST /api/auth/login - User Login
+At line:1 char:14
++ {"identifier":"testuser1","password":"Test123456#"} | Out-File -Encod ...
++              ~~~~~~~~~~~~
+Unexpected token ':"testuser1"' in expression or statement.
+At line:1 char:26
++ {"identifier":"testuser1","password":"Test123456#"} | Out-File -Encod ...
++                          ~
+Missing argument in parameter list.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : UnexpectedToken
+ 
+curl: option -d: error encountered when reading a file
+curl: try 'curl --help' or 'curl --manual' for more information
+FINDSTR: Cannot open temp_login.json
+[91m✗ FAIL[0m - User login failed
+
+[7] Testing GET /api/auth/me - Get Current User Profile
+[93m⊘ SKIP[0m - No access token available
+
+[8] Testing POST /api/auth/refresh - Refresh Access Token
+[93m⊘ SKIP[0m - No refresh token available
+
+[9] Testing POST /api/auth/forgot-password - Request Password Reset
+[92m✓ PASS[0m - Password reset request processed
+
+[10-13] [93m⊘ SKIP[0m - Email verification & password reset (require tokens)
+
+[93m============================================================================[0m
+[93mSECTION 3: USER MANAGEMENT ENDPOINTS (10 endpoints)[0m
+[93m============================================================================[0m
+
+[14] Testing GET /api/users/me - Get Current User Profile
+[93m⊘ SKIP[0m - No access token available
+
+[15] Testing PUT /api/users/me - Update User Profile
+[93m⊘ SKIP[0m - No access token available
+
+[16] Testing GET /api/users/search?q=test - Search Users
+[93m⊘ SKIP[0m - No access token available
+
+[17] Testing GET /api/users - List Users with Pagination
+[92m✓ PASS[0m - User list retrieved
+
+[18-23] [93m⊘ SKIP[0m - Avatar upload, user deletion, device tokens, data export
+
+[93m============================================================================[0m
+[93mSECTION 4: MESSAGING ENDPOINTS (9 endpoints)[0m
+[93m============================================================================[0m
+
+[24] Testing POST /api/messages - Send New Message
+[93m⊘ SKIP[0m - No access token available
+
+[25] Testing GET /api/messages?conversationWith={userId} - Get Conversation
+[93m⊘ SKIP[0m - No access token available
+
+[26] Testing GET /api/messages/search?q=test - Search Messages
+[93m⊘ SKIP[0m - No access token available
+
+[27] Testing GET /api/messages/conversations - Get Conversations List
+[93m⊘ SKIP[0m - No access token available
+
+[28-32] [93m⊘ SKIP[0m - Mark read/delivered, edit, delete, edit history
+
+[93m============================================================================[0m
+[93mSECTION 5: CONTACTS ENDPOINTS (6 endpoints)[0m
+[93m============================================================================[0m
+
+[33] Testing GET /api/contacts - Get Contacts List
+[93m⊘ SKIP[0m - No access token available
+
+[34] Testing GET /api/contacts/search?q=test - Search Contacts
+[93m⊘ SKIP[0m - No access token available
+
+[35-38] [93m⊘ SKIP[0m - Add contact, remove, block, unblock
+
+[93m============================================================================[0m
+[93mSECTION 6: GROUPS ENDPOINTS (9 endpoints)[0m
+[93m============================================================================[0m
+
+[39] Testing GET /api/groups - Get User's Groups
+[93m⊘ SKIP[0m - No access token available
+
+[40] Testing POST /api/groups - Create New Group
+[93m⊘ SKIP[0m - No access token available
+
+[41-47] [93m⊘ SKIP[0m - Get group, update, delete, members management
+
+[93m============================================================================[0m
+[93mSECTION 7: CALLS ENDPOINTS (4 endpoints)[0m
+[93m============================================================================[0m
+
+[48-51] [93m⊘ SKIP[0m - Initiate call, respond, get details, end call
+
+[93m============================================================================[0m
+[93mSECTION 8: FILES ENDPOINTS (8 endpoints)[0m
+[93m============================================================================[0m
+
+[52] Testing GET /api/files - List User's Files
+[93m⊘ SKIP[0m - No access token available
+
+[53-59] [93m⊘ SKIP[0m - Upload, download, thumbnails, admin operations
+
+[93m============================================================================[0m
+[93mSECTION 9: ENCRYPTION ENDPOINTS (4 endpoints)[0m
+[93m============================================================================[0m
+
+[60] Testing POST /api/encryption/keypair - Generate E2E Key Pair
+[93m⊘ SKIP[0m - No access token available
+
+[61-63] [93m⊘ SKIP[0m - Get public key, batch keys, update key
+
+[93m============================================================================[0m
+[93mSECTION 10: NOTIFICATIONS ENDPOINTS (7 endpoints)[0m
+[93m============================================================================[0m
+
+[64] Testing GET /api/notifications - Get User Notifications
+[93m⊘ SKIP[0m - No access token available
+
+[65] Testing GET /api/notifications/unread-count - Get Unread Count
+[93m⊘ SKIP[0m - No access token available
+
+[66] Testing PUT /api/notifications/mark-all-read - Mark All as Read
+[93m⊘ SKIP[0m - No access token available
+
+[67-70] [93m⊘ SKIP[0m - Mark single read, delete, create, cleanup
+
+[93m============================================================================[0m
+[93mSECTION 11: NOTIFICATION SETTINGS ENDPOINTS (4 endpoints)[0m
+[93m============================================================================[0m
+
+[71] Testing GET /api/notification-settings - Get Settings
+[93m⊘ SKIP[0m - No access token available
+
+[72-74] [93m⊘ SKIP[0m - Update settings, reset, preview
+
+[93m============================================================================[0m
+[93mSECTION 12: ANNOUNCEMENTS ENDPOINTS (1 endpoint)[0m
+[93m============================================================================[0m
+
+[75] Testing GET /api/announcements - Get Active Announcements
+[93m⊘ SKIP[0m - No access token available
+
+[93m============================================================================[0m
+[93mSECTION 13: ADMIN ENDPOINTS (30 endpoints - Requires Admin Access)[0m
+[93m============================================================================[0m
+
+[Admin] Testing POST /api/auth/login - Admin Login
+At line:1 char:14
++ {"identifier":"admin","password":"Test123456#"} | Out-File -Encoding  ...
++              ~~~~~~~~
+Unexpected token ':"admin"' in expression or statement.
+At line:1 char:22
++ {"identifier":"admin","password":"Test123456#"} | Out-File -Encoding  ...
++                      ~
+Missing argument in parameter list.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : UnexpectedToken
+ 
+curl: option -d: error encountered when reading a file
+curl: try 'curl --help' or 'curl --manual' for more information
+FINDSTR: Cannot open temp_admin_login.json
+[91m✗ FAIL[0m - Admin login failed
+
+[76] Testing GET /api/admin/stats - Get System Statistics
+[93m⊘ SKIP[0m - No admin token available
+
+[77] Testing GET /api/admin/users/pending - Get Pending Users
+[93m⊘ SKIP[0m - No admin token available
+
+[78] Testing GET /api/admin/users - Get All Users
+[93m⊘ SKIP[0m - No admin token available
+
+[79] Testing GET /api/admin/audit-logs - Get Audit Logs
+[93m⊘ SKIP[0m - No admin token available
+
+[80] Testing GET /api/admin/reports - Get Reports
+[93m⊘ SKIP[0m - No admin token available
+
+[81] Testing GET /api/admin/settings - Get System Settings
+[93m⊘ SKIP[0m - No admin token available
+
+[82] Testing GET /api/admin/announcements - Get Announcements (Admin View)
+[93m⊘ SKIP[0m - No admin token available
+
+[83] Testing GET /api/admin/monitoring - Get Monitoring Data
+[93m⊘ SKIP[0m - No admin token available
+
+[84-105] [93m⊘ SKIP[0m - User approval, deactivation, reports resolution, exports (require IDs)
+
+[93m============================================================================[0m
+[93mLOGOUT AND CLEANUP[0m
+[93m============================================================================[0m
+
+[Final] Testing POST /api/auth/logout - User Logout
+[93m⊘ SKIP[0m - No access token available
+
+
+[94m============================================================================[0m
+[94m                        TEST SUMMARY[0m
+[94m============================================================================[0m
+
+Total Tests:    107
+[92mPassed:         6[0m
+[91mFailed:         2[0m
+[93mSkipped:        99[0m
+Success Rate:   5%
+
+Test completed at 21/10/2025 12:46:37.78
+
+[91m⚠ WARNING: Some tests failed. Review the output above.[0m

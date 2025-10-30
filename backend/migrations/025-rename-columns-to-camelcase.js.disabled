@@ -1,0 +1,286 @@
+'use strict';
+
+/** @type {import('sequelize-cli').Migration} */
+export async function up(queryInterface, Sequelize) {
+    // First, let's handle foreign key constraints by dropping them temporarily
+    // We'll recreate them after column renames
+    
+    // 1. Rename table: message_edit_history -> messageEditHistory (if it exists)
+    try {
+      await queryInterface.renameTable('message_edit_history', 'messageEditHistory');
+    } catch (error) {
+      // Table doesn't exist, skip
+      console.log('Table message_edit_history does not exist, skipping rename');
+    }
+    
+    // 2. Handle users table (already camelCase, no changes needed)
+    // 3. Handle messages table (already camelCase, no changes needed)
+    // 4. Handle files table (already camelCase, no changes needed)
+    // 5. Handle contacts table (already camelCase, no changes needed)
+    
+    // 6. Handle password_history table (snake_case to camelCase)
+    const passwordHistoryTableDescription = await queryInterface.describeTable('password_history');
+
+    if (passwordHistoryTableDescription.user_id) {
+      await queryInterface.renameColumn('password_history', 'user_id', 'userId');
+    }
+    if (passwordHistoryTableDescription.password_hash) {
+      await queryInterface.renameColumn('password_history', 'password_hash', 'passwordHash');
+    }
+    if (passwordHistoryTableDescription.created_at) {
+      await queryInterface.renameColumn('password_history', 'created_at', 'createdAt');
+    }
+    if (passwordHistoryTableDescription.updated_at) {
+      await queryInterface.renameColumn('password_history', 'updated_at', 'updatedAt');
+    }
+    if (passwordHistoryTableDescription.deleted_at) {
+      await queryInterface.renameColumn('password_history', 'deleted_at', 'deletedAt');
+    }
+    
+    // 7. Handle calls table - check if columns exist before renaming
+    // calls table might be missing columns, so we need to add them if they don't exist
+    const callsTableDescription = await queryInterface.describeTable('calls');
+
+    // Add missing columns to calls table if they don't exist
+    if (!callsTableDescription.callerId) {
+      await queryInterface.addColumn('calls', 'callerId', {
+        type: Sequelize.UUID,
+        allowNull: true, // Temporarily nullable
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+      });
+    }
+
+    if (!callsTableDescription.recipientId) {
+      await queryInterface.addColumn('calls', 'recipientId', {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+      });
+    }
+
+    if (!callsTableDescription.callType) {
+      await queryInterface.addColumn('calls', 'callType', {
+        type: Sequelize.ENUM('audio', 'video'),
+        allowNull: true,
+      });
+    }
+
+    if (!callsTableDescription.startedAt) {
+      await queryInterface.addColumn('calls', 'startedAt', {
+        type: Sequelize.DATE,
+        allowNull: true,
+      });
+    }
+
+    if (!callsTableDescription.endedAt) {
+      await queryInterface.addColumn('calls', 'endedAt', {
+        type: Sequelize.DATE,
+        allowNull: true,
+      });
+    }
+
+    if (!callsTableDescription.createdAt) {
+      await queryInterface.addColumn('calls', 'createdAt', {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+      });
+    }
+
+    if (!callsTableDescription.updatedAt) {
+      await queryInterface.addColumn('calls', 'updatedAt', {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+      });
+    }
+
+    // Now rename deleted_at to deletedAt if it exists
+    if (callsTableDescription.deleted_at) {
+      await queryInterface.renameColumn('calls', 'deleted_at', 'deletedAt');
+    }
+    
+    // 8. Handle devices table (already camelCase, no changes needed)
+    
+    // 9. Handle notifications table (check if already camelCase)
+    const notificationsTableDescription = await queryInterface.describeTable('notifications');
+
+    if (notificationsTableDescription.user_id) {
+      await queryInterface.renameColumn('notifications', 'user_id', 'userId');
+    }
+    if (notificationsTableDescription.expires_at) {
+      await queryInterface.renameColumn('notifications', 'expires_at', 'expiresAt');
+    }
+    if (notificationsTableDescription.created_at) {
+      await queryInterface.renameColumn('notifications', 'created_at', 'createdAt');
+    }
+    if (notificationsTableDescription.updated_at) {
+      await queryInterface.renameColumn('notifications', 'updated_at', 'updatedAt');
+    }
+    if (notificationsTableDescription.deleted_at) {
+      await queryInterface.renameColumn('notifications', 'deleted_at', 'deletedAt');
+    }
+    
+    // 10. Handle notification_settings table (already camelCase, no changes needed)
+    
+    // 11. Handle audit_logs table (check if already camelCase)
+    const auditLogsTableDescription = await queryInterface.describeTable('audit_logs');
+
+    if (auditLogsTableDescription.user_id) {
+      await queryInterface.renameColumn('audit_logs', 'user_id', 'userId');
+    }
+    if (auditLogsTableDescription.resource_type) {
+      await queryInterface.renameColumn('audit_logs', 'resource_type', 'resourceType');
+    }
+    if (auditLogsTableDescription.resource_id) {
+      await queryInterface.renameColumn('audit_logs', 'resource_id', 'resourceId');
+    }
+    if (auditLogsTableDescription.ip_address) {
+      await queryInterface.renameColumn('audit_logs', 'ip_address', 'ipAddress');
+    }
+    if (auditLogsTableDescription.user_agent) {
+      await queryInterface.renameColumn('audit_logs', 'user_agent', 'userAgent');
+    }
+    if (auditLogsTableDescription.error_message) {
+      await queryInterface.renameColumn('audit_logs', 'error_message', 'errorMessage');
+    }
+    if (auditLogsTableDescription.created_at) {
+      await queryInterface.renameColumn('audit_logs', 'created_at', 'createdAt');
+    }
+    
+    // 12. Handle reports table (check if already camelCase)
+    const reportsTableDescription = await queryInterface.describeTable('reports');
+
+    if (reportsTableDescription.reporter_id) {
+      await queryInterface.renameColumn('reports', 'reporter_id', 'reporterId');
+    }
+    if (reportsTableDescription.reported_user_id) {
+      await queryInterface.renameColumn('reports', 'reported_user_id', 'reportedUserId');
+    }
+    if (reportsTableDescription.reported_message_id) {
+      await queryInterface.renameColumn('reports', 'reported_message_id', 'reportedMessageId');
+    }
+    if (reportsTableDescription.reported_file_id) {
+      await queryInterface.renameColumn('reports', 'reported_file_id', 'reportedFileId');
+    }
+    if (reportsTableDescription.report_type) {
+      await queryInterface.renameColumn('reports', 'report_type', 'reportType');
+    }
+    if (reportsTableDescription.reviewed_by) {
+      await queryInterface.renameColumn('reports', 'reviewed_by', 'reviewedBy');
+    }
+    if (reportsTableDescription.reviewed_at) {
+      await queryInterface.renameColumn('reports', 'reviewed_at', 'reviewedAt');
+    }
+    if (reportsTableDescription.action_taken) {
+      await queryInterface.renameColumn('reports', 'action_taken', 'actionTaken');
+    }
+    if (reportsTableDescription.created_at) {
+      await queryInterface.renameColumn('reports', 'created_at', 'createdAt');
+    }
+    if (reportsTableDescription.updated_at) {
+      await queryInterface.renameColumn('reports', 'updated_at', 'updatedAt');
+    }
+    
+    // 13. Handle announcements table (check if already camelCase)
+    const announcementsTableDescription = await queryInterface.describeTable('announcements');
+
+    if (announcementsTableDescription.created_by) {
+      await queryInterface.renameColumn('announcements', 'created_by', 'createdBy');
+    }
+    if (announcementsTableDescription.expires_at) {
+      await queryInterface.renameColumn('announcements', 'expires_at', 'expiresAt');
+    }
+    if (announcementsTableDescription.created_at) {
+      await queryInterface.renameColumn('announcements', 'created_at', 'createdAt');
+    }
+    if (announcementsTableDescription.updated_at) {
+      await queryInterface.renameColumn('announcements', 'updated_at', 'updatedAt');
+    }
+    if (announcementsTableDescription.deleted_at) {
+      await queryInterface.renameColumn('announcements', 'deleted_at', 'deletedAt');
+    }
+    
+    // Now we need to update foreign key constraints
+    // Note: In PostgreSQL, when we rename columns, foreign key constraints are automatically updated
+    // But we need to update any references in other tables that might reference these columns
+    
+    // Update indexes that reference the renamed columns
+    // This is handled automatically in most cases, but let's be explicit about it
+    
+    // Note: queryInterface.renameIndex is not supported in Sequelize
+    // Indexes will continue to work with old names, this doesn't affect functionality
+    // Index names reference column names, and indexes are automatically updated when columns are renamed
+}
+
+export async function down(queryInterface, Sequelize) {
+    // Rollback: Reverse all the changes
+    
+    // 1. Rename table back: messageEditHistory -> message_edit_history (if it exists)
+    try {
+      await queryInterface.renameTable('messageEditHistory', 'message_edit_history');
+    } catch (error) {
+      // Table doesn't exist, skip
+      console.log('Table messageEditHistory does not exist, skipping rename');
+    }
+    
+    // 2. Handle users table (already camelCase, no changes needed)
+    // 3. Handle messages table (already camelCase, no changes needed)
+    // 4. Handle contacts table (already camelCase, no changes needed)
+    
+    // 5. Handle password_history table (camelCase back to snake_case)
+    await queryInterface.renameColumn('password_history', 'userId', 'user_id');
+    await queryInterface.renameColumn('password_history', 'passwordHash', 'password_hash');
+    await queryInterface.renameColumn('password_history', 'createdAt', 'created_at');
+    await queryInterface.renameColumn('password_history', 'updatedAt', 'updated_at');
+    await queryInterface.renameColumn('password_history', 'deletedAt', 'deleted_at');
+    
+    // 6. Handle calls table (rename deletedAt back to deleted_at)
+    await queryInterface.renameColumn('calls', 'deletedAt', 'deleted_at');
+    
+    // 7. Handle notifications table (camelCase back to snake_case)
+    await queryInterface.renameColumn('notifications', 'userId', 'user_id');
+    await queryInterface.renameColumn('notifications', 'expiresAt', 'expires_at');
+    await queryInterface.renameColumn('notifications', 'createdAt', 'created_at');
+    await queryInterface.renameColumn('notifications', 'updatedAt', 'updated_at');
+    await queryInterface.renameColumn('notifications', 'deletedAt', 'deleted_at');
+    
+    // 8. Handle audit_logs table (camelCase back to snake_case)
+    await queryInterface.renameColumn('audit_logs', 'userId', 'user_id');
+    await queryInterface.renameColumn('audit_logs', 'resourceType', 'resource_type');
+    await queryInterface.renameColumn('audit_logs', 'resourceId', 'resource_id');
+    await queryInterface.renameColumn('audit_logs', 'ipAddress', 'ip_address');
+    await queryInterface.renameColumn('audit_logs', 'userAgent', 'user_agent');
+    await queryInterface.renameColumn('audit_logs', 'errorMessage', 'error_message');
+    await queryInterface.renameColumn('audit_logs', 'createdAt', 'created_at');
+    
+    // 9. Handle reports table (camelCase back to snake_case)
+    await queryInterface.renameColumn('reports', 'reporterId', 'reporter_id');
+    await queryInterface.renameColumn('reports', 'reportedUserId', 'reported_user_id');
+    await queryInterface.renameColumn('reports', 'reportedMessageId', 'reported_message_id');
+    await queryInterface.renameColumn('reports', 'reportedFileId', 'reported_file_id');
+    await queryInterface.renameColumn('reports', 'reportType', 'report_type');
+    await queryInterface.renameColumn('reports', 'reviewedBy', 'reviewed_by');
+    await queryInterface.renameColumn('reports', 'reviewedAt', 'reviewed_at');
+    await queryInterface.renameColumn('reports', 'actionTaken', 'action_taken');
+    await queryInterface.renameColumn('reports', 'createdAt', 'created_at');
+    await queryInterface.renameColumn('reports', 'updatedAt', 'updated_at');
+    
+    // 10. Handle announcements table (camelCase back to snake_case)
+    await queryInterface.renameColumn('announcements', 'createdBy', 'created_by');
+    await queryInterface.renameColumn('announcements', 'expiresAt', 'expires_at');
+    await queryInterface.renameColumn('announcements', 'createdAt', 'created_at');
+    await queryInterface.renameColumn('announcements', 'updatedAt', 'updated_at');
+    
+    // Note: Index renaming not needed, indexes work with old names
+  }

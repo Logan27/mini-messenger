@@ -449,4 +449,50 @@ router.put(
  */
 router.post('/:id/leave', validateParams(groupValidation.groupId), groupsController.leaveGroup);
 
+/**
+ * @swagger
+ * /api/groups/{id}/mute:
+ *   post:
+ *     summary: Mute group notifications
+ *     tags: [Groups]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Group muted successfully
+ *       404:
+ *         description: Group not found or not a member
+ */
+router.post('/:id/mute', validateParams(groupValidation.groupId), groupsController.muteGroup);
+
+/**
+ * @swagger
+ * /api/groups/{id}/mute:
+ *   delete:
+ *     summary: Unmute group notifications
+ *     tags: [Groups]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Group unmuted successfully
+ *       404:
+ *         description: Group not found or not a member
+ */
+router.delete('/:id/mute', validateParams(groupValidation.groupId), groupsController.unmuteGroup);
+
 export default router;

@@ -71,6 +71,11 @@ services:
       PORT: ${PORT:-4000}
       HOST: ${HOST:-0.0.0.0}
       DATABASE_URL: postgresql://${DB_USER:-messenger}:${DB_PASSWORD:-messenger_password}@postgres:5432/${DB_NAME:-messenger}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-messenger}
+      DB_USER: ${DB_USER:-messenger}
+      DB_PASSWORD: ${DB_PASSWORD:-messenger_password}
       REDIS_URL: redis://:${REDIS_PASSWORD:-messenger_redis_password}@redis:6379
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -83,6 +88,7 @@ services:
       CLAMAV_HOST: clamav
       CLAMAV_PORT: 3310
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      CORS_CREDENTIALS: "true"
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
     volumes:
       - ./src:/app/src

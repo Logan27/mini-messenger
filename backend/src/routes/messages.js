@@ -6,6 +6,7 @@ import { Op } from 'sequelize';
 import { sequelize } from '../config/database.js';
 import { authenticate } from '../middleware/auth.js';
 import { userRateLimit } from '../middleware/rateLimit.js';
+import { Contact } from '../models/Contact.js';
 import { Group } from '../models/Group.js';
 import { GroupMember } from '../models/GroupMember.js';
 import { Message } from '../models/Message.js';
@@ -486,9 +487,13 @@ router.get(
           groupId: groupId,
         };
 
-        // Verify user is member of the group
+        // Verify user is an active member of the group
         const membership = await GroupMember.findOne({
-          where: { groupId, userId },
+          where: {
+            groupId,
+            userId,
+            isActive: true,
+          },
         });
 
         if (!membership) {
@@ -506,6 +511,7 @@ router.get(
           },
           {
             model: Group,
+            as: 'group',
             attributes: ['id', 'name', 'description'],
           },
           {
@@ -606,11 +612,11 @@ router.get(
                 avatar: message.sender.avatar,
               }
             : null,
-          group: message.Group
+          group: message.group
             ? {
-                id: message.Group.id,
-                name: message.Group.name,
-                description: message.Group.description,
+                id: message.group.id,
+                name: message.group.name,
+                description: message.group.description,
               }
             : null,
         })),
@@ -1485,9 +1491,13 @@ router.get(
 
       // Add group filter
       if (groupId) {
-        // Verify user is member of the group
+        // Verify user is an active member of the group
         const membership = await GroupMember.findOne({
-          where: { groupId, userId },
+          where: {
+            groupId,
+            userId,
+            isActive: true,
+          },
         });
 
         if (!membership) {
@@ -1726,6 +1736,15 @@ router.get(
             attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'status'],
           });
 
+          // Get contact to check if muted
+          const contact = await Contact.findOne({
+            where: {
+              userId,
+              contactUserId: dm.otherUserId,
+            },
+            attributes: ['isMuted'],
+          });
+
           // Get last message
           const lastMessage = await Message.findOne({
             where: {
@@ -1763,6 +1782,7 @@ router.get(
             messageCount: parseInt(dm.messageCount),
             unreadCount: parseInt(dm.unreadCount || 0),
             lastMessageAt: dm.lastMessageAt,
+            isMuted: contact?.isMuted || false,
           };
         })
       );
@@ -1777,7 +1797,7 @@ router.get(
           {
             model: Group,
             as: 'group',
-            attributes: ['id', 'name', 'description', 'avatar'],
+            attributes: ['id', 'name', 'description', 'avatar', 'creatorId'],
           },
         ],
       });
@@ -1816,8 +1836,10 @@ router.get(
                   name: gm.group.name,
                   description: gm.group.description,
                   avatar: gm.group.avatar,
+                  creatorId: gm.group.creatorId,
                 }
               : null,
+            userRole: gm.role, // Include user's role in the group (admin, member, etc.)
             lastMessage: lastMessage
               ? {
                   id: lastMessage.id,
@@ -1835,6 +1857,7 @@ router.get(
               : null,
             unreadCount,
             lastMessageAt: lastMessage ? lastMessage.createdAt : gm.joinedAt,
+            isMuted: gm.isMuted || false,
           };
         })
       );

@@ -842,6 +842,204 @@ class AuthController {
     }
   }
 
+  // Parse user agent to extract device info
+  static parseUserAgent(userAgent) {
+    if (!userAgent) {
+      return {
+        deviceType: 'desktop',
+        browser: 'Unknown',
+        os: 'Unknown',
+      };
+    }
+
+    const ua = userAgent.toLowerCase();
+    let deviceType = 'desktop';
+    let browser = 'Unknown';
+    let os = 'Unknown';
+
+    // Detect device type
+    if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) {
+      deviceType = 'mobile';
+    } else if (ua.includes('tablet') || ua.includes('ipad')) {
+      deviceType = 'tablet';
+    }
+
+    // Detect browser
+    if (ua.includes('edg/')) {
+      browser = 'Edge';
+    } else if (ua.includes('chrome/') && !ua.includes('edg/')) {
+      browser = 'Chrome';
+    } else if (ua.includes('firefox/')) {
+      browser = 'Firefox';
+    } else if (ua.includes('safari/') && !ua.includes('chrome/')) {
+      browser = 'Safari';
+    } else if (ua.includes('opera/') || ua.includes('opr/')) {
+      browser = 'Opera';
+    }
+
+    // Detect OS
+    if (ua.includes('windows')) {
+      os = 'Windows';
+    } else if (ua.includes('mac os')) {
+      os = 'macOS';
+    } else if (ua.includes('linux')) {
+      os = 'Linux';
+    } else if (ua.includes('android')) {
+      os = 'Android';
+    } else if (ua.includes('iphone') || ua.includes('ipad')) {
+      os = 'iOS';
+    }
+
+    return { deviceType, browser, os };
+  }
+
+  // Get all active sessions for the current user
+  async getSessions(req, res) {
+    try {
+      const userId = req.user.id;
+      const currentToken = req.headers.authorization?.replace('Bearer ', '');
+
+      const sessions = await Session.findValidSessionsByUserId(userId);
+
+      const formattedSessions = sessions.map((session) => {
+        const { deviceType, browser, os } = AuthController.parseUserAgent(session.userAgent);
+
+        return {
+          id: session.id,
+          deviceType,
+          browser,
+          os,
+          ip: session.ipAddress || 'Unknown',
+          location: 'Unknown', // Could integrate with IP geolocation service
+          lastActivity: session.lastAccessedAt,
+          isCurrent: session.token === currentToken,
+        };
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Sessions retrieved successfully',
+        data: {
+          sessions: formattedSessions,
+        },
+      });
+    } catch (error) {
+      logger.error('Get sessions error:', error);
+
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Failed to retrieve sessions. Please try again.',
+        },
+      });
+    }
+  }
+
+  // Revoke a specific session
+  async revokeSession(req, res) {
+    try {
+      const userId = req.user.id;
+      const sessionId = req.params.sessionId;
+      const currentToken = req.headers.authorization?.replace('Bearer ', '');
+
+      // Find the session
+      const session = await Session.findOne({
+        where: {
+          id: sessionId,
+          userId,
+        },
+      });
+
+      if (!session) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            type: 'SESSION_NOT_FOUND',
+            message: 'Session not found',
+          },
+        });
+      }
+
+      // Prevent revoking current session
+      if (session.token === currentToken) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            type: 'INVALID_OPERATION',
+            message: 'Cannot revoke current session. Use logout instead.',
+          },
+        });
+      }
+
+      // Expire the session
+      session.expiresAt = new Date();
+      await session.save();
+
+      // Remove from Redis
+      await AuthController.removeSessionFromRedis(session.token);
+
+      logger.info(`Session revoked for user ${userId}: ${sessionId}`);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Session revoked successfully',
+      });
+    } catch (error) {
+      logger.error('Revoke session error:', error);
+
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Failed to revoke session. Please try again.',
+        },
+      });
+    }
+  }
+
+  // Revoke all other sessions (keep current)
+  async revokeAllOtherSessions(req, res) {
+    try {
+      const userId = req.user.id;
+      const currentToken = req.headers.authorization?.replace('Bearer ', '');
+
+      // Get all sessions for the user
+      const sessions = await Session.findValidSessionsByUserId(userId);
+
+      // Expire all sessions except current
+      let revokedCount = 0;
+      for (const session of sessions) {
+        if (session.token !== currentToken) {
+          session.expiresAt = new Date();
+          await session.save();
+          await AuthController.removeSessionFromRedis(session.token);
+          revokedCount++;
+        }
+      }
+
+      logger.info(`Revoked ${revokedCount} sessions for user ${userId}`);
+
+      return res.status(200).json({
+        success: true,
+        message: `${revokedCount} session${revokedCount !== 1 ? 's' : ''} revoked successfully`,
+        data: {
+          revokedCount,
+        },
+      });
+    } catch (error) {
+      logger.error('Revoke all sessions error:', error);
+
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Failed to revoke sessions. Please try again.',
+        },
+      });
+    }
+  }
+
   static async storeSessionInRedis(session) {
     try {
       const redis = getRedisClient();

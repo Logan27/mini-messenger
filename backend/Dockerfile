@@ -46,7 +46,7 @@ RUN npm ci --only=production && npm cache clean --force
 # Copy built application from builder stage
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/tests ./tests
-COPY --from=builder /app/docs ./docs
+# COPY --from=builder /app/docs ./docs
 
 # Create necessary directories
 RUN mkdir -p /app/uploads /app/logs /app/temp && \

@@ -105,8 +105,8 @@ class MessageService {
 
       // Broadcast to recipient(s)
       if (recipientId) {
-        console.log('🔵 Backend: Broadcasting message_sent to recipientId:', recipientId);
-        await this.broadcastToUser(recipientId, WS_EVENTS.MESSAGE_SENT, {
+        console.log('🔵 Backend: Broadcasting message.new to recipientId:', recipientId);
+        await this.broadcastToUser(recipientId, 'message.new', {
           ...enhancedMessage,
           delivered: false,
           read: false,
@@ -457,11 +457,12 @@ class MessageService {
           throw new Error('Group not found');
         }
 
-        // Check if sender is a member of the group
+        // Check if sender is an active member of the group
         const membership = await GroupMember.findOne({
           where: {
             groupId: messageData.groupId,
             userId: messageData.senderId,
+            isActive: true,
           },
           transaction,
         });

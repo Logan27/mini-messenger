@@ -378,4 +378,106 @@ router.post('/change-password', authenticate, validate(authValidation.changePass
  */
 router.post('/resend-verification', authController.resendVerification);
 
+/**
+ * @swagger
+ * /api/auth/sessions:
+ *   get:
+ *     summary: Get all active sessions for the current user
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Sessions retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Sessions retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     sessions:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           deviceType:
+ *                             type: string
+ *                             enum: [desktop, mobile, tablet]
+ *                           browser:
+ *                             type: string
+ *                           os:
+ *                             type: string
+ *                           ip:
+ *                             type: string
+ *                           location:
+ *                             type: string
+ *                           lastActivity:
+ *                             type: string
+ *                             format: date-time
+ *                           isCurrent:
+ *                             type: boolean
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/sessions', authenticate, authController.getSessions);
+
+/**
+ * @swagger
+ * /api/auth/sessions/{sessionId}:
+ *   delete:
+ *     summary: Revoke a specific session
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Session ID to revoke
+ *     responses:
+ *       200:
+ *         description: Session revoked successfully
+ *       400:
+ *         description: Cannot revoke current session
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Session not found
+ *       500:
+ *         description: Internal server error
+ */
+router.delete('/sessions/:sessionId', authenticate, authController.revokeSession);
+
+/**
+ * @swagger
+ * /api/auth/sessions:
+ *   delete:
+ *     summary: Revoke all other sessions (keep current)
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All other sessions revoked successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.delete('/sessions', authenticate, authController.revokeAllOtherSessions);
+
 export default router;

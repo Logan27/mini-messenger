@@ -76,6 +76,11 @@ export const GroupMember = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    isMuted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+    },
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -164,6 +169,18 @@ GroupMember.prototype.leaveGroup = async function () {
 GroupMember.prototype.updateLastSeen = async function () {
   this.lastSeenAt = new Date();
   await this.save();
+};
+
+GroupMember.prototype.mute = async function () {
+  this.isMuted = true;
+  await this.save();
+  return this;
+};
+
+GroupMember.prototype.unmute = async function () {
+  this.isMuted = false;
+  await this.save();
+  return this;
 };
 
 GroupMember.prototype.hasPermission = function (permission) {

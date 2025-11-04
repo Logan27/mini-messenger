@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .granted { background: #d4edda; color: #155724; }
+        .denied { background: #f8d7da; color: #721c24; }
+        .default { background: #fff3cd; color: #856404; }
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background: #007bff;
+            color: white;
+        }
+        button:hover { background: #0056b3; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .info { color: #0066cc; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+    </style>
+</head>
+<body>
+    <h1>🔔 Browser Notification API Test</h1>
+    
+    <div id="status"></div>
+    
+    <div>
+        <h2>Actions:</h2>
+        <button onclick="checkStatus()">Check Status</button>
+        <button onclick="requestPermission()">Request Permission</button>
+        <button onclick="testNotification()">Test Notification</button>
+        <button onclick="testRequireInteraction()">Test Persistent Notification</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <div>
+        <h2>Test Results:</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <div>
+        <h2>Instructions for Messenger App:</h2>
+        <ol>
+            <li>Open browser DevTools (F12)</li>
+            <li>Go to Console tab</li>
+            <li>Type: <code>Notification.permission</code> and press Enter</li>
+            <li>If it's "default", run: <code>Notification.requestPermission()</code></li>
+            <li>Check if socketService is connected: <code>socketService.diagnose()</code></li>
+            <li>Send a test message from another user to see if notifications work</li>
+            <li>Check console for logs starting with 🔔, 💬, ✅, ❌</li>
+        </ol>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus() {
+            const statusDiv = document.getElementById('status');
+            
+            if (!('Notification' in window)) {
+                statusDiv.className = 'status denied';
+                statusDiv.innerHTML = '❌ Notification API NOT SUPPORTED in this browser';
+                log('Notification API not supported', 'error');
+                return;
+            }
+
+            const permission = Notification.permission;
+            let className = '';
+            let message = '';
+
+            switch(permission) {
+                case 'granted':
+                    className = 'granted';
+                    message = '✅ Notifications ENABLED - Can send notifications';
+                    log('Notifications enabled', 'success');
+                    break;
+                case 'denied':
+                    className = 'denied';
+                    message = '❌ Notifications DENIED - Check browser settings (click lock icon in address bar)';
+                    log('Notifications denied - check browser settings', 'error');
+                    break;
+                case 'default':
+                    className = 'default';
+                    message = '⚠️ Notifications NOT REQUESTED - Click "Request Permission" button';
+                    log('Notifications not yet requested', 'warning');
+                    break;
+            }
+
+            statusDiv.className = `status ${className}`;
+            statusDiv.innerHTML = message;
+        }
+
+        function checkStatus() {
+            log('Checking notification status...', 'info');
+            updateStatus();
+            
+            if ('Notification' in window) {
+                log(`Permission: ${Notification.permission}`, 'info');
+                log(`Max actions: ${Notification.maxActions || 'N/A'}`, 'info');
+            }
+        }
+
+        async function requestPermission() {
+            if (!('Notification' in window)) {
+                log('Notification API not supported', 'error');
+                alert('Notifications are not supported in this browser');
+                return;
+            }
+
+            log('Requesting notification permission...', 'info');
+            
+            try {
+                const permission = await Notification.requestPermission();
+                log(`Permission result: ${permission}`, permission === 'granted' ? 'success' : 'error');
+                updateStatus();
+            } catch (error) {
+                log(`Error requesting permission: ${error.message}`, 'error');
+            }
+        }
+
+        function testNotification() {
+            if (!('Notification' in window)) {
+                log('Notification API not supported', 'error');
+                alert('Notifications are not supported in this browser');
+                return;
+            }
+
+            if (Notification.permission !== 'granted') {
+                log('Cannot send notification - permission not granted', 'error');
+                alert('Please grant notification permission first');
+                return;
+            }
+
+            log('Creating test notification...', 'info');
+
+            try {
+                const notification = new Notification('Test Message', {
+                    body: 'This is a test notification from Messenger',
+                    icon: 'https://via.placeholder.com/96',
+                    tag: 'test-notification',
+                    requireInteraction: false,
+                    silent: false,
+                    timestamp: Date.now(),
+                });
+
+                log('Test notification created successfully', 'success');
+
+                notification.onclick = () => {
+                    log('Notification clicked', 'info');
+                    notification.close();
+                };
+
+                notification.onerror = (error) => {
+                    log(`Notification error: ${error}`, 'error');
+                };
+
+                notification.onclose = () => {
+                    log('Notification closed', 'info');
+                };
+
+                setTimeout(() => {
+                    notification.close();
+                    log('Auto-closed test notification after 5 seconds', 'info');
+                }, 5000);
+
+            } catch (error) {
+                log(`Failed to create notification: ${error.message}`, 'error');
+            }
+        }
+
+        function testRequireInteraction() {
+            if (!('Notification' in window)) {
+                log('Notification API not supported', 'error');
+                alert('Notifications are not supported in this browser');
+                return;
+            }
+
+            if (Notification.permission !== 'granted') {
+                log('Cannot send notification - permission not granted', 'error');
+                alert('Please grant notification permission first');
+                return;
+            }
+
+            log('Creating persistent test notification (stays until clicked)...', 'info');
+
+            try {
+                const notification = new Notification('Persistent Test', {
+                    body: 'This notification stays until you click it (requireInteraction: true)',
+                    icon: 'https://via.placeholder.com/96',
+                    tag: 'persistent-test',
+                    requireInteraction: true,
+                    silent: false,
+                });
+
+                log('Persistent notification created successfully', 'success');
+
+                notification.onclick = () => {
+                    log('Persistent notification clicked', 'info');
+                    notification.close();
+                };
+
+            } catch (error) {
+                log(`Failed to create persistent notification: ${error.message}`, 'error');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            log('Log cleared', 'info');
+        }
+
+        // Check status on page load
+        updateStatus();
+        log('Page loaded - ready for testing', 'success');
+    </script>
+</body>
+</html>

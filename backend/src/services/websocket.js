@@ -48,6 +48,14 @@ const WS_EVENTS = {
   GROUP_MEMBER_LEFT: 'group_member_left',
   GROUP_MEMBER_ROLE_UPDATED: 'group_member_role_updated',
 
+  // Contact events
+  CONTACT_REQUEST: 'contact.request',
+  CONTACT_ACCEPTED: 'contact.accepted',
+  CONTACT_REJECTED: 'contact.rejected',
+  CONTACT_REMOVED: 'contact.removed',
+  CONTACT_BLOCKED: 'contact.blocked',
+  CONTACT_UNBLOCKED: 'contact.unblocked',
+
   // WebRTC events
   WEBRTC_SIGNAL: 'webrtc_signal',
   WEBRTC_OFFER: 'webrtc_offer',
@@ -143,6 +151,9 @@ class WebSocketService {
 
       // Start periodic cleanup tasks
       this.startPeriodicCleanup();
+
+      // Mark all users as offline on server start (in case of restart)
+      await this.markAllUsersOffline();
 
       console.log('✅ WebSocket service initialized successfully');
       return this.io;
@@ -363,7 +374,19 @@ class WebSocketService {
       }
     });
 
-    // Handle message events
+    // Handle message events (frontend sends 'message.send')
+    socket.on('message.send', data => {
+      if (this.checkEventRateLimit(socket.userId, 'message_sent')) {
+        messageService.handleMessageSent(socket, data);
+      } else {
+        socket.emit(WS_EVENTS.ERROR, {
+          type: 'RATE_LIMIT_EXCEEDED',
+          message: 'Rate limit exceeded for messages',
+        });
+      }
+    });
+
+    // Legacy support for message_sent event
     socket.on(WS_EVENTS.MESSAGE_SENT, data => {
       if (this.checkEventRateLimit(socket.userId, 'message_sent')) {
         messageService.handleMessageSent(socket, data);
@@ -816,8 +839,15 @@ class WebSocketService {
 
     // Broadcast status update to all connected clients
     // Use 'user.status' event that frontend is listening to
-    this.io?.emit('user.status', statusInfo);
-    
+    // Map 'status' to 'onlineStatus' for frontend compatibility
+    this.io?.emit('user.status', {
+      userId,
+      status,  // Keep for potential future use
+      onlineStatus: status,  // Frontend expects this field
+      timestamp: statusInfo.timestamp,
+      socketId: statusInfo.socketId,
+    });
+
     // Also emit specific events for backward compatibility
     if (status === 'online') {
       this.io?.emit(WS_EVENTS.USER_ONLINE, statusInfo);
@@ -1089,6 +1119,21 @@ class WebSocketService {
       error: error.message || 'Upload failed',
       timestamp: new Date().toISOString(),
     });
+  }
+
+  // Mark all users as offline on server start
+  async markAllUsersOffline() {
+    try {
+      const { User } = await import('../models/index.js');
+      const result = await User.update(
+        { status: 'offline' },
+        { where: { status: ['online', 'away'] } }
+      );
+
+      console.log(`📴 Marked ${result[0]} users as offline on server start`);
+    } catch (error) {
+      console.error('❌ Error marking users offline on startup:', error);
+    }
   }
 
   // Clean up resources

@@ -527,7 +527,12 @@ Message.getRecentConversations = function (userId, limit = 20) {
 };
 
 // Hooks
-Message.beforeCreate(async message => {
+Message.beforeCreate(async (message, options) => {
+  // Skip validation for call messages - they have special handling
+  if (message.messageType === 'call') {
+    return;
+  }
+
   // Validate that either recipientId or groupId is set, but not both
   if ((!message.recipientId && !message.groupId) || (message.recipientId && message.groupId)) {
     throw new Error('Message must have either recipientId or groupId, but not both');
@@ -543,27 +548,41 @@ Message.beforeCreate(async message => {
   }
 });
 
-Message.afterCreate(async message => {
-  // Update group's lastMessageAt when a new message is sent
-  if (message.groupId) {
-    const { Group } = await import('./index.js');
-    await Group.update({ lastMessageAt: message.createdAt }, { where: { id: message.groupId } });
+Message.afterCreate(async (message, options) => {
+  // Skip afterCreate hook processing for call messages to avoid transaction issues
+  if (message.messageType === 'call') {
+    return;
   }
 
-  // Update contact's lastContactAt for direct messages
-  if (message.recipientId && message.senderId !== message.recipientId) {
-    const { Contact } = await import('./index.js');
-    await Contact.update(
-      { lastContactAt: message.createdAt },
-      {
-        where: {
-          [Op.or]: [
-            { userId: message.senderId, contactUserId: message.recipientId },
-            { userId: message.recipientId, contactUserId: message.senderId },
-          ],
-        },
-      }
-    );
+  try {
+    // Update group's lastMessageAt when a new message is sent
+    if (message.groupId) {
+      const { Group } = await import('./index.js');
+      await Group.update(
+        { lastMessageAt: message.createdAt },
+        { where: { id: message.groupId }, transaction: options.transaction }
+      );
+    }
+
+    // Update contact's lastContactAt for direct messages
+    if (message.recipientId && message.senderId !== message.recipientId) {
+      const { Contact } = await import('./index.js');
+      await Contact.update(
+        { lastContactAt: message.createdAt },
+        {
+          where: {
+            [Op.or]: [
+              { userId: message.senderId, contactUserId: message.recipientId },
+              { userId: message.recipientId, contactUserId: message.senderId },
+            ],
+          },
+          transaction: options.transaction,
+        }
+      );
+    }
+  } catch (error) {
+    // Log error but don't throw - message creation should succeed even if related updates fail
+    console.error('Failed to update related records in afterCreate hook:', error.message);
   }
 });
 

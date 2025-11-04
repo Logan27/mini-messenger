@@ -629,15 +629,15 @@ class GroupsController {
         });
       }
 
-      // FIX BUG-G010: Verify user exists and is active
+      // FIX BUG-G010: Verify user exists and is approved
       const userToAdd = await User.findByPk(memberId, { transaction });
-      if (!userToAdd || userToAdd.status !== 'active') {
+      if (!userToAdd || userToAdd.approvalStatus !== 'approved') {
         await transaction.rollback();
         return res.status(400).json({
           success: false,
           error: {
             type: 'VALIDATION_ERROR',
-            message: 'User not found or inactive',
+            message: 'User not found or not approved',
           },
         });
       }
@@ -1316,6 +1316,120 @@ class GroupsController {
         error: {
           type: 'INTERNAL_ERROR',
           message: 'Failed to leave group',
+        },
+      });
+    }
+  }
+
+  /**
+   * Mute group notifications
+   * POST /api/groups/:id/mute
+   */
+  async muteGroup(req, res) {
+    try {
+      const userId = req.user.id;
+      const groupId = req.params.id;
+
+      // Check if user is a member
+      const membership = await GroupMember.findOne({
+        where: {
+          groupId,
+          userId,
+          isActive: true,
+        },
+      });
+
+      if (!membership) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            type: 'NOT_FOUND',
+            message: 'Group not found or you are not a member',
+          },
+        });
+      }
+
+      await membership.mute();
+
+      logger.info('Group muted', { userId, groupId });
+
+      res.json({
+        success: true,
+        message: 'Group muted successfully',
+        data: {
+          groupId: membership.groupId,
+          isMuted: membership.isMuted,
+        },
+      });
+    } catch (error) {
+      logger.error('Error muting group:', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.id,
+        groupId: req.params.id,
+      });
+      res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Failed to mute group',
+        },
+      });
+    }
+  }
+
+  /**
+   * Unmute group notifications
+   * DELETE /api/groups/:id/mute
+   */
+  async unmuteGroup(req, res) {
+    try {
+      const userId = req.user.id;
+      const groupId = req.params.id;
+
+      // Check if user is a member
+      const membership = await GroupMember.findOne({
+        where: {
+          groupId,
+          userId,
+          isActive: true,
+        },
+      });
+
+      if (!membership) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            type: 'NOT_FOUND',
+            message: 'Group not found or you are not a member',
+          },
+        });
+      }
+
+      await membership.unmute();
+
+      logger.info('Group unmuted', { userId, groupId });
+
+      res.json({
+        success: true,
+        message: 'Group unmuted successfully',
+        data: {
+          groupId: membership.groupId,
+          isMuted: membership.isMuted,
+        },
+      });
+    } catch (error) {
+      logger.error('Error unmuting group:', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.id,
+        groupId: req.params.id,
+      });
+      res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Failed to unmute group',
         },
       });
     }

@@ -1,4 +1,4 @@
-import { Call, User, sequelize } from '../models/index.js';
+import { Call, User, Message, sequelize } from '../models/index.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/errors.js';
 import { Op } from 'sequelize';
 import { getIO } from './websocket.js';
@@ -122,12 +122,15 @@ const respondToCall = async ({ callId, recipientId, response }) => {
       throw new ValidationError(`Cannot respond to call in status: ${call.status}. Call must be in 'calling' status.`);
     }
 
+    let callMessage = null;
     if (response === 'accept') {
       call.status = 'connected';
       call.startedAt = new Date();
     } else {
       call.status = 'rejected';
       call.endedAt = new Date();
+      // Create call message for rejected calls
+      callMessage = await createCallMessage(call, transaction);
     }
 
     await call.save({ transaction });
@@ -160,6 +163,20 @@ const respondToCall = async ({ callId, recipientId, response }) => {
         call: callWithDetails,
         timestamp: new Date().toISOString(),
       });
+
+      // Emit message.new event for rejected calls so they appear in chat immediately
+      if (callMessage) {
+        const messageWithSender = await Message.findByPk(callMessage.id, {
+          include: [
+            { model: User, as: 'sender', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+          ],
+        });
+
+        // Emit flat message object (not nested) to match expected format
+        const messageData = messageWithSender.toJSON();
+        io.to(`user:${call.callerId}`).emit('message.new', messageData);
+        io.to(`user:${call.recipientId}`).emit('message.new', messageData);
+      }
     } else {
       logger.warn('WebSocket not available, call response notification not sent', {
         callId,
@@ -230,6 +247,10 @@ const endCall = async ({ callId, userId }) => {
     }
 
     await call.save({ transaction });
+
+    // Create call message in chat
+    const callMessage = await createCallMessage(call, transaction);
+
     await transaction.commit();
 
     // FIX BUG-C010: Add audit logging
@@ -251,6 +272,18 @@ const endCall = async ({ callId, userId }) => {
         call,
         timestamp: new Date().toISOString(),
       });
+
+      // Emit message.new event so call appears in chat immediately with full message data
+      const messageWithSender = await Message.findByPk(callMessage.id, {
+        include: [
+          { model: User, as: 'sender', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+        ],
+      });
+
+      // Emit flat message object (not nested) to match expected format
+      const messageData = messageWithSender.toJSON();
+      io.to(`user:${call.callerId}`).emit('message.new', messageData);
+      io.to(`user:${call.recipientId}`).emit('message.new', messageData);
     } else {
       logger.warn('WebSocket not available, call ended notification not sent', {
         callId,
@@ -263,6 +296,63 @@ const endCall = async ({ callId, userId }) => {
     if (!transaction.finished) {
       await transaction.rollback();
     }
+    throw error;
+  }
+};
+
+// Helper function to create a message entry for a call
+const createCallMessage = async (call, transaction) => {
+  // Determine call status for message
+  let callStatus = call.status;
+  if (call.status === 'ended') {
+    callStatus = 'completed';
+  }
+
+  // Determine message status - missed/cancelled/rejected calls are unread for recipient
+  let messageStatus = 'sent';
+  if (['missed', 'rejected'].includes(call.status)) {
+    // These calls should appear as unread for the recipient
+    messageStatus = 'sent'; // Not 'read', so they count as unread
+  } else if (call.status === 'ended') {
+    // Completed calls are not considered "unread" - both parties were on the call
+    messageStatus = 'delivered';
+  }
+
+  // Create message for both participants
+  const messageData = {
+    senderId: call.callerId,
+    recipientId: call.recipientId,
+    content: `${call.callType} call`, // Required by validation, actual call info in metadata
+    messageType: 'call',
+    status: messageStatus,
+    metadata: {
+      callId: call.id,
+      callType: call.callType,
+      callStatus: callStatus,
+      callDuration: call.durationSeconds || 0,
+    },
+  };
+
+  try {
+    const message = await Message.create(messageData, { transaction });
+
+    logger.info('Call message created', {
+      messageId: message.id,
+      callId: call.id,
+      callStatus,
+      messageStatus,
+    });
+
+    return message;
+  } catch (error) {
+    logger.error('Failed to create call message', {
+      callId: call.id,
+      error: error.message,
+      errorName: error.name,
+      callStatus,
+      messageStatus,
+    });
+    // Throw error to trigger transaction rollback in parent function
     throw error;
   }
 };

@@ -68,6 +68,11 @@ export const Contact = sequelize.define(
       defaultValue: false,
       allowNull: false,
     },
+    isMuted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+    },
     lastContactAt: {
       type: DataTypes.DATE,
       allowNull: true,
@@ -185,6 +190,18 @@ Contact.prototype.unblock = async function () {
 Contact.prototype.setFavorite = async function (isFavorite) {
   this.isFavorite = isFavorite;
   await this.save();
+};
+
+Contact.prototype.mute = async function () {
+  this.isMuted = true;
+  await this.save();
+  return this;
+};
+
+Contact.prototype.unmute = async function () {
+  this.isMuted = false;
+  await this.save();
+  return this;
 };
 
 Contact.prototype.updateLastContact = async function () {

@@ -56,7 +56,7 @@ const userProfileSchema = Joi.object({
   bio: Joi.string().trim().max(500).allow('').messages({
     'string.max': 'Bio cannot exceed 500 characters',
   }),
-  phone: Joi.string().trim().pattern(/^\+?[1-9]\d{1,14}$/).allow('').messages({
+  phone: Joi.string().trim().pattern(/^\+?[1-9]\d{1,14}$/).allow('', null).messages({
     'string.pattern.base': 'Phone must be a valid E.164 format (e.g., +1234567890)',
   }),
   avatar: Joi.string().max(500).allow('').messages({
@@ -394,6 +394,8 @@ router.put('/me', authenticate, async (req, res) => {
         email: updatedUser.email,
         firstName: updatedUser.firstName,
         lastName: updatedUser.lastName,
+        bio: updatedUser.bio,
+        phone: updatedUser.phone,
         avatar: updatedUser.avatar,
         status: updatedUser.status,
         emailVerified: updatedUser.emailVerified,

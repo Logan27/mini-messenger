@@ -8,6 +8,7 @@ import { userRateLimit } from '../middleware/rateLimit.js';
 import { Contact } from '../models/Contact.js';
 import { User } from '../models/User.js';
 import logger from '../utils/logger.js';
+import { getWebSocketService } from '../services/websocket.js';
 
 const router = express.Router();
 
@@ -83,22 +84,43 @@ router.get(
       const offset = (page - 1) * limit;
 
       // Build where condition
-      // For pending status, show incoming requests (where current user is contactUserId)
+      // For pending status, show BOTH incoming requests (contactUserId) AND outgoing requests (userId)
       // For accepted/blocked, show the user's contacts (where current user is userId)
       const whereCondition = status === 'pending' 
-        ? { contactUserId: userId, status: 'pending' }
+        ? {
+            [Op.or]: [
+              { contactUserId: userId, status: 'pending' }, // Incoming requests
+              { userId, status: 'pending' } // Outgoing requests
+            ]
+          }
         : { userId, status };
 
       // Get contacts with pagination
+      // For pending requests, include BOTH user (sender) and contact (recipient)
+      const includeModels = status === 'pending' 
+        ? [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'username', 'avatar', 'status', 'lastLoginAt'],
+            },
+            {
+              model: User,
+              as: 'contact',
+              attributes: ['id', 'username', 'avatar', 'status', 'lastLoginAt'],
+            },
+          ]
+        : [
+            {
+              model: User,
+              as: 'contact',
+              attributes: ['id', 'username', 'avatar', 'status', 'lastLoginAt'],
+            },
+          ];
+
       const { count, rows: contacts} = await Contact.findAndCountAll({
         where: whereCondition,
-        include: [
-          {
-            model: User,
-            as: status === 'pending' ? 'user' : 'contact',
-            attributes: ['id', 'username', 'avatar', 'status', 'lastLoginAt'],
-          },
-        ],
+        include: includeModels,
         order: [
           ['isFavorite', 'DESC'],
           ['lastContactAt', 'DESC'],
@@ -114,15 +136,27 @@ router.get(
         success: true,
         message: 'Contacts retrieved successfully',
         data: contacts.map(contact => {
-          // For pending requests, the sender is 'user', for others it's 'contact'
-          const contactUser = status === 'pending' ? contact.user : contact.contact;
+          // For pending requests, determine if incoming (show sender) or outgoing (show recipient)
+          // If contactUserId === userId, it's an incoming request (show sender = user)
+          // If userId === userId, it's an outgoing request (show recipient = contact)
+          let contactUser;
+          if (status === 'pending') {
+            // If current user is the recipient, show the sender
+            // If current user is the sender, show the recipient
+            contactUser = contact.contactUserId === userId ? contact.user : contact.contact;
+          } else {
+            contactUser = contact.contact;
+          }
           
           return {
             id: contact.id,
             status: contact.status,
+            userId: contact.userId, // Include userId to identify request sender
+            contactUserId: contact.contactUserId, // Include contactUserId to identify request recipient
             nickname: contact.nickname,
             notes: contact.notes,
             isFavorite: contact.isFavorite,
+            isMuted: contact.isMuted, // Include mute status
             lastContactAt: contact.lastContactAt,
             blockedAt: contact.blockedAt,
             user: contactUser
@@ -259,6 +293,29 @@ router.post(
           },
         ],
       });
+
+      // Send WebSocket notification to the recipient
+      try {
+        const wsService = getWebSocketService();
+        const requesterUser = await User.findByPk(currentUserId, {
+          attributes: ['id', 'username', 'avatar', 'status'],
+        });
+
+        await wsService.broadcastToUser(contactUserId, 'contact.request', {
+          contactId: contact.id,
+          from: {
+            id: requesterUser.id,
+            username: requesterUser.username,
+            avatar: requesterUser.avatar,
+            status: requesterUser.status,
+          },
+          timestamp: new Date().toISOString(),
+        });
+        logger.info(`✅ Contact request notification sent to user ${contactUserId}`);
+      } catch (wsError) {
+        logger.error('❌ Failed to send contact request notification via WebSocket:', wsError);
+        // Don't fail the request if WebSocket notification fails
+      }
 
       res.status(201).json({
         success: true,
@@ -442,30 +499,42 @@ router.post(
       // Original: userId=A, contactUserId=B (requester -> recipient)
       // Reverse: userId=B, contactUserId=A (recipient -> requester)
       const requesterId = contact.userId;
-      
+
       // Use transaction to ensure both records are created
       await sequelize.transaction(async (t) => {
-        // Accept the original request
-        contact.status = 'accepted';
-        await contact.save({ transaction: t });
-
-        // Check if reverse relationship already exists
+        // Check if reverse relationship already exists (including soft-deleted)
         const existingReverse = await Contact.findOne({
           where: {
             userId: userId,
             contactUserId: requesterId,
           },
+          paranoid: false, // Include soft-deleted records
           transaction: t,
         });
 
-        // Create reverse relationship if it doesn't exist
-        if (!existingReverse) {
+        // Create or restore reverse relationship BEFORE accepting the request
+        // This prevents the beforeCreate hook from finding the accepted original request
+        if (existingReverse) {
+          // If reverse exists but is deleted, restore it
+          if (existingReverse.deletedAt) {
+            await existingReverse.restore({ transaction: t });
+          }
+          // Update status to accepted
+          existingReverse.status = 'accepted';
+          existingReverse.blockedAt = null;
+          await existingReverse.save({ transaction: t });
+        } else {
+          // Create new reverse relationship
           await Contact.create({
             userId: userId,
             contactUserId: requesterId,
             status: 'accepted',
-          }, { transaction: t });
+          }, { transaction: t, hooks: false }); // Skip hooks to avoid the duplicate check
         }
+
+        // Now accept the original request
+        contact.status = 'accepted';
+        await contact.save({ transaction: t });
       });
 
       // Load contact with user details
@@ -478,6 +547,28 @@ router.post(
           },
         ],
       });
+
+      // Send WebSocket notification to the requester
+      try {
+        const wsService = getWebSocketService();
+        const acceptorUser = await User.findByPk(userId, {
+          attributes: ['id', 'username', 'avatar', 'status'],
+        });
+
+        await wsService.broadcastToUser(requesterId, 'contact.accepted', {
+          contactId: contact.id,
+          acceptedBy: {
+            id: acceptorUser.id,
+            username: acceptorUser.username,
+            avatar: acceptorUser.avatar,
+            status: acceptorUser.status,
+          },
+          timestamp: new Date().toISOString(),
+        });
+        logger.info(`✅ Contact acceptance notification sent to user ${requesterId}`);
+      } catch (wsError) {
+        logger.error('❌ Failed to send contact acceptance notification via WebSocket:', wsError);
+      }
 
       res.status(200).json({
         success: true,
@@ -910,6 +1001,174 @@ router.post(
       res.status(500).json({
         success: false,
         message: 'Failed to unblock contact',
+        error: error.message,
+      });
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/contacts/{contactId}/mute:
+ *   post:
+ *     summary: Mute contact notifications
+ *     tags: [Contacts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: contactId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Contact ID
+ *     responses:
+ *       200:
+ *         description: Contact muted successfully
+ *       404:
+ *         description: Contact not found
+ */
+router.post(
+  '/:contactId/mute',
+  [param('contactId').isUUID().withMessage('Invalid contact ID format')],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: errors.array(),
+        });
+      }
+
+      const userId = req.user.id;
+      const { contactId } = req.params;
+
+      const contact = await Contact.findOne({
+        where: {
+          id: contactId,
+          userId,
+        },
+      });
+
+      if (!contact) {
+        return res.status(404).json({
+          success: false,
+          message: 'Contact not found',
+        });
+      }
+
+      await contact.mute();
+
+      // Emit WebSocket event to notify client about contact update
+      const io = getWebSocketService();
+      if (io) {
+        io.to(`user:${userId}`).emit('contact.updated', {
+          contactId: contact.id,
+          isMuted: contact.isMuted,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Contact muted successfully',
+        data: {
+          id: contact.id,
+          isMuted: contact.isMuted,
+        },
+      });
+    } catch (error) {
+      logger.error('❌ Error muting contact:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to mute contact',
+        error: error.message,
+      });
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/contacts/{contactId}/mute:
+ *   delete:
+ *     summary: Unmute contact notifications
+ *     tags: [Contacts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: contactId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Contact ID
+ *     responses:
+ *       200:
+ *         description: Contact unmuted successfully
+ *       404:
+ *         description: Contact not found
+ */
+router.delete(
+  '/:contactId/mute',
+  [param('contactId').isUUID().withMessage('Invalid contact ID format')],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: errors.array(),
+        });
+      }
+
+      const userId = req.user.id;
+      const { contactId } = req.params;
+
+      const contact = await Contact.findOne({
+        where: {
+          id: contactId,
+          userId,
+        },
+      });
+
+      if (!contact) {
+        return res.status(404).json({
+          success: false,
+          message: 'Contact not found',
+        });
+      }
+
+      await contact.unmute();
+
+      // Emit WebSocket event to notify client about contact update
+      const io = getWebSocketService();
+      if (io) {
+        io.to(`user:${userId}`).emit('contact.updated', {
+          contactId: contact.id,
+          isMuted: contact.isMuted,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Contact unmuted successfully',
+        data: {
+          id: contact.id,
+          isMuted: contact.isMuted,
+        },
+      });
+    } catch (error) {
+      logger.error('❌ Error unmuting contact:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to unmute contact',
         error: error.message,
       });
     }

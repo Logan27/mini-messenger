@@ -427,6 +427,8 @@ class NotificationSettingsController {
    */
   async emitSettingsUpdate(userId, event, data) {
     try {
+      console.log(`🔔 Emitting WebSocket event: ${event} to userId: ${userId}`);
+
       // Import WebSocket service dynamically to avoid circular dependencies
       const { getWebSocketService } = await import('../services/websocket.js');
 
@@ -434,9 +436,13 @@ class NotificationSettingsController {
       if (wsService) {
         // Use broadcastToUser method for cross-server support
         await wsService.broadcastToUser(userId, event, data);
+        console.log(`✅ WebSocket event emitted successfully: ${event}`);
+      } else {
+        console.warn('⚠️ WebSocket service not available');
       }
     } catch (error) {
       logger.error('Failed to emit notification settings WebSocket event:', error);
+      console.error('❌ WebSocket emission failed:', error.message);
       // Don't fail the request if WebSocket emission fails
     }
   }

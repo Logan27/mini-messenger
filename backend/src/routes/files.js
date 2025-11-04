@@ -305,20 +305,26 @@ router.post('/upload', uploadRateLimit, uploadValidation, async (req, res) => {
           totalSize: savedFiles.reduce((sum, file) => sum + file.fileSize, 0),
         });
 
+        // Return single file (updated) for backward compatibility with frontend
+        const fileData = savedFiles.map(file => ({
+          id: file.id,
+          fileName: file.originalName, // Use originalName as fileName for frontend
+          filename: file.filename,
+          originalName: file.originalName,
+          fileSize: file.fileSize,
+          mimeType: file.mimeType,
+          fileType: file.fileType,
+          isImage: file.isImage,
+          width: file.width,
+          height: file.height,
+          expiresAt: file.expiresAt,
+        }));
+
         res.status(201).json({
+          success: true,
           message: 'Files uploaded successfully',
-          files: savedFiles.map(file => ({
-            id: file.id,
-            filename: file.filename,
-            originalName: file.originalName,
-            fileSize: file.fileSize,
-            mimeType: file.mimeType,
-            fileType: file.fileType,
-            isImage: file.isImage,
-            width: file.width,
-            height: file.height,
-            expiresAt: file.expiresAt,
-          })),
+          data: savedFiles.length === 1 ? fileData[0] : fileData, // Single file or array
+          files: fileData, // Keep for backward compatibility
         });
       } catch (processingError) {
         logger.error('File processing error:', {
@@ -1098,3 +1104,5 @@ router.post('/admin/cleanup', authenticate, async (req, res) => {
 });
 
 export default router;
+
+

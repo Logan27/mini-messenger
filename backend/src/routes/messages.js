@@ -1999,6 +1999,13 @@ router.post(
           action: userIndex > -1 ? 'removed' : 'added',
         };
 
+        console.log('🎯 Emitting reaction event:', {
+          reactionData,
+          senderRoom: `user:${message.senderId}`,
+          recipientRoom: message.recipientId ? `user:${message.recipientId}` : null,
+          groupRoom: message.groupId ? `group:${message.groupId}` : null,
+        });
+
         // Notify sender
         io.to(`user:${message.senderId}`).emit('message.reaction', reactionData);
 

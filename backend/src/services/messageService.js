@@ -1,5 +1,5 @@
 import { sequelize } from '../config/database.js';
-import { getRedisClient } from '../config/redis.js';
+import { getRedisClient, getRedisSubscriber } from '../config/redis.js';
 import { Device } from '../models/Device.js';
 import { Group } from '../models/Group.js';
 import { GroupMember } from '../models/GroupMember.js';
@@ -14,6 +14,7 @@ import { getIO, WS_EVENTS, getWebSocketService } from './websocket.js';
 class MessageService {
   constructor() {
     this.redisClient = null;
+    this.redisSubscriber = null;
     this.messageSequences = new Map(); // userId -> current sequence number
     this.pendingDeliveries = new Map(); // messageId -> delivery info
     this.deliveryTimeouts = new Map(); // messageId -> timeout handle
@@ -21,10 +22,11 @@ class MessageService {
 
   async initialize() {
     this.redisClient = getRedisClient();
+    this.redisSubscriber = getRedisSubscriber();
 
-    // Subscribe to cross-server message events
-    if (this.redisClient) {
-      await this.redisClient.subscribe('message_delivery', message => {
+    // Subscribe to cross-server message events using the subscriber client
+    if (this.redisSubscriber) {
+      await this.redisSubscriber.subscribe('message_delivery', message => {
         try {
           if (message) {
             this.handleCrossServerMessageDelivery(JSON.parse(message));
@@ -39,7 +41,7 @@ class MessageService {
         }
       });
 
-      await this.redisClient.subscribe('message_read', message => {
+      await this.redisSubscriber.subscribe('message_read', message => {
         try {
           if (message) {
             this.handleCrossServerMessageRead(JSON.parse(message));

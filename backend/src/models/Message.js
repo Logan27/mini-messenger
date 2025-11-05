@@ -2,6 +2,7 @@ import { DataTypes, Op } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 
 import { sequelize } from '../config/database.js';
+
 import User from './User.js';
 
 // MessageEditHistory model for tracking edit history
@@ -341,7 +342,7 @@ Message.prototype.edit = async function (newContent, editedByUserId) {
     // Lock the row for update (SELECT FOR UPDATE)
     const message = await Message.findByPk(this.id, {
       lock: transaction.LOCK.UPDATE,
-      transaction
+      transaction,
     });
 
     if (!message) {
@@ -369,13 +370,16 @@ Message.prototype.edit = async function (newContent, editedByUserId) {
     }
 
     // Store edit history
-    await MessageEditHistory.create({
-      messageId: this.id,
-      previousContent: message.content,
-      newContent: newContent,
-      editedBy: editedByUserId,
-      editedAt: now,
-    }, { transaction });
+    await MessageEditHistory.create(
+      {
+        messageId: this.id,
+        previousContent: message.content,
+        newContent: newContent,
+        editedBy: editedByUserId,
+        editedAt: now,
+      },
+      { transaction }
+    );
 
     // Update message
     message.content = newContent;

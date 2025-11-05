@@ -1,9 +1,10 @@
 import rateLimit from 'express-rate-limit';
+
+import { getRedisClient } from '../config/redis.js';
 import Session from '../models/Session.js';
 import User from '../models/User.js';
 import { verifyAccessToken, extractTokenFromHeader } from '../utils/jwt.js';
 import logger from '../utils/logger.js';
-import { getRedisClient } from '../config/redis.js';
 
 /**
  * Authentication middleware
@@ -260,14 +261,14 @@ class RedisStore {
 
       return {
         totalHits: current,
-        resetTime: new Date(Date.now() + ttl * 1000)
+        resetTime: new Date(Date.now() + ttl * 1000),
       };
     } catch (error) {
       logger.error('Redis rate limit error:', error);
       // Fallback to allowing request if Redis fails
       return {
         totalHits: 1,
-        resetTime: new Date(Date.now() + 900000)
+        resetTime: new Date(Date.now() + 900000),
       };
     }
   }

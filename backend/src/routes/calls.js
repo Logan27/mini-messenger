@@ -2,8 +2,8 @@ import express from 'express';
 
 import callController from '../controllers/callController.js';
 import auth from '../middleware/auth.js';
-import { validate } from '../utils/validation.js';
 import * as callValidators from '../middleware/validators/callValidators.js';
+import { validate } from '../utils/validation.js';
 
 const router = express.Router();
 
@@ -60,7 +60,12 @@ const router = express.Router();
  *         $ref: '#/components/responses/ServerError'
  */
 // FIX BUG-C002: Added input validation
-router.post('/', auth.authenticate, validate(callValidators.initiateCallSchema), callController.initiateCall);
+router.post(
+  '/',
+  auth.authenticate,
+  validate(callValidators.initiateCallSchema),
+  callController.initiateCall
+);
 
 /**
  * @swagger
@@ -112,7 +117,12 @@ router.post('/', auth.authenticate, validate(callValidators.initiateCallSchema),
  *         $ref: '#/components/responses/ServerError'
  */
 // FIX BUG-C002: Added input validation
-router.post('/respond', auth.authenticate, validate(callValidators.respondToCallSchema), callController.respondToCall);
+router.post(
+  '/respond',
+  auth.authenticate,
+  validate(callValidators.respondToCallSchema),
+  callController.respondToCall
+);
 
 /**
  * @swagger
@@ -152,7 +162,12 @@ router.post('/respond', auth.authenticate, validate(callValidators.respondToCall
  *         $ref: '#/components/responses/ServerError'
  */
 // FIX BUG-C002: Added input validation
-router.get('/:callId', auth.authenticate, validate(callValidators.callIdParamSchema, 'params'), callController.getCallDetails);
+router.get(
+  '/:callId',
+  auth.authenticate,
+  validate(callValidators.callIdParamSchema, 'params'),
+  callController.getCallDetails
+);
 
 /**
  * @swagger
@@ -192,6 +207,11 @@ router.get('/:callId', auth.authenticate, validate(callValidators.callIdParamSch
  *         $ref: '#/components/responses/ServerError'
  */
 // FIX BUG-C002: Added input validation
-router.post('/:callId/end', auth.authenticate, validate(callValidators.callIdParamSchema, 'params'), callController.endCall);
+router.post(
+  '/:callId/end',
+  auth.authenticate,
+  validate(callValidators.callIdParamSchema, 'params'),
+  callController.endCall
+);
 
 export default router;

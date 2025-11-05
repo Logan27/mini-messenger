@@ -120,7 +120,7 @@ export const File = sequelize.define(
     virusScanStatus: {
       type: DataTypes.ENUM('pending', 'scanning', 'clean', 'infected', 'error', 'skipped'),
       allowNull: true,
-      defaultValue: 'clean',  // Default to 'clean' to bypass scanning
+      defaultValue: 'clean', // Default to 'clean' to bypass scanning
       // Validation temporarily disabled until virus scanning is fully implemented
       // validate: {
       //   isIn: [['pending', 'scanning', 'clean', 'infected', 'error', 'skipped']],

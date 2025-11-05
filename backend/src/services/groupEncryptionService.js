@@ -1,5 +1,6 @@
-import { logger } from '../config/index.js';
 import { Op } from 'sequelize';
+
+import { logger } from '../config/index.js';
 
 import encryptionService from './encryptionService.js';
 

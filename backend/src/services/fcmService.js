@@ -1,10 +1,11 @@
-import admin from 'firebase-admin';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import logger from '../utils/logger.js';
+import admin from 'firebase-admin';
+
 import config from '../config/index.js';
+import logger from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,11 +47,7 @@ class FcmService {
       }
 
       // Check if Firebase is configured via environment variables
-      if (
-        config.firebase.projectId &&
-        config.firebase.clientEmail &&
-        config.firebase.privateKey
-      ) {
+      if (config.firebase.projectId && config.firebase.clientEmail && config.firebase.privateKey) {
         admin.initializeApp({
           credential: admin.credential.cert({
             projectId: config.firebase.projectId,
@@ -91,7 +88,7 @@ class FcmService {
 
     // Convert data values to strings (FCM requirement)
     const stringifiedData = {};
-    Object.keys(data).forEach((key) => {
+    Object.keys(data).forEach(key => {
       stringifiedData[key] = typeof data[key] === 'string' ? data[key] : JSON.stringify(data[key]);
     });
 
@@ -123,14 +120,14 @@ class FcmService {
       const response = await admin.messaging().send(message);
       logger.info('Successfully sent push notification', {
         messageId: response,
-        deviceToken: deviceToken.substring(0, 20) + '...',
+        deviceToken: `${deviceToken.substring(0, 20)}...`,
       });
       return { success: true, messageId: response };
     } catch (error) {
       logger.error('Error sending push notification', {
         error: error.message,
         code: error.code,
-        deviceToken: deviceToken.substring(0, 20) + '...',
+        deviceToken: `${deviceToken.substring(0, 20)}...`,
       });
 
       // Handle invalid tokens
@@ -161,7 +158,7 @@ class FcmService {
 
     // Convert data values to strings (FCM requirement)
     const stringifiedData = {};
-    Object.keys(data).forEach((key) => {
+    Object.keys(data).forEach(key => {
       stringifiedData[key] = typeof data[key] === 'string' ? data[key] : JSON.stringify(data[key]);
     });
 

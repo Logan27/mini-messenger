@@ -1,13 +1,14 @@
 import crypto from 'crypto';
+
 import { Op } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 
+import { getRedisClient } from '../config/redis.js';
 import { User, Session } from '../models/index.js';
-import emailService from '../services/emailService.js';
 import auditService from '../services/auditService.js';
+import emailService from '../services/emailService.js';
 import { generateTokens } from '../utils/jwt.js';
 import logger from '../utils/logger.js';
-import { getRedisClient } from '../config/redis.js';
 
 class AuthController {
   async register(req, res) {
@@ -679,11 +680,7 @@ class AuthController {
         transaction,
       });
 
-      if (
-        !user ||
-        !user.passwordResetExpires ||
-        new Date(user.passwordResetExpires) < new Date()
-      ) {
+      if (!user || !user.passwordResetExpires || new Date(user.passwordResetExpires) < new Date()) {
         await transaction.rollback();
         return res.status(400).json({
           success: false,
@@ -702,7 +699,8 @@ class AuthController {
           success: false,
           error: {
             type: 'PASSWORD_IN_HISTORY',
-            message: 'You cannot reuse one of your last 3 passwords. Please choose a different password.',
+            message:
+              'You cannot reuse one of your last 3 passwords. Please choose a different password.',
           },
         });
       }
@@ -853,7 +851,8 @@ class AuthController {
           success: false,
           error: {
             type: 'PASSWORD_IN_HISTORY',
-            message: 'You cannot reuse one of your last 3 passwords. Please choose a different password.',
+            message:
+              'You cannot reuse one of your last 3 passwords. Please choose a different password.',
           },
         });
       }
@@ -880,7 +879,7 @@ class AuthController {
       logger.error('Error details:', {
         name: error.name,
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
 
       if (error.name === 'SequelizeValidationError') {
@@ -962,7 +961,7 @@ class AuthController {
 
       const sessions = await Session.findValidSessionsByUserId(userId);
 
-      const formattedSessions = sessions.map((session) => {
+      const formattedSessions = sessions.map(session => {
         const { deviceType, browser, os } = AuthController.parseUserAgent(session.userAgent);
 
         return {

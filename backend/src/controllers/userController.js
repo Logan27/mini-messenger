@@ -2,9 +2,9 @@ import { PassThrough } from 'stream';
 
 import archiver from 'archiver';
 
-import { User, Message, Call, File, Group, Contact, Session, Device } from '../models/index.js';
 import { sequelize } from '../config/database.js';
 import { getRedisClient } from '../config/redis.js';
+import { User, Message, Call, File, Group, Contact, Session, Device } from '../models/index.js';
 import logger from '../utils/logger.js';
 
 class UserController {
@@ -20,7 +20,7 @@ class UserController {
       // FIX BUG-U004: Use unique constraint to prevent duplicates
       // Check if token already exists for this user
       const existing = await Device.findOne({
-        where: { userId, token }
+        where: { userId, token },
       });
 
       if (existing) {
@@ -28,7 +28,7 @@ class UserController {
         await existing.update({ updatedAt: new Date() });
         return res.status(200).json({
           success: true,
-          message: 'Device token already registered'
+          message: 'Device token already registered',
         });
       }
 
@@ -50,7 +50,7 @@ class UserController {
 
       res.status(200).json({
         success: true,
-        message: 'Device token registered successfully'
+        message: 'Device token registered successfully',
       });
     } catch (error) {
       // FIX BUG-U005: Use logger instead of console.error
@@ -61,7 +61,7 @@ class UserController {
       });
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: 'Internal server error',
       });
     }
   }
@@ -77,13 +77,13 @@ class UserController {
     try {
       // Find and delete the device token
       const device = await Device.findOne({
-        where: { userId, token }
+        where: { userId, token },
       });
 
       if (!device) {
         return res.status(404).json({
           success: false,
-          message: 'Device token not found'
+          message: 'Device token not found',
         });
       }
 
@@ -96,7 +96,7 @@ class UserController {
 
       res.status(200).json({
         success: true,
-        message: 'Device token removed successfully'
+        message: 'Device token removed successfully',
       });
     } catch (error) {
       logger.error('Error unregistering device token:', {
@@ -106,7 +106,7 @@ class UserController {
       });
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: 'Internal server error',
       });
     }
   }
@@ -118,7 +118,7 @@ class UserController {
       // PERFORMANCE FIX (BUG-U001): Stream data instead of loading everything into memory
       // 1. Fetch user profile only (no eager loading)
       const user = await User.findByPk(userId, {
-        attributes: ['id', 'username', 'email', 'firstName', 'lastName', 'createdAt', 'lastSeenAt']
+        attributes: ['id', 'username', 'email', 'firstName', 'lastName', 'createdAt', 'lastSeenAt'],
       });
 
       if (!user) {
@@ -137,7 +137,7 @@ class UserController {
       passThrough.pipe(res);
 
       // Handle archive errors
-      archive.on('error', (err) => {
+      archive.on('error', err => {
         logger.error('Archive error during user data export:', {
           userId,
           error: err.message,
@@ -152,23 +152,30 @@ class UserController {
       // 3. Stream messages in batches (avoid loading all at once)
       const BATCH_SIZE = 1000;
       let messageOffset = 0;
-      let messagesData = [];
+      const messagesData = [];
 
       while (true) {
         const messages = await Message.findAll({
           where: {
-            [sequelize.Sequelize.Op.or]: [
-              { senderId: userId },
-              { recipientId: userId }
-            ]
+            [sequelize.Sequelize.Op.or]: [{ senderId: userId }, { recipientId: userId }],
           },
           limit: BATCH_SIZE,
           offset: messageOffset,
           order: [['createdAt', 'DESC']],
-          attributes: ['id', 'senderId', 'recipientId', 'content', 'messageType', 'createdAt', 'isRead']
+          attributes: [
+            'id',
+            'senderId',
+            'recipientId',
+            'content',
+            'messageType',
+            'createdAt',
+            'isRead',
+          ],
         });
 
-        if (messages.length === 0) break;
+        if (messages.length === 0) {
+          break;
+        }
         messagesData.push(...messages.map(m => m.toJSON()));
         messageOffset += BATCH_SIZE;
 
@@ -183,23 +190,30 @@ class UserController {
 
       // 4. Stream calls in batches
       let callOffset = 0;
-      let callsData = [];
+      const callsData = [];
 
       while (true) {
         const calls = await Call.findAll({
           where: {
-            [sequelize.Sequelize.Op.or]: [
-              { callerId: userId },
-              { recipientId: userId }
-            ]
+            [sequelize.Sequelize.Op.or]: [{ callerId: userId }, { recipientId: userId }],
           },
           limit: BATCH_SIZE,
           offset: callOffset,
           order: [['createdAt', 'DESC']],
-          attributes: ['id', 'callerId', 'recipientId', 'callType', 'status', 'duration', 'createdAt']
+          attributes: [
+            'id',
+            'callerId',
+            'recipientId',
+            'callType',
+            'status',
+            'duration',
+            'createdAt',
+          ],
         });
 
-        if (calls.length === 0) break;
+        if (calls.length === 0) {
+          break;
+        }
         callsData.push(...calls.map(c => c.toJSON()));
         callOffset += BATCH_SIZE;
 
@@ -216,12 +230,33 @@ class UserController {
       const devices = await Device.findAll({ where: { userId } });
       const sessions = await Session.findAll({
         where: { userId },
-        attributes: ['id', 'userId', 'deviceInfo', 'createdAt', 'expiresAt', 'isValid']
+        attributes: ['id', 'userId', 'deviceInfo', 'createdAt', 'expiresAt', 'isValid'],
       });
 
-      archive.append(JSON.stringify(contacts.map(c => c.toJSON()), null, 2), { name: 'contacts.json' });
-      archive.append(JSON.stringify(devices.map(d => d.toJSON()), null, 2), { name: 'devices.json' });
-      archive.append(JSON.stringify(sessions.map(s => s.toJSON()), null, 2), { name: 'sessions.json' });
+      archive.append(
+        JSON.stringify(
+          contacts.map(c => c.toJSON()),
+          null,
+          2
+        ),
+        { name: 'contacts.json' }
+      );
+      archive.append(
+        JSON.stringify(
+          devices.map(d => d.toJSON()),
+          null,
+          2
+        ),
+        { name: 'devices.json' }
+      );
+      archive.append(
+        JSON.stringify(
+          sessions.map(s => s.toJSON()),
+          null,
+          2
+        ),
+        { name: 'sessions.json' }
+      );
 
       // Finalize archive
       await archive.finalize();
@@ -271,11 +306,11 @@ class UserController {
       const expiredSessions = await Session.update(
         {
           expiresAt: new Date(),
-          isValid: false
+          isValid: false,
         },
         {
           where: { userId },
-          transaction
+          transaction,
         }
       );
 
@@ -316,7 +351,7 @@ class UserController {
 
       res.status(200).json({
         success: true,
-        message: 'Account deleted successfully. All sessions have been invalidated.'
+        message: 'Account deleted successfully. All sessions have been invalidated.',
       });
     } catch (error) {
       await transaction.rollback();
@@ -327,7 +362,7 @@ class UserController {
       });
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: 'Internal server error',
       });
     }
   }

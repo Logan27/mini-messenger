@@ -820,10 +820,7 @@ class WebSocketService {
     // Update user status in database
     try {
       const { User } = await import('../models/index.js');
-      await User.update(
-        { status },
-        { where: { id: userId } }
-      );
+      await User.update({ status }, { where: { id: userId } });
     } catch (error) {
       console.error('❌ Error updating user status in database:', error);
     }
@@ -842,8 +839,8 @@ class WebSocketService {
     // Map 'status' to 'onlineStatus' for frontend compatibility
     this.io?.emit('user.status', {
       userId,
-      status,  // Keep for potential future use
-      onlineStatus: status,  // Frontend expects this field
+      status, // Keep for potential future use
+      onlineStatus: status, // Frontend expects this field
       timestamp: statusInfo.timestamp,
       socketId: statusInfo.socketId,
     });
@@ -922,7 +919,7 @@ class WebSocketService {
       dataKeys: Object.keys(data),
       ioExists: !!this.io,
       roomExists: !!socketsInRoom,
-      roomSize: socketsInRoom?.size || 0
+      roomSize: socketsInRoom?.size || 0,
     });
 
     if (!socketsInRoom || socketsInRoom.size === 0) {

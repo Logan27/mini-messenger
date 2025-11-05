@@ -6,12 +6,17 @@ import Joi from 'joi';
 export const authValidation = {
   // User registration schema
   register: Joi.object({
-    username: Joi.string().pattern(/^[a-zA-Z0-9_]+$/).min(3).max(50).required().messages({
-      'string.pattern.base': 'Username can only contain letters, numbers, and underscores',
-      'string.min': 'Username must be at least 3 characters long',
-      'string.max': 'Username cannot exceed 50 characters',
-      'any.required': 'Username is required',
-    }),
+    username: Joi.string()
+      .pattern(/^[a-zA-Z0-9_]+$/)
+      .min(3)
+      .max(50)
+      .required()
+      .messages({
+        'string.pattern.base': 'Username can only contain letters, numbers, and underscores',
+        'string.min': 'Username must be at least 3 characters long',
+        'string.max': 'Username cannot exceed 50 characters',
+        'any.required': 'Username is required',
+      }),
 
     email: Joi.string()
       .email({ tlds: { allow: false } })

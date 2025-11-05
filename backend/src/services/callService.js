@@ -1,9 +1,11 @@
+import { Op } from 'sequelize';
+
 import { Call, User, Message, Device, sequelize } from '../models/index.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/errors.js';
-import { Op } from 'sequelize';
-import { getIO, getWebSocketService } from './websocket.js';
-import fcmService from './fcmService.js';
 import logger from '../utils/logger.js';
+
+import fcmService from './fcmService.js';
+import { getIO, getWebSocketService } from './websocket.js';
 
 // FIX BUG-C003, C005, C006, C007, C010, C011: Comprehensive fixes
 const initiateCall = async ({ callerId, recipientId, callType }) => {
@@ -36,7 +38,9 @@ const initiateCall = async ({ callerId, recipientId, callType }) => {
     });
 
     if (activeCallerCalls > 0) {
-      throw new ValidationError('You already have an active call. End it before starting a new one.');
+      throw new ValidationError(
+        'You already have an active call. End it before starting a new one.'
+      );
     }
 
     // Check if recipient has active calls
@@ -54,20 +58,31 @@ const initiateCall = async ({ callerId, recipientId, callType }) => {
       throw new ValidationError('Recipient is already on another call');
     }
 
-    const call = await Call.create({
-      callerId,
-      recipientId,
-      callType,
-      status: 'calling',
-    }, { transaction });
+    const call = await Call.create(
+      {
+        callerId,
+        recipientId,
+        callType,
+        status: 'calling',
+      },
+      { transaction }
+    );
 
     await transaction.commit();
 
     // Fetch call with user details for WebSocket notification
     const callWithDetails = await Call.findByPk(call.id, {
       include: [
-        { model: User, as: 'caller', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
-        { model: User, as: 'recipient', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+        {
+          model: User,
+          as: 'caller',
+          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+        },
+        {
+          model: User,
+          as: 'recipient',
+          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+        },
       ],
     });
 
@@ -100,9 +115,8 @@ const initiateCall = async ({ callerId, recipientId, callType }) => {
     if (!userSockets || userSockets.size === 0) {
       // User is offline, send push notification
       const devices = await Device.findAll({ where: { userId: recipientId } });
-      const callerName = callWithDetails.caller?.username ||
-                         callWithDetails.caller?.firstName ||
-                         'Someone';
+      const callerName =
+        callWithDetails.caller?.username || callWithDetails.caller?.firstName || 'Someone';
       const callTypeText = callType === 'video' ? 'Video' : 'Voice';
 
       for (const device of devices) {
@@ -153,7 +167,9 @@ const respondToCall = async ({ callId, recipientId, response }) => {
 
     // FIX BUG-C009: Validate current status
     if (call.status !== 'calling') {
-      throw new ValidationError(`Cannot respond to call in status: ${call.status}. Call must be in 'calling' status.`);
+      throw new ValidationError(
+        `Cannot respond to call in status: ${call.status}. Call must be in 'calling' status.`
+      );
     }
 
     let callMessage = null;
@@ -173,8 +189,16 @@ const respondToCall = async ({ callId, recipientId, response }) => {
     // Fetch call with user details for WebSocket notification
     const callWithDetails = await Call.findByPk(callId, {
       include: [
-        { model: User, as: 'caller', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
-        { model: User, as: 'recipient', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+        {
+          model: User,
+          as: 'caller',
+          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+        },
+        {
+          model: User,
+          as: 'recipient',
+          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+        },
       ],
     });
 
@@ -202,7 +226,11 @@ const respondToCall = async ({ callId, recipientId, response }) => {
       if (callMessage) {
         const messageWithSender = await Message.findByPk(callMessage.id, {
           include: [
-            { model: User, as: 'sender', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+            {
+              model: User,
+              as: 'sender',
+              attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+            },
           ],
         });
 
@@ -310,7 +338,11 @@ const endCall = async ({ callId, userId }) => {
       // Emit message.new event so call appears in chat immediately with full message data
       const messageWithSender = await Message.findByPk(callMessage.id, {
         include: [
-          { model: User, as: 'sender', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+          {
+            model: User,
+            as: 'sender',
+            attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+          },
         ],
       });
 

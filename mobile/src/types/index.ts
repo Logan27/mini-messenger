@@ -213,6 +213,9 @@ export type RootStackParamList = {
   AccountDeletion: undefined;
   DataExport: undefined;
   ConsentManagement: undefined;
+  IncomingCall: { call: Call };
+  OutgoingCall: { call: Call };
+  ActiveCall: { call: Call };
 };
 
 export type AuthStackParamList = {
@@ -231,6 +234,37 @@ export type MainTabParamList = {
   Profile: undefined;
 };
 
+// Call types
+export interface Call {
+  id: string;
+  callerId: string;
+  recipientId: string;
+  callType: 'audio' | 'video';
+  status: 'calling' | 'connected' | 'ended' | 'rejected' | 'missed';
+  durationSeconds?: number;
+  startedAt?: string;
+  endedAt?: string;
+  createdAt: string;
+  caller?: User;
+  recipient?: User;
+}
+
+export interface CallState {
+  activeCall: Call | null;
+  localStream: any; // MediaStream
+  remoteStream: any; // MediaStream
+  isMuted: boolean;
+  isVideoEnabled: boolean;
+  isCallActive: boolean;
+}
+
+export interface WebRTCSignal {
+  type: 'offer' | 'answer' | 'ice-candidate';
+  callId: string;
+  sdp?: string;
+  candidate?: any;
+}
+
 // WebSocket event types
 export interface ServerToClientEvents {
   message: (message: Message) => void;
@@ -238,6 +272,14 @@ export interface ServerToClientEvents {
   typing: (data: { conversationId: string; userId: string; isTyping: boolean }) => void;
   userOnline: (data: { userId: string; isOnline: boolean }) => void;
   conversationUpdate: (conversation: Conversation) => void;
+  'call.incoming': (data: { call: Call }) => void;
+  'call.response': (data: { call: Call; accepted: boolean }) => void;
+  'call.ended': (data: { callId: string; reason?: string }) => void;
+  webrtc_offer: (data: { callId: string; sdp: string; callerId: string }) => void;
+  webrtc_answer: (data: { callId: string; sdp: string }) => void;
+  webrtc_ice_candidate: (data: { callId: string; candidate: any }) => void;
+  call_mute: (data: { callId: string; userId: string; muted: boolean }) => void;
+  call_video_toggle: (data: { callId: string; userId: string; enabled: boolean }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -245,6 +287,11 @@ export interface ClientToServerEvents {
   leaveConversation: (conversationId: string) => void;
   typing: (data: { conversationId: string; isTyping: boolean }) => void;
   markAsRead: (data: { conversationId: string; messageId: string }) => void;
+  webrtc_offer: (data: { callId: string; sdp: string; recipientId: string }) => void;
+  webrtc_answer: (data: { callId: string; sdp: string; callerId: string }) => void;
+  webrtc_ice_candidate: (data: { callId: string; candidate: any; targetUserId: string }) => void;
+  call_mute: (data: { callId: string; muted: boolean }) => void;
+  call_video_toggle: (data: { callId: string; enabled: boolean }) => void;
 }
 
 // Push notification types

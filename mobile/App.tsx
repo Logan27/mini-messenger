@@ -7,6 +7,7 @@ import * as Notifications from 'expo-notifications';
 import AppNavigator from './src/navigation/AppNavigator';
 import { useAuthStore } from './src/stores/authStore';
 import { wsService } from './src/services/api';
+import { initializeCallWebSocketHandlers, cleanupCallWebSocketHandlers } from './src/services/callWebSocketHandler';
 
 // Configure notifications
 Notifications.setNotificationHandler({
@@ -39,10 +40,13 @@ export default function App() {
     // Connect to WebSocket when authenticated
     if (token) {
       wsService.connect(token);
+      // Initialize call-specific WebSocket handlers
+      initializeCallWebSocketHandlers();
     }
 
     // Cleanup WebSocket on unmount
     return () => {
+      cleanupCallWebSocketHandlers();
       wsService.disconnect();
     };
   }, [token]);

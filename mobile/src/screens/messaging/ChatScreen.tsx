@@ -22,6 +22,7 @@ import { wsService } from '../../services/api';
 import MessageActionsModal from '../../components/messaging/MessageActionsModal';
 import MessageStatusIndicator, { MessageStatus } from '../../components/messaging/MessageStatusIndicator';
 import FileAttachmentPicker from '../../components/messaging/FileAttachmentPicker';
+import ImageViewerModal from '../../components/messaging/ImageViewerModal';
 
 interface ChatScreenProps {
   route: {
@@ -58,6 +59,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [showActionsModal, setShowActionsModal] = useState(false);
   const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [viewingImageUri, setViewingImageUri] = useState<string>('');
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -220,15 +223,32 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const handleFileSelected = useCallback(async (file: any) => {
     try {
       setIsSending(true);
-      // TODO: Implement file upload to server
-      // For now, just show a placeholder
-      await sendMessage(conversationId, `📎 ${file.name}`, undefined, file);
+      setShowAttachmentPicker(false);
+
+      // Upload file to server
+      const { fileAPI } = await import('../../services/api');
+      const uploadResponse = await fileAPI.uploadFile(file, conversationId);
+      const uploadedFile = uploadResponse.data.data;
+
+      // Send message with file attachment
+      await sendMessage(
+        conversationId,
+        file.type === 'image' ? '📷 Photo' : file.type === 'video' ? '🎥 Video' : `📎 ${file.name}`,
+        undefined,
+        uploadedFile
+      );
     } catch (error) {
+      console.error('File upload error:', error);
       Alert.alert('Error', 'Failed to send file. Please try again.');
     } finally {
       setIsSending(false);
     }
   }, [conversationId, sendMessage]);
+
+  const handleImagePress = useCallback((imageUri: string) => {
+    setViewingImageUri(imageUri);
+    setShowImageViewer(true);
+  }, []);
 
   const handleLoadMore = useCallback(async () => {
     if (isLoadingMore || !hasMoreMessages) return;
@@ -314,9 +334,28 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
               {message.content}
             </Text>
           ) : message.type === 'image' ? (
-            <View style={styles.imageContainer}>
-              <Image source={{ uri: message.file?.url }} style={styles.messageImage} />
-            </View>
+            <TouchableOpacity
+              style={styles.imageContainer}
+              onPress={() => message.file?.url && handleImagePress(message.file.url)}
+              activeOpacity={0.9}
+            >
+              <Image
+                source={{ uri: message.file?.url }}
+                style={styles.messageImage}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+          ) : message.type === 'video' ? (
+            <TouchableOpacity style={styles.imageContainer} activeOpacity={0.9}>
+              <Image
+                source={{ uri: message.file?.url }}
+                style={styles.messageImage}
+                resizeMode="cover"
+              />
+              <View style={styles.videoOverlay}>
+                <Ionicons name="play-circle" size={48} color="#fff" />
+              </View>
+            </TouchableOpacity>
           ) : (
             <Text style={[
               styles.messageText,
@@ -542,6 +581,13 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         onClose={() => setShowAttachmentPicker(false)}
         onFileSelected={handleFileSelected}
       />
+
+      {/* Image Viewer Modal */}
+      <ImageViewerModal
+        visible={showImageViewer}
+        imageUri={viewingImageUri}
+        onClose={() => setShowImageViewer(false)}
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -695,10 +741,18 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     padding: 0,
+    position: 'relative',
   },
   messageImage: {
     width: 200,
     height: 150,
+    borderRadius: 12,
+  },
+  videoOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     borderRadius: 12,
   },
   typingBubble: {

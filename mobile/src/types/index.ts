@@ -95,7 +95,7 @@ export interface Message {
   conversationId: string;
   senderId: string;
   content: string;
-  type: 'text' | 'image' | 'file' | 'voice' | 'system';
+  type: 'text' | 'image' | 'video' | 'file' | 'voice' | 'system';
   createdAt: string;
   updatedAt?: string;
   editedAt?: string;

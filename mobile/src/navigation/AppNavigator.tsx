@@ -15,7 +15,9 @@ import EmailVerificationScreen from '../screens/auth/EmailVerificationScreen';
 import AccountPendingScreen from '../screens/auth/AccountPendingScreen';
 import ConversationsScreen from '../screens/messaging/ConversationsScreen';
 import ChatScreen from '../screens/messaging/ChatScreen';
-import ContactsScreen from '../screens/profile/ContactsScreen';
+import ContactsListScreen from '../screens/contacts/ContactsListScreen';
+import AddContactScreen from '../screens/contacts/AddContactScreen';
+import ContactRequestsScreen from '../screens/contacts/ContactRequestsScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -72,7 +74,7 @@ const MainTabNavigator = () => {
       />
       <Tab.Screen
         name="Contacts"
-        component={ContactsScreen}
+        component={ContactsListScreen}
         options={{ tabBarLabel: 'Contacts' }}
       />
       <Tab.Screen
@@ -96,6 +98,14 @@ const MainNavigator = () => {
           headerShown: true,
           headerTitle: 'Chat',
         }}
+      />
+      <Stack.Screen
+        name="AddContact"
+        component={AddContactScreen}
+      />
+      <Stack.Screen
+        name="ContactRequests"
+        component={ContactRequestsScreen}
       />
     </Stack.Navigator>
   );

@@ -137,9 +137,12 @@ export interface ResetPasswordForm {
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
-  Chat: { conversationId: string };
+  Chat: { conversationId: string; contactId?: string };
   Profile: { userId: string };
   Settings: undefined;
+  AddContact: undefined;
+  ContactRequests: undefined;
+  ContactProfile: { contactId: string };
 };
 
 export type AuthStackParamList = {

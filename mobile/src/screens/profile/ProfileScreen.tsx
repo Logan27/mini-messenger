@@ -42,7 +42,7 @@ const ProfileScreen = ({ navigation }: any) => {
     {
       title: 'Settings',
       icon: 'settings',
-      onPress: () => Alert.alert('Settings', 'Settings screen coming soon!'),
+      onPress: () => navigation.navigate('Settings'),
     },
     {
       title: 'Privacy & Security',

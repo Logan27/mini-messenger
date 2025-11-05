@@ -182,6 +182,10 @@ export type RootStackParamList = {
   Profile: { userId: string };
   EditProfile: undefined;
   Settings: undefined;
+  NotificationSettings: undefined;
+  PrivacySettings: undefined;
+  AppearanceSettings: undefined;
+  DataStorageSettings: undefined;
   AddContact: undefined;
   ContactRequests: undefined;
   ContactProfile: { contactId: string };

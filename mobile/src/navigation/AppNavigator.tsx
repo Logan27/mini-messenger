@@ -23,6 +23,11 @@ import CreateGroupScreen from '../screens/groups/CreateGroupScreen';
 import GroupInfoScreen from '../screens/groups/GroupInfoScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
+import SettingsScreen from '../screens/settings/SettingsScreen';
+import NotificationSettingsScreen from '../screens/settings/NotificationSettingsScreen';
+import PrivacySettingsScreen from '../screens/settings/PrivacySettingsScreen';
+import AppearanceSettingsScreen from '../screens/settings/AppearanceSettingsScreen';
+import DataStorageSettingsScreen from '../screens/settings/DataStorageSettingsScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -129,6 +134,26 @@ const MainNavigator = () => {
       <Stack.Screen
         name="EditProfile"
         component={EditProfileScreen}
+      />
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+      />
+      <Stack.Screen
+        name="NotificationSettings"
+        component={NotificationSettingsScreen}
+      />
+      <Stack.Screen
+        name="PrivacySettings"
+        component={PrivacySettingsScreen}
+      />
+      <Stack.Screen
+        name="AppearanceSettings"
+        component={AppearanceSettingsScreen}
+      />
+      <Stack.Screen
+        name="DataStorageSettings"
+        component={DataStorageSettingsScreen}
       />
     </Stack.Navigator>
   );

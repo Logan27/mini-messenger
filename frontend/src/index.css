@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Soft blue-tinted background instead of pure white */
+    --background: 210 20% 98%;
+    --foreground: 215 25% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+
+    /* Telegram blue as primary */
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Lighter blue for secondary */
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 215 25% 15%;
+
+    /* Light blue muted tones */
+    --muted: 210 35% 96%;
+    --muted-foreground: 215 15% 45%;
+
+    /* Vibrant accent */
+    --accent: 199 89% 48%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Soft blue borders */
+    --border: 215 20% 88%;
+    --input: 210 25% 96%;
+    --ring: 199 89% 48%;
+
+    --radius: 0.75rem;
+
+    /* Messenger specific tokens - better contrast for all message types */
+    --message-sent: 199 89% 42%; /* Darker blue for better contrast on light bg */
+    --message-sent-foreground: 0 0% 100%;
+    --message-received: 215 25% 90%; /* Darker gray for better contrast */
+    --message-received-foreground: 215 30% 20%; /* Darker text for better readability */
+    --chat-hover: 210 30% 94%;
+
+    /* Sidebar with subtle blue tint */
+    --sidebar-background: 210 25% 97%;
+    --sidebar-foreground: 215 25% 25%;
+    --sidebar-primary: 215 30% 20%;
+    --sidebar-primary-foreground: 210 25% 97%;
+    --sidebar-accent: 210 35% 93%;
+    --sidebar-accent-foreground: 215 30% 20%;
+    --sidebar-border: 215 20% 88%;
+    --sidebar-ring: 199 89% 48%;
+  }
+
+  .dark {
+    /* Rich dark blue background */
+    --background: 215 28% 12%;
+    --foreground: 210 20% 95%;
+
+    /* Slightly lighter cards for depth */
+    --card: 215 25% 16%;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 215 25% 16%;
+    --popover-foreground: 210 20% 95%;
+
+    /* Bright Telegram blue pops in dark mode */
+    --primary: 199 89% 52%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Rich blue secondary */
+    --secondary: 215 25% 20%;
+    --secondary-foreground: 210 20% 95%;
+
+    /* Muted blue tones */
+    --muted: 215 22% 18%;
+    --muted-foreground: 215 10% 65%;
+
+    /* Vibrant accent */
+    --accent: 199 89% 52%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Warmer red for destructive */
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Subtle blue borders */
+    --border: 215 20% 24%;
+    --input: 215 22% 18%;
+    --ring: 199 89% 52%;
+
+    /* Messenger specific tokens - dark mode with better contrast */
+    --message-sent: 199 89% 52%;
+    --message-sent-foreground: 0 0% 100%;
+    --message-received: 215 25% 25%; /* Increased from 20% to 25% for better contrast */
+    --message-received-foreground: 210 20% 98%; /* Brighter white for better readability */
+    --chat-hover: 215 25% 16%;
+
+    /* Sidebar with deep blue tones */
+    --sidebar-background: 215 30% 10%;
+    --sidebar-foreground: 210 20% 92%;
+    --sidebar-primary: 199 89% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 25% 15%;
+    --sidebar-accent-foreground: 210 20% 92%;
+    --sidebar-border: 215 22% 20%;
+    --sidebar-ring: 199 89% 52%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

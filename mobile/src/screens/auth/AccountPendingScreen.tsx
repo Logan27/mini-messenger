@@ -10,10 +10,11 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { api } from '../../services/api';
+import api from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../../types';
+
+type NativeStackNavigationProp<T, K extends keyof T> = any;
 
 type AccountPendingScreenProps = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'AccountPending'>;

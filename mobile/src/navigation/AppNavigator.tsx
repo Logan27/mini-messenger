@@ -95,7 +95,6 @@ const MainNavigator = () => {
         options={{
           headerShown: true,
           headerTitle: 'Chat',
-          headerBackTitleVisible: false,
         }}
       />
     </Stack.Navigator>

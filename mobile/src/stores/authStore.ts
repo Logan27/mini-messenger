@@ -106,7 +106,9 @@ export const useAuthStore = create<AuthStore>()(
 
       logoutAll: async () => {
         try {
-          await authAPI.post('/auth/logout-all');
+          // Import api at runtime to avoid circular dependency
+          const { default: api } = await import('../services/api');
+          await api.post('/api/auth/logout-all');
         } catch (error) {
           console.error('Logout all error:', error);
         } finally {
@@ -178,7 +180,7 @@ export const useAuthStore = create<AuthStore>()(
         set({ refreshTokenInProgress: true });
 
         try {
-          const response = await authAPI.post('/auth/refresh');
+          const response = await authAPI.refreshToken();
           const { token: newToken } = response.data;
 
           set({
@@ -202,7 +204,8 @@ export const useAuthStore = create<AuthStore>()(
 
       checkAccountStatus: async (email: string): Promise<AccountStatus> => {
         try {
-          const response = await authAPI.get('/auth/account-status', {
+          const { default: api } = await import('../services/api');
+          const response = await api.get('/api/auth/account-status', {
             params: { email },
           });
 

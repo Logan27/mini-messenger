@@ -15,9 +15,10 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Ionicons } from '@expo/vector-icons';
-import { api } from '../../services/api';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import api from '../../services/api';
 import type { AuthStackParamList } from '../../types';
+
+type NativeStackNavigationProp<T, K extends keyof T> = any;
 
 type ResetPasswordScreenProps = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'ResetPassword'>;

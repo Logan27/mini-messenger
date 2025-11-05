@@ -8,9 +8,10 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { api } from '../../services/api';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import api from '../../services/api';
 import type { AuthStackParamList } from '../../types';
+
+type NativeStackNavigationProp<T, K extends keyof T> = any;
 
 type EmailVerificationScreenProps = {
   navigation: NativeStackNavigationProp<

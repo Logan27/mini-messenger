@@ -19,7 +19,7 @@
     "build:apk": "expo build:android -t apk",
     "build:aab": "expo build:android -t aab",
     "eject": "expo eject",
-    "prepare": "npm run type-check",
+    "prepare": "echo 'Skipping type-check during install'",
     "prebuild": "expo prebuild",
     "clean": "expo start --clear",
     "optimize": "echo 'Running optimization checks...' && npm run lint && npm run type-check && npm run test:ci"

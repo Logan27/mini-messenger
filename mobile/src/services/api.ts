@@ -188,6 +188,75 @@ export const userAPI = {
     api.get(`/api/v1/users/search?q=${encodeURIComponent(query)}`),
 };
 
+export const groupAPI = {
+  // Group CRUD
+  getUserGroups: (page = 1, limit = 20, search?: string, groupType?: 'private' | 'public') => {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+    if (search) params.append('search', search);
+    if (groupType) params.append('groupType', groupType);
+    return api.get(`/api/groups?${params.toString()}`);
+  },
+
+  getGroup: (groupId: string) =>
+    api.get(`/api/groups/${groupId}`),
+
+  createGroup: (data: {
+    name: string;
+    description?: string;
+    groupType?: 'private' | 'public';
+    avatar?: string;
+    initialMembers?: string[];
+  }) =>
+    api.post('/api/groups', data),
+
+  updateGroup: (groupId: string, data: {
+    name?: string;
+    description?: string;
+    avatar?: string;
+  }) =>
+    api.put(`/api/groups/${groupId}`, data),
+
+  deleteGroup: (groupId: string) =>
+    api.delete(`/api/groups/${groupId}`),
+
+  leaveGroup: (groupId: string) =>
+    api.post(`/api/groups/${groupId}/leave`),
+
+  muteGroup: (groupId: string) =>
+    api.post(`/api/groups/${groupId}/mute`),
+
+  unmuteGroup: (groupId: string) =>
+    api.delete(`/api/groups/${groupId}/mute`),
+
+  // Group Members
+  getGroupMembers: (groupId: string) =>
+    api.get(`/api/groups/${groupId}/members`),
+
+  addGroupMembers: (groupId: string, userIds: string[]) =>
+    api.post(`/api/groups/${groupId}/members`, { userIds }),
+
+  removeGroupMember: (groupId: string, userId: string) =>
+    api.delete(`/api/groups/${groupId}/members/${userId}`),
+
+  updateMemberRole: (groupId: string, userId: string, role: 'admin' | 'moderator' | 'member') =>
+    api.put(`/api/groups/${groupId}/members/${userId}/role`, { role }),
+
+  // Group Settings
+  getGroupSettings: (groupId: string) =>
+    api.get(`/api/groups/${groupId}/settings`),
+
+  updateGroupSettings: (groupId: string, settings: {
+    onlyAdminsCanPost?: boolean;
+    onlyAdminsCanAddMembers?: boolean;
+    onlyAdminsCanEditInfo?: boolean;
+    enableReadReceipts?: boolean;
+    enableTypingIndicators?: boolean;
+  }) =>
+    api.put(`/api/groups/${groupId}/settings`, settings),
+};
+
 export const contactAPI = {
   getContacts: (status?: 'pending' | 'accepted' | 'blocked', page = 1, limit = 50) => {
     const params = new URLSearchParams();

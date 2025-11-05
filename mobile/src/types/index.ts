@@ -41,6 +41,45 @@ export interface ContactRequest {
   isIncoming: boolean; // true if current user is recipient
 }
 
+// Group types
+export interface Group {
+  id: string;
+  name: string;
+  description?: string;
+  groupType: 'private' | 'public';
+  avatar?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  memberCount: number;
+  unreadCount?: number;
+  lastMessage?: Message;
+  isMuted?: boolean;
+}
+
+export interface GroupMember {
+  id: string;
+  groupId: string;
+  userId: string;
+  user: User;
+  role: 'admin' | 'moderator' | 'member';
+  joinedAt: string;
+  isMuted: boolean;
+  addedBy?: string;
+}
+
+export interface GroupSettings {
+  groupId: string;
+  onlyAdminsCanPost: boolean;
+  onlyAdminsCanAddMembers: boolean;
+  onlyAdminsCanEditInfo: boolean;
+  enableReadReceipts: boolean;
+  enableTypingIndicators: boolean;
+  maxMembers: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AuthState {
   user: User | null;
   token: string | null;
@@ -143,6 +182,8 @@ export type RootStackParamList = {
   AddContact: undefined;
   ContactRequests: undefined;
   ContactProfile: { contactId: string };
+  CreateGroup: undefined;
+  GroupInfo: { groupId: string };
 };
 
 export type AuthStackParamList = {

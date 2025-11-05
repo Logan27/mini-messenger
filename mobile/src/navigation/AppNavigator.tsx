@@ -18,6 +18,8 @@ import ChatScreen from '../screens/messaging/ChatScreen';
 import ContactsListScreen from '../screens/contacts/ContactsListScreen';
 import AddContactScreen from '../screens/contacts/AddContactScreen';
 import ContactRequestsScreen from '../screens/contacts/ContactRequestsScreen';
+import CreateGroupScreen from '../screens/groups/CreateGroupScreen';
+import GroupInfoScreen from '../screens/groups/GroupInfoScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -106,6 +108,14 @@ const MainNavigator = () => {
       <Stack.Screen
         name="ContactRequests"
         component={ContactRequestsScreen}
+      />
+      <Stack.Screen
+        name="CreateGroup"
+        component={CreateGroupScreen}
+      />
+      <Stack.Screen
+        name="GroupInfo"
+        component={GroupInfoScreen}
       />
     </Stack.Navigator>
   );

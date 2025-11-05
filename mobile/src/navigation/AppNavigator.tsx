@@ -22,6 +22,7 @@ import GroupsScreen from '../screens/groups/GroupsScreen';
 import CreateGroupScreen from '../screens/groups/CreateGroupScreen';
 import GroupInfoScreen from '../screens/groups/GroupInfoScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
+import EditProfileScreen from '../screens/profile/EditProfileScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -124,6 +125,10 @@ const MainNavigator = () => {
       <Stack.Screen
         name="GroupInfo"
         component={GroupInfoScreen}
+      />
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
       />
     </Stack.Navigator>
   );

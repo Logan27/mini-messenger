@@ -96,7 +96,10 @@ const ProfileScreen = ({ navigation }: any) => {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.editButton}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => navigation.navigate('EditProfile')}
+        >
           <Ionicons name="pencil" size={20} color="#2563eb" />
         </TouchableOpacity>
       </View>

@@ -5,6 +5,8 @@ export interface User {
   name: string;
   username?: string;
   avatar?: string;
+  bio?: string;
+  phoneNumber?: string;
   role: 'user' | 'admin';
   isApproved: boolean;
   createdAt: string;
@@ -178,6 +180,7 @@ export type RootStackParamList = {
   Main: undefined;
   Chat: { conversationId: string; contactId?: string };
   Profile: { userId: string };
+  EditProfile: undefined;
   Settings: undefined;
   AddContact: undefined;
   ContactRequests: undefined;

@@ -23,6 +23,7 @@ interface AuthStore extends AuthState {
   storeBiometricCredentials: (email: string, password: string) => Promise<void>;
   getBiometricCredentials: () => Promise<{ email: string; password: string } | null>;
   clearBiometricCredentials: () => Promise<void>;
+  setUser: (user: User) => void;
 
   // State
   biometricAvailable: boolean;
@@ -305,6 +306,11 @@ export const useAuthStore = create<AuthStore>()(
         } catch (error) {
           console.error('Clear biometric credentials error:', error);
         }
+      },
+
+      setUser: (user: User) => {
+        set({ user });
+        AsyncStorage.setItem('user', JSON.stringify(user));
       },
     }),
     {

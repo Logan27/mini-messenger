@@ -468,13 +468,13 @@ class ExportService {
     if (filters.userId) {
       whereClause.userId = filters.userId;
     }
-    
+
     // BUG-A012: Escape special characters in LIKE queries to prevent SQL injection
     if (filters.action) {
       const sanitized = filters.action.replace(/[%_\\]/g, '\\$&');
       whereClause.action = { [Op.iLike]: `%${sanitized}%` };
     }
-    
+
     if (filters.resourceType) {
       whereClause.resourceType = filters.resourceType;
     }

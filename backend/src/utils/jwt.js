@@ -1,5 +1,6 @@
-import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+
+import jwt from 'jsonwebtoken';
 
 import { config } from '../config/index.js';
 

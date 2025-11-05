@@ -3,21 +3,11 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import * as Notifications from 'expo-notifications';
 import AppNavigator from './src/navigation/AppNavigator';
 import { useAuthStore } from './src/stores/authStore';
 import { wsService } from './src/services/api';
-
-// Configure notifications
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+import { initializeCallWebSocketHandlers, cleanupCallWebSocketHandlers } from './src/services/callWebSocketHandler';
+import { pushNotificationService } from './src/services/pushNotifications';
 
 // Create QueryClient
 const queryClient = new QueryClient({
@@ -36,14 +26,25 @@ export default function App() {
     // Check authentication on app start
     checkAuth();
 
-    // Connect to WebSocket when authenticated
+    // Initialize services when authenticated
     if (token) {
+      // Connect to WebSocket
       wsService.connect(token);
+
+      // Initialize call-specific WebSocket handlers
+      initializeCallWebSocketHandlers();
+
+      // Initialize push notifications
+      pushNotificationService.initialize().catch((error) => {
+        console.error('Failed to initialize push notifications:', error);
+      });
     }
 
-    // Cleanup WebSocket on unmount
+    // Cleanup on unmount or logout
     return () => {
+      cleanupCallWebSocketHandlers();
       wsService.disconnect();
+      pushNotificationService.cleanup();
     };
   }, [token]);
 

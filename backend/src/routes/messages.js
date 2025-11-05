@@ -1,7 +1,7 @@
 import express from 'express';
 import { body, param, query, validationResult } from 'express-validator';
-import { v4 as uuidv4 } from 'uuid';
 import { Op } from 'sequelize';
+import { v4 as uuidv4 } from 'uuid';
 
 import { sequelize } from '../config/database.js';
 import { authenticate } from '../middleware/auth.js';
@@ -194,17 +194,20 @@ router.post(
 
       try {
         // Create message in database
-        const message = await Message.create({
-          id: messageId,
-          senderId,
-          recipientId,
-          groupId,
-          content,
-          messageType: messageType || 'text',
-          status: 'sent',
-          replyToId: replyToId || null,
-          metadata: metadata || {},
-        }, { transaction });
+        const message = await Message.create(
+          {
+            id: messageId,
+            senderId,
+            recipientId,
+            groupId,
+            content,
+            messageType: messageType || 'text',
+            status: 'sent',
+            replyToId: replyToId || null,
+            metadata: metadata || {},
+          },
+          { transaction }
+        );
 
         // Get the created message with sender info
         const messageWithSender = await Message.findByPk(messageId, {
@@ -229,12 +232,12 @@ router.post(
             groupId,
             senderId,
           });
-          
+
           const { getIO } = await import('../services/websocket.js');
           const io = getIO();
-          
+
           logger.info('🔵 Got IO instance:', { ioExists: !!io });
-          
+
           if (io) {
             const messageData = {
               id: messageWithSender.id,
@@ -266,7 +269,7 @@ router.post(
                 room: `user:${recipientId}`,
               });
               io.to(`user:${recipientId}`).emit('message.new', messageData);
-              
+
               // Also emit to sender for multi-device sync
               logger.info('📤 Broadcasting message.new to sender', {
                 messageId: messageData.id,
@@ -275,7 +278,7 @@ router.post(
               });
               io.to(`user:${senderId}`).emit('message.new', messageData);
             }
-            
+
             // Emit to group members for group messages
             if (groupId) {
               io.to(`group:${groupId}`).emit('message.new', messageData);
@@ -476,11 +479,13 @@ router.get(
             model: Message,
             as: 'replyTo',
             attributes: ['id', 'content', 'senderId', 'messageType'],
-            include: [{
-              model: User,
-              as: 'sender',
-              attributes: ['id', 'username', 'firstName', 'lastName'],
-            }],
+            include: [
+              {
+                model: User,
+                as: 'sender',
+                attributes: ['id', 'username', 'firstName', 'lastName'],
+              },
+            ],
           }
         );
       } else if (groupId) {
@@ -520,11 +525,13 @@ router.get(
             model: Message,
             as: 'replyTo',
             attributes: ['id', 'content', 'senderId', 'messageType'],
-            include: [{
-              model: User,
-              as: 'sender',
-              attributes: ['id', 'username', 'firstName', 'lastName'],
-            }],
+            include: [
+              {
+                model: User,
+                as: 'sender',
+                attributes: ['id', 'username', 'firstName', 'lastName'],
+              },
+            ],
           }
         );
       }
@@ -1471,8 +1478,8 @@ router.get(
         const sanitizedQuery = searchQuery.replace(/[%_]/g, '\\$&');
         whereConditions.push({
           content: {
-            [Op.iLike]: `%${sanitizedQuery}%`
-          }
+            [Op.iLike]: `%${sanitizedQuery}%`,
+          },
         });
       }
 
@@ -1899,7 +1906,6 @@ router.get(
   }
 );
 
-
 /**
  * Add reaction to a message
  * POST /api/messages/:messageId/reactions
@@ -2127,6 +2133,5 @@ router.get('/:messageId/reactions', [param('messageId').isUUID()], async (req, r
     });
   }
 });
-
 
 export default router;

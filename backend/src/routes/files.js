@@ -199,10 +199,16 @@ router.post('/upload', uploadRateLimit, uploadValidation, async (req, res) => {
         let filesArray = [];
         if (req.files) {
           // Handle multer.fields() format
-          if (req.files.files) filesArray = filesArray.concat(req.files.files);
-          if (req.files.file) filesArray = filesArray.concat(req.files.file);
-          if (req.files.avatar) filesArray = filesArray.concat(req.files.avatar);
-          
+          if (req.files.files) {
+            filesArray = filesArray.concat(req.files.files);
+          }
+          if (req.files.file) {
+            filesArray = filesArray.concat(req.files.file);
+          }
+          if (req.files.avatar) {
+            filesArray = filesArray.concat(req.files.avatar);
+          }
+
           // Handle multer.array() format (if files is already an array)
           if (Array.isArray(req.files)) {
             filesArray = req.files;
@@ -210,9 +216,9 @@ router.post('/upload', uploadRateLimit, uploadValidation, async (req, res) => {
         }
 
         if (!filesArray || filesArray.length === 0) {
-          return res.status(400).json({ 
+          return res.status(400).json({
             error: 'No files provided',
-            hint: 'Use field name: "files", "file", or "avatar"'
+            hint: 'Use field name: "files", "file", or "avatar"',
           });
         }
 
@@ -225,7 +231,9 @@ router.post('/upload', uploadRateLimit, uploadValidation, async (req, res) => {
         const processedFiles = [];
         for (const file of req.files) {
           try {
-            logger.info(`Processing file: ${file.originalname}, size: ${file.size}, mimetype: ${file.mimetype}`);
+            logger.info(
+              `Processing file: ${file.originalname}, size: ${file.size}, mimetype: ${file.mimetype}`
+            );
             const processedFile = await fileUploadService.processFile(file, {
               userId,
               messageId,
@@ -265,7 +273,7 @@ router.post('/upload', uploadRateLimit, uploadValidation, async (req, res) => {
             messageId: processedFile.messageId || null,
             downloadCount: Number(processedFile.downloadCount) || 0,
             virusScanStatus: processedFile.virusScanStatus || 'clean', // Use actual scan status
-            expiresAt: processedFile.expiresAt || null
+            expiresAt: processedFile.expiresAt || null,
           };
 
           const savedFile = await File.create(fileData);
@@ -503,7 +511,7 @@ router.get('/:id', downloadRateLimit, downloadValidation, async (req, res) => {
         requestedPath: filePath,
         resolvedPath: absoluteFilePath,
         allowedBasePath: uploadBasePath,
-        severity: 'CRITICAL'
+        severity: 'CRITICAL',
       });
 
       await auditService.logSecurityEvent({
@@ -635,7 +643,7 @@ router.get('/:id', downloadRateLimit, downloadValidation, async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const userId = req.user?.id;
-    
+
     if (!userId) {
       return res.status(401).json({
         error: 'Authentication required',
@@ -710,7 +718,7 @@ router.get('/', async (req, res) => {
     logger.error('List files error:', {
       error: error.message,
       stack: error.stack,
-      userId: req.user?.id
+      userId: req.user?.id,
     });
     res.status(500).json({
       error: 'Internal server error while listing files',
@@ -807,7 +815,7 @@ router.get('/:id/thumbnail', downloadRateLimit, downloadValidation, async (req, 
         requestedPath: thumbnailPath,
         resolvedPath: absoluteThumbnailPath,
         allowedBasePath: uploadBasePath,
-        severity: 'CRITICAL'
+        severity: 'CRITICAL',
       });
 
       await auditService.logSecurityEvent({
@@ -829,7 +837,10 @@ router.get('/:id/thumbnail', downloadRateLimit, downloadValidation, async (req, 
     try {
       await fs.promises.access(absoluteThumbnailPath);
     } catch (error) {
-      logger.error('Thumbnail file not found on disk:', { thumbnailPath: absoluteThumbnailPath, fileId: id });
+      logger.error('Thumbnail file not found on disk:', {
+        thumbnailPath: absoluteThumbnailPath,
+        fileId: id,
+      });
       return res.status(404).json({ error: 'Thumbnail not found on server' });
     }
 
@@ -1104,5 +1115,3 @@ router.post('/admin/cleanup', authenticate, async (req, res) => {
 });
 
 export default router;
-
-

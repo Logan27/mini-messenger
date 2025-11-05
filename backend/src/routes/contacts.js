@@ -1,14 +1,16 @@
 import express from 'express';
-import { Op } from 'sequelize';
 import { body, param, query, validationResult } from 'express-validator';
+import { Op } from 'sequelize';
 
 import { sequelize } from '../config/database.js';
 import { authenticate } from '../middleware/auth.js';
 import { userRateLimit } from '../middleware/rateLimit.js';
 import { Contact } from '../models/Contact.js';
+import { Device } from '../models/Device.js';
 import { User } from '../models/User.js';
-import logger from '../utils/logger.js';
+import fcmService from '../services/fcmService.js';
 import { getWebSocketService } from '../services/websocket.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -86,39 +88,41 @@ router.get(
       // Build where condition
       // For pending status, show BOTH incoming requests (contactUserId) AND outgoing requests (userId)
       // For accepted/blocked, show the user's contacts (where current user is userId)
-      const whereCondition = status === 'pending' 
-        ? {
-            [Op.or]: [
-              { contactUserId: userId, status: 'pending' }, // Incoming requests
-              { userId, status: 'pending' } // Outgoing requests
-            ]
-          }
-        : { userId, status };
+      const whereCondition =
+        status === 'pending'
+          ? {
+              [Op.or]: [
+                { contactUserId: userId, status: 'pending' }, // Incoming requests
+                { userId, status: 'pending' }, // Outgoing requests
+              ],
+            }
+          : { userId, status };
 
       // Get contacts with pagination
       // For pending requests, include BOTH user (sender) and contact (recipient)
-      const includeModels = status === 'pending' 
-        ? [
-            {
-              model: User,
-              as: 'user',
-              attributes: ['id', 'username', 'avatar', 'status', 'lastLoginAt'],
-            },
-            {
-              model: User,
-              as: 'contact',
-              attributes: ['id', 'username', 'avatar', 'status', 'lastLoginAt'],
-            },
-          ]
-        : [
-            {
-              model: User,
-              as: 'contact',
-              attributes: ['id', 'username', 'avatar', 'status', 'lastLoginAt'],
-            },
-          ];
+      const includeModels =
+        status === 'pending'
+          ? [
+              {
+                model: User,
+                as: 'user',
+                attributes: ['id', 'username', 'avatar', 'status', 'lastLoginAt'],
+              },
+              {
+                model: User,
+                as: 'contact',
+                attributes: ['id', 'username', 'avatar', 'status', 'lastLoginAt'],
+              },
+            ]
+          : [
+              {
+                model: User,
+                as: 'contact',
+                attributes: ['id', 'username', 'avatar', 'status', 'lastLoginAt'],
+              },
+            ];
 
-      const { count, rows: contacts} = await Contact.findAndCountAll({
+      const { count, rows: contacts } = await Contact.findAndCountAll({
         where: whereCondition,
         include: includeModels,
         order: [
@@ -147,7 +151,7 @@ router.get(
           } else {
             contactUser = contact.contact;
           }
-          
+
           return {
             id: contact.id,
             status: contact.status,
@@ -315,6 +319,55 @@ router.post(
       } catch (wsError) {
         logger.error('❌ Failed to send contact request notification via WebSocket:', wsError);
         // Don't fail the request if WebSocket notification fails
+      }
+
+      // Send push notification if user is offline
+      try {
+        const wsService = getWebSocketService();
+        const userSockets = wsService.getUserSockets(contactUserId);
+
+        // Only send push notification if user has no active connections
+        if (!userSockets || userSockets.size === 0) {
+          const devices = await Device.findAll({
+            where: { userId: contactUserId },
+          });
+
+          if (devices.length > 0) {
+            const requesterUser = await User.findByPk(currentUserId, {
+              attributes: ['id', 'username', 'firstName', 'lastName'],
+            });
+
+            const senderName = requesterUser.username || requesterUser.firstName || 'Someone';
+
+            for (const device of devices) {
+              try {
+                await fcmService.sendPushNotification(
+                  device.token,
+                  'New Contact Request',
+                  `${senderName} wants to connect with you`,
+                  {
+                    type: 'contact_request',
+                    contactId: contact.id.toString(),
+                    senderId: currentUserId.toString(),
+                  }
+                );
+                logger.info(`✅ Push notification sent to device ${device.id} for contact request`);
+              } catch (fcmError) {
+                logger.error(
+                  `❌ Failed to send push notification to device ${device.id}:`,
+                  fcmError
+                );
+              }
+            }
+          } else {
+            logger.info(`ℹ️ No devices registered for user ${contactUserId}`);
+          }
+        } else {
+          logger.info(`ℹ️ User ${contactUserId} is online, skipping push notification`);
+        }
+      } catch (pushError) {
+        logger.error('❌ Failed to send contact request push notification:', pushError);
+        // Don't fail the request if push notification fails
       }
 
       res.status(201).json({
@@ -501,7 +554,7 @@ router.post(
       const requesterId = contact.userId;
 
       // Use transaction to ensure both records are created
-      await sequelize.transaction(async (t) => {
+      await sequelize.transaction(async t => {
         // Check if reverse relationship already exists (including soft-deleted)
         const existingReverse = await Contact.findOne({
           where: {
@@ -525,11 +578,14 @@ router.post(
           await existingReverse.save({ transaction: t });
         } else {
           // Create new reverse relationship
-          await Contact.create({
-            userId: userId,
-            contactUserId: requesterId,
-            status: 'accepted',
-          }, { transaction: t, hooks: false }); // Skip hooks to avoid the duplicate check
+          await Contact.create(
+            {
+              userId: userId,
+              contactUserId: requesterId,
+              status: 'accepted',
+            },
+            { transaction: t, hooks: false }
+          ); // Skip hooks to avoid the duplicate check
         }
 
         // Now accept the original request

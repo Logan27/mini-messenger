@@ -57,24 +57,36 @@ const userProfileSchema = Joi.object({
   bio: Joi.string().trim().max(500).allow('').messages({
     'string.max': 'Bio cannot exceed 500 characters',
   }),
-  phone: Joi.string().trim().pattern(/^\+?[1-9]\d{1,14}$/).allow('', null).messages({
-    'string.pattern.base': 'Phone must be a valid E.164 format (e.g., +1234567890)',
-  }),
+  phone: Joi.string()
+    .trim()
+    .pattern(/^\+?[1-9]\d{1,14}$/)
+    .allow('', null)
+    .messages({
+      'string.pattern.base': 'Phone must be a valid E.164 format (e.g., +1234567890)',
+    }),
   avatar: Joi.string().max(500).allow('').messages({
     'string.max': 'Avatar URL cannot exceed 500 characters',
   }),
   status: Joi.string().valid('online', 'offline', 'away', 'busy').messages({
     'any.only': 'Status must be one of: online, offline, away, busy',
   }),
-  username: Joi.string().trim().min(3).max(50).pattern(/^[a-zA-Z0-9_]+$/).messages({
-    'string.min': 'Username must be at least 3 characters',
-    'string.max': 'Username cannot exceed 50 characters',
-    'string.pattern.base': 'Username must contain only letters, numbers, and underscores',
-  }),
-  email: Joi.string().email({ tlds: { allow: false } }).max(255).messages({
-    'string.email': 'Email must be valid',
-    'string.max': 'Email cannot exceed 255 characters',
-  }),
+  username: Joi.string()
+    .trim()
+    .min(3)
+    .max(50)
+    .pattern(/^[a-zA-Z0-9_]+$/)
+    .messages({
+      'string.min': 'Username must be at least 3 characters',
+      'string.max': 'Username cannot exceed 50 characters',
+      'string.pattern.base': 'Username must contain only letters, numbers, and underscores',
+    }),
+  email: Joi.string()
+    .email({ tlds: { allow: false } })
+    .max(255)
+    .messages({
+      'string.email': 'Email must be valid',
+      'string.max': 'Email cannot exceed 255 characters',
+    }),
   settings: Joi.object({
     showOnlineStatus: Joi.boolean(),
     sendReadReceipts: Joi.boolean(),
@@ -82,9 +94,11 @@ const userProfileSchema = Joi.object({
   profilePicture: Joi.string().max(500).allow('').messages({
     'string.max': 'Profile picture cannot exceed 500 characters',
   }),
-}).min(1).messages({
-  'object.min': 'At least one field must be provided for update',
-});
+})
+  .min(1)
+  .messages({
+    'object.min': 'At least one field must be provided for update',
+  });
 
 const userQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1).messages({
@@ -1059,19 +1073,22 @@ router.post('/me/avatar', authenticate, upload.single('avatar'), async (req, res
       // Update user avatar with the processed file
       // Ensure path starts with / for proper URL formation
       let avatarPath = processedFile.filePath.replace(/\\/g, '/');
-      
+
       // Extract path starting from 'uploads/'
       if (avatarPath.includes('uploads/')) {
-        avatarPath = '/' + avatarPath.substring(avatarPath.indexOf('uploads/'));
+        avatarPath = `/${avatarPath.substring(avatarPath.indexOf('uploads/'))}`;
       } else if (!avatarPath.startsWith('/')) {
-        avatarPath = '/' + avatarPath;
+        avatarPath = `/${avatarPath}`;
       }
-      
+
       logger.info('Avatar path generated', { filePath: processedFile.filePath, avatarPath });
-      
-      await user.update({
-        avatar: avatarPath, // Serve from uploads directory
-      }, { validate: false }); // Skip validation since we know path is valid
+
+      await user.update(
+        {
+          avatar: avatarPath, // Serve from uploads directory
+        },
+        { validate: false }
+      ); // Skip validation since we know path is valid
 
       // Log profile change
       await auditService.logProfileChange({
@@ -1298,57 +1315,40 @@ router.delete('/:userId', authenticate, async (req, res) => {
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.post('/me/device-token', authenticate, async (req, res) => {
-  try {
-    const requestId = req.id;
-    const userId = req.user?.id;
-    // Accept both 'deviceToken' and 'token' for flexibility
-    const { deviceToken, token, platform } = req.body;
-    const finalToken = deviceToken || token;
+router.post('/me/device-token', authenticate, (req, res) => {
+  const requestId = req.id;
+  const userId = req.user?.id;
+  // Accept both 'deviceToken' and 'token' for flexibility
+  const { deviceToken, token } = req.body;
+  const finalToken = deviceToken || token;
 
-    if (!userId) {
-      logger.warn('Unauthorized device token registration attempt', {
-        requestId,
-        ip: req.ip,
-      });
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required',
-      });
-    }
-
-    if (!finalToken) {
-      return res.status(400).json({
-        success: false,
-        error: 'Device token is required',
-      });
-    }
-
-    // Store device token (simplified implementation)
-    // In a real implementation, you would store this in a database
-    logger.info('Device token registered', {
+  if (!userId) {
+    logger.warn('Unauthorized device token registration attempt', {
       requestId,
-      userId,
-      deviceToken: finalToken,
-      platform,
       ip: req.ip,
     });
-
-    res.json({
-      success: true,
-      message: 'Device token registered successfully',
-    });
-  } catch (error) {
-    logger.error('Error registering device token', {
-      requestId: req.id,
-      error: error.message,
-      stack: error.stack,
-    });
-    res.status(500).json({
+    return res.status(401).json({
       success: false,
-      error: 'Failed to register device token',
+      error: 'Authentication required',
     });
   }
+
+  if (!finalToken) {
+    return res.status(400).json({
+      success: false,
+      error: 'Device token is required',
+    });
+  }
+
+  // Store device token in database
+  req.body.token = finalToken; // Normalize to 'token'
+  logger.info('Device token registration', {
+    requestId,
+    userId,
+    platform: req.body.platform,
+    ip: req.ip,
+  });
+  return userController.registerDeviceToken(req, res);
 });
 
 /**
@@ -1393,46 +1393,38 @@ router.post('/me/device-token', authenticate, async (req, res) => {
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.delete('/me/device-token', authenticate, async (req, res) => {
-  try {
-    const requestId = req.id;
-    const userId = req.user?.id;
-    const { deviceToken } = req.body;
+router.delete('/me/device-token', authenticate, (req, res) => {
+  const requestId = req.id;
+  const userId = req.user?.id;
+  const { deviceToken, token } = req.body;
+  const finalToken = deviceToken || token;
 
-    if (!userId) {
-      logger.warn('Unauthorized device token removal attempt', {
-        requestId,
-        ip: req.ip,
-      });
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required',
-      });
-    }
-
-    // Remove device token (simplified implementation)
-    // In a real implementation, you would remove this from a database
-    logger.info('Device token removed', {
+  if (!userId) {
+    logger.warn('Unauthorized device token removal attempt', {
       requestId,
-      userId,
       ip: req.ip,
     });
-
-    res.json({
-      success: true,
-      message: 'Device token removed successfully',
-    });
-  } catch (error) {
-    logger.error('Error removing device token', {
-      requestId: req.id,
-      error: error.message,
-      stack: error.stack,
-    });
-    res.status(500).json({
+    return res.status(401).json({
       success: false,
-      error: 'Failed to remove device token',
+      error: 'Authentication required',
     });
   }
+
+  if (!finalToken) {
+    return res.status(400).json({
+      success: false,
+      error: 'Device token is required',
+    });
+  }
+
+  // Remove device token from database
+  req.body.token = finalToken; // Normalize to 'token'
+  logger.info('Device token removal', {
+    requestId,
+    userId,
+    ip: req.ip,
+  });
+  return userController.unregisterDeviceToken(req, res);
 });
 
 /**
@@ -1647,48 +1639,48 @@ router.delete('/me', authenticate, async (req, res) => {
  *       401:
  *         description: Unauthorized
  */
-router.put('/me/privacy/read-receipts', authenticate, [
-  body('enabled').isBoolean().withMessage('enabled must be a boolean'),
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
+router.put(
+  '/me/privacy/read-receipts',
+  authenticate,
+  [body('enabled').isBoolean().withMessage('enabled must be a boolean')],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: errors.array(),
+        });
+      }
+
+      const { enabled } = req.body;
+      const userId = req.user.id;
+
+      // Update user's read receipts setting
+      await User.update({ readReceiptsEnabled: enabled }, { where: { id: userId } });
+
+      logger.info(`User ${userId} updated read receipts setting to: ${enabled}`);
+
+      res.json({
+        success: true,
+        message: 'Read receipts setting updated successfully',
+        data: {
+          readReceiptsEnabled: enabled,
+        },
+      });
+    } catch (error) {
+      logger.error('Error updating read receipts setting', {
+        error: error.message,
+        stack: error.stack,
+      });
+      res.status(500).json({
         success: false,
-        message: 'Validation failed',
-        errors: errors.array(),
+        message: 'Failed to update read receipts setting',
+        error: error.message,
       });
     }
-
-    const { enabled } = req.body;
-    const userId = req.user.id;
-
-    // Update user's read receipts setting
-    await User.update(
-      { readReceiptsEnabled: enabled },
-      { where: { id: userId } }
-    );
-
-    logger.info(`User ${userId} updated read receipts setting to: ${enabled}`);
-
-    res.json({
-      success: true,
-      message: 'Read receipts setting updated successfully',
-      data: {
-        readReceiptsEnabled: enabled,
-      },
-    });
-  } catch (error) {
-    logger.error('Error updating read receipts setting', {
-      error: error.message,
-      stack: error.stack,
-    });
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update read receipts setting',
-      error: error.message,
-    });
   }
-});
+);
 
 export default router;

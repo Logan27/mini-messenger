@@ -133,7 +133,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -213,29 +220,35 @@ class AdminController {
       }
 
       // Update user status (BUG-A001: Now in transaction)
-      await user.update({
-        approvalStatus: 'approved',
-        approvedBy: req.user.id,
-        approvedAt: new Date(),
-      }, { transaction });
+      await user.update(
+        {
+          approvalStatus: 'approved',
+          approvedBy: req.user.id,
+          approvedAt: new Date(),
+        },
+        { transaction }
+      );
 
       // Log admin action (BUG-A001: Now in transaction)
-      await auditService.logAdminAction({
-        requestId,
-        adminId: req.user.id,
-        action: 'user_approve',
-        resource: 'user',
-        resourceId: user.id,
-        details: {
-          previousStatus: 'pending',
-          newStatus: 'approved',
-          adminNotes: approvalData.adminNotes,
+      await auditService.logAdminAction(
+        {
+          requestId,
+          adminId: req.user.id,
+          action: 'user_approve',
+          resource: 'user',
+          resourceId: user.id,
+          details: {
+            previousStatus: 'pending',
+            newStatus: 'approved',
+            adminNotes: approvalData.adminNotes,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+          severity: 'medium',
+          status: 'success',
         },
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent'),
-        severity: 'medium',
-        status: 'success',
-      }, { transaction });
+        { transaction }
+      );
 
       await transaction.commit();
 
@@ -280,7 +293,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -347,7 +367,7 @@ class AdminController {
       await transaction.commit();
 
       // Send approval emails asynchronously (outside transaction)
-      pendingUsers.forEach(async (user) => {
+      pendingUsers.forEach(async user => {
         try {
           await emailService.sendUserApprovalEmail(user);
         } catch (emailError) {
@@ -468,31 +488,37 @@ class AdminController {
       }
 
       // Update user status (BUG-A002: Now in transaction)
-      await user.update({
-        approvalStatus: 'rejected',
-        approvedBy: req.user.id,
-        approvedAt: new Date(),
-        rejectionReason: rejectionData.reason,
-      }, { transaction });
+      await user.update(
+        {
+          approvalStatus: 'rejected',
+          approvedBy: req.user.id,
+          approvedAt: new Date(),
+          rejectionReason: rejectionData.reason,
+        },
+        { transaction }
+      );
 
       // Log admin action (BUG-A002: Now in transaction)
-      await auditService.logAdminAction({
-        requestId,
-        adminId: req.user.id,
-        action: 'user_reject',
-        resource: 'user',
-        resourceId: user.id,
-        details: {
-          previousStatus: 'pending',
-          newStatus: 'rejected',
-          reason: rejectionData.reason,
-          adminNotes: rejectionData.adminNotes,
+      await auditService.logAdminAction(
+        {
+          requestId,
+          adminId: req.user.id,
+          action: 'user_reject',
+          resource: 'user',
+          resourceId: user.id,
+          details: {
+            previousStatus: 'pending',
+            newStatus: 'rejected',
+            reason: rejectionData.reason,
+            adminNotes: rejectionData.adminNotes,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+          severity: 'medium',
+          status: 'success',
         },
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent'),
-        severity: 'medium',
-        status: 'success',
-      }, { transaction });
+        { transaction }
+      );
 
       await transaction.commit();
 
@@ -543,7 +569,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -607,9 +640,10 @@ class AdminController {
         },
       });
 
-      const storageUsed = (await File.sum('fileSize', {
-        where: { uploaderId: userId },
-      })) || 0;
+      const storageUsed =
+        (await File.sum('fileSize', {
+          where: { uploaderId: userId },
+        })) || 0;
 
       logger.info('User details retrieved successfully', {
         requestId,
@@ -933,7 +967,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -1051,7 +1092,8 @@ class AdminController {
             success: false,
             error: {
               type: 'LAST_ADMIN_PROTECTION',
-              message: 'Cannot deactivate the last active administrator. System must have at least one admin.',
+              message:
+                'Cannot deactivate the last active administrator. System must have at least one admin.',
             },
           });
         }
@@ -1070,12 +1112,15 @@ class AdminController {
       const previousStatus = user.status;
 
       // BUG-A003: Update user status in transaction
-      await user.update({
-        status: 'inactive',
-        deactivatedBy: req.user.id,
-        deactivatedAt: new Date(),
-        deactivationReason: deactivateData.reason,
-      }, { transaction });
+      await user.update(
+        {
+          status: 'inactive',
+          deactivatedBy: req.user.id,
+          deactivatedAt: new Date(),
+          deactivationReason: deactivateData.reason,
+        },
+        { transaction }
+      );
 
       // BUG-A003: Terminate all user sessions in transaction
       await Session.destroy({
@@ -1084,23 +1129,26 @@ class AdminController {
       });
 
       // BUG-A003: Log admin action in transaction
-      await auditService.logAdminAction({
-        requestId,
-        adminId: req.user.id,
-        action: 'user_deactivate',
-        resource: 'user',
-        resourceId: user.id,
-        details: {
-          previousStatus,
-          newStatus: 'inactive',
-          reason: deactivateData.reason,
-          adminNotes: deactivateData.adminNotes,
+      await auditService.logAdminAction(
+        {
+          requestId,
+          adminId: req.user.id,
+          action: 'user_deactivate',
+          resource: 'user',
+          resourceId: user.id,
+          details: {
+            previousStatus,
+            newStatus: 'inactive',
+            reason: deactivateData.reason,
+            adminNotes: deactivateData.adminNotes,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+          severity: 'high',
+          status: 'success',
         },
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent'),
-        severity: 'high',
-        status: 'success',
-      }, { transaction });
+        { transaction }
+      );
 
       await transaction.commit();
 
@@ -1164,7 +1212,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -1250,30 +1305,36 @@ class AdminController {
       const previousStatus = user.status;
 
       // BUG-A005: Update user status in transaction
-      await user.update({
-        status: 'active',
-        reactivatedBy: req.user.id,
-        reactivatedAt: new Date(),
-        deactivationReason: null,
-      }, { transaction });
+      await user.update(
+        {
+          status: 'active',
+          reactivatedBy: req.user.id,
+          reactivatedAt: new Date(),
+          deactivationReason: null,
+        },
+        { transaction }
+      );
 
       // BUG-A005: Log admin action in transaction
-      await auditService.logAdminAction({
-        requestId,
-        adminId: req.user.id,
-        action: 'user_reactivate',
-        resource: 'user',
-        resourceId: user.id,
-        details: {
-          previousStatus,
-          newStatus: 'active',
-          adminNotes: reactivateData.adminNotes,
+      await auditService.logAdminAction(
+        {
+          requestId,
+          adminId: req.user.id,
+          action: 'user_reactivate',
+          resource: 'user',
+          resourceId: user.id,
+          details: {
+            previousStatus,
+            newStatus: 'active',
+            adminNotes: reactivateData.adminNotes,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+          severity: 'medium',
+          status: 'success',
         },
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent'),
-        severity: 'medium',
-        status: 'success',
-      }, { transaction });
+        { transaction }
+      );
 
       await transaction.commit();
 
@@ -1317,7 +1378,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -1446,7 +1514,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -1554,7 +1629,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -1636,32 +1718,38 @@ class AdminController {
       }
 
       // BUG-A004: Update report in transaction
-      await report.update({
-        status: resolveData.status,
-        resolution: resolveData.resolution,
-        actionTaken: resolveData.actionTaken,
-        reviewedBy: req.user.id,
-        reviewedAt: new Date(),
-      }, { transaction });
+      await report.update(
+        {
+          status: resolveData.status,
+          resolution: resolveData.resolution,
+          actionTaken: resolveData.actionTaken,
+          reviewedBy: req.user.id,
+          reviewedAt: new Date(),
+        },
+        { transaction }
+      );
 
       // BUG-A004: Log admin action in transaction
-      await auditService.logAdminAction({
-        requestId,
-        adminId: req.user.id,
-        action: 'report_resolve',
-        resource: 'report',
-        resourceId: report.id,
-        details: {
-          reportType: report.reportType,
-          reason: report.reason,
-          actionTaken: resolveData.actionTaken,
-          resolution: resolveData.resolution,
+      await auditService.logAdminAction(
+        {
+          requestId,
+          adminId: req.user.id,
+          action: 'report_resolve',
+          resource: 'report',
+          resourceId: report.id,
+          details: {
+            reportType: report.reportType,
+            reason: report.reason,
+            actionTaken: resolveData.actionTaken,
+            resolution: resolveData.resolution,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+          severity: 'high',
+          status: 'success',
         },
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent'),
-        severity: 'high',
-        status: 'success',
-      }, { transaction });
+        { transaction }
+      );
 
       await transaction.commit();
 
@@ -1694,7 +1782,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -1709,7 +1804,7 @@ class AdminController {
       // BUG-A007: Enforce hard export limit
       const MAX_EXPORT_LIMIT = 500;
       const requestedLimit = parseInt(filters.limit) || 500;
-      
+
       if (requestedLimit > MAX_EXPORT_LIMIT) {
         logger.warn('Export limit exceeded', {
           requestId,
@@ -1770,7 +1865,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -1785,7 +1887,7 @@ class AdminController {
       // BUG-A007: Enforce hard export limit
       const MAX_EXPORT_LIMIT = 500;
       const requestedLimit = parseInt(filters.limit) || 500;
-      
+
       if (requestedLimit > MAX_EXPORT_LIMIT) {
         logger.warn('Export limit exceeded', {
           requestId,
@@ -1845,7 +1947,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -1882,7 +1991,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -1919,7 +2035,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -1954,7 +2077,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -1989,7 +2119,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -2030,7 +2167,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -2074,14 +2218,16 @@ class AdminController {
 
       // Convert DB records to settings object
       const settings = { ...defaultSettings };
-      dbSettings.forEach((setting) => {
+      dbSettings.forEach(setting => {
         try {
           const keys = setting.key.split('.');
           let target = settings;
 
           // Navigate nested structure (e.g., "featureFlags.fileSharing")
           for (let i = 0; i < keys.length - 1; i++) {
-            if (!target[keys[i]]) target[keys[i]] = {};
+            if (!target[keys[i]]) {
+              target[keys[i]] = {};
+            }
             target = target[keys[i]];
           }
 
@@ -2120,7 +2266,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 
@@ -2208,7 +2361,7 @@ class AdminController {
           resource: 'system_settings',
           resourceId: null,
           details: {
-            updatedKeys: settingsArray.map((s) => s.key),
+            updatedKeys: settingsArray.map(s => s.key),
             newSettings: settingsData,
           },
           ipAddress: req.ip,
@@ -2241,7 +2394,14 @@ class AdminController {
         error: error.message,
         stack: error.stack,
       });
-      return res.status(500).json({ success: false, error: { type: 'INTERNAL_ERROR', message: 'Operation failed', debug: process.env.NODE_ENV === 'development' ? error.message : undefined } });
+      return res.status(500).json({
+        success: false,
+        error: {
+          type: 'INTERNAL_ERROR',
+          message: 'Operation failed',
+          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        },
+      });
     }
   }
 }

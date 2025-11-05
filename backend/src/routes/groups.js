@@ -307,11 +307,7 @@ router.post(
  *       500:
  *         description: Internal server error
  */
-router.get(
-  '/:id/members',
-  validateParams(groupValidation.groupId),
-  groupsController.getMembers
-);
+router.get('/:id/members', validateParams(groupValidation.groupId), groupsController.getMembers);
 
 /**
  * @swagger
@@ -350,10 +346,12 @@ router.get(
  */
 router.delete(
   '/:id/members/:userId',
-  validateParams(Joi.object({
-    id: groupValidation.groupId.extract('id'),
-    userId: groupValidation.userId.extract('userId')
-  })),
+  validateParams(
+    Joi.object({
+      id: groupValidation.groupId.extract('id'),
+      userId: groupValidation.userId.extract('userId'),
+    })
+  ),
   groupsController.removeMember
 );
 
@@ -408,10 +406,12 @@ router.delete(
  */
 router.put(
   '/:id/members/:userId/role',
-  validateParams(Joi.object({
-    id: groupValidation.groupId.extract('id'),
-    userId: groupValidation.userId.extract('userId')
-  })),
+  validateParams(
+    Joi.object({
+      id: groupValidation.groupId.extract('id'),
+      userId: groupValidation.userId.extract('userId'),
+    })
+  ),
   validate(groupValidation.updateMemberRole),
   groupsController.updateMemberRole
 );

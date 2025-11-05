@@ -5,7 +5,7 @@ import {
   authenticate,
   loginRateLimit,
   registerRateLimit,
-  passwordResetRateLimit
+  passwordResetRateLimit,
 } from '../middleware/auth.js';
 import { authValidation, validate, validateParams } from '../utils/validation.js';
 
@@ -68,7 +68,12 @@ const router = express.Router();
  *       500:
  *         description: Internal server error
  */
-router.post('/register', registerRateLimit, validate(authValidation.register), authController.register);
+router.post(
+  '/register',
+  registerRateLimit,
+  validate(authValidation.register),
+  authController.register
+);
 
 /**
  * @swagger
@@ -196,11 +201,7 @@ router.post('/logout-all', authenticate, authController.logoutAll);
  *       500:
  *         description: Internal server error
  */
-router.post(
-  '/verify-email',
-  validate(authValidation.verifyEmail),
-  authController.verifyEmail
-);
+router.post('/verify-email', validate(authValidation.verifyEmail), authController.verifyEmail);
 
 /**
  * @swagger
@@ -343,7 +344,12 @@ router.get('/me', authenticate, authController.getProfile);
  *       500:
  *         description: Internal server error
  */
-router.post('/change-password', authenticate, validate(authValidation.changePassword), authController.changePassword);
+router.post(
+  '/change-password',
+  authenticate,
+  validate(authValidation.changePassword),
+  authController.changePassword
+);
 
 /**
  * @swagger

@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMessagingStore } from '../../stores/messagingStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useCallStore } from '../../stores/callStore';
 import { Message, Conversation } from '../../types';
 import { wsService } from '../../services/api';
 import MessageActionsSheet from '../../components/messaging/MessageActionsSheet';
@@ -439,6 +440,50 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     setShowWhoReacted(true);
   }, []);
 
+  const { initiateCall } = useCallStore();
+
+  const handleVoiceCall = useCallback(async () => {
+    if (!conversation || conversation.type !== 'direct') {
+      Alert.alert('Error', 'Voice calls are only available in direct conversations');
+      return;
+    }
+
+    const otherUser = conversation.participants.find(p => p.id !== user?.id);
+    if (!otherUser) {
+      Alert.alert('Error', 'Unable to find recipient');
+      return;
+    }
+
+    try {
+      const call = await initiateCall(otherUser.id, 'audio');
+      navigation.navigate('OutgoingCall', { call });
+    } catch (error) {
+      console.error('Failed to initiate voice call:', error);
+      Alert.alert('Error', 'Failed to initiate voice call');
+    }
+  }, [conversation, user, initiateCall, navigation]);
+
+  const handleVideoCall = useCallback(async () => {
+    if (!conversation || conversation.type !== 'direct') {
+      Alert.alert('Error', 'Video calls are only available in direct conversations');
+      return;
+    }
+
+    const otherUser = conversation.participants.find(p => p.id !== user?.id);
+    if (!otherUser) {
+      Alert.alert('Error', 'Unable to find recipient');
+      return;
+    }
+
+    try {
+      const call = await initiateCall(otherUser.id, 'video');
+      navigation.navigate('OutgoingCall', { call });
+    } catch (error) {
+      console.error('Failed to initiate video call:', error);
+      Alert.alert('Error', 'Failed to initiate video call');
+    }
+  }, [conversation, user, initiateCall, navigation]);
+
   const getUserName = useCallback((userId: string) => {
     if (userId === user?.id) return 'You';
     const participant = conversation?.participants.find(p => p.id === userId);
@@ -743,9 +788,16 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         <TouchableOpacity style={styles.headerButton} onPress={handleSearchToggle}>
           <Ionicons name="search" size={24} color="#2563eb" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.headerButton}>
-          <Ionicons name="call" size={24} color="#2563eb" />
-        </TouchableOpacity>
+        {conversation.type === 'direct' && (
+          <>
+            <TouchableOpacity style={styles.headerButton} onPress={handleVoiceCall}>
+              <Ionicons name="call" size={24} color="#2563eb" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerButton} onPress={handleVideoCall}>
+              <Ionicons name="videocam" size={24} color="#2563eb" />
+            </TouchableOpacity>
+          </>
+        )}
       </View>
 
       {/* Search Bar */}

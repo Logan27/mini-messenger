@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../stores/authStore';
 import { RootStackParamList, MainTabParamList, AuthStackParamList } from '../types';
+import { navigationRef } from '../services/navigationService';
 
 // Import screens
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -35,6 +36,9 @@ import TwoFactorAuthScreen from '../screens/settings/TwoFactorAuthScreen';
 import UserSearchScreen from '../screens/contacts/UserSearchScreen';
 import DataExportScreen from '../screens/settings/DataExportScreen';
 import ConsentManagementScreen from '../screens/settings/ConsentManagementScreen';
+import IncomingCallScreen from '../screens/calls/IncomingCallScreen';
+import OutgoingCallScreen from '../screens/calls/OutgoingCallScreen';
+import ActiveCallScreen from '../screens/calls/ActiveCallScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -190,6 +194,30 @@ const MainNavigator = () => {
         name="ConsentManagement"
         component={ConsentManagementScreen}
       />
+      <Stack.Screen
+        name="IncomingCall"
+        component={IncomingCallScreen}
+        options={{
+          headerShown: false,
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="OutgoingCall"
+        component={OutgoingCallScreen}
+        options={{
+          headerShown: false,
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="ActiveCall"
+        component={ActiveCallScreen}
+        options={{
+          headerShown: false,
+          presentation: 'modal',
+        }}
+      />
     </Stack.Navigator>
   );
 };
@@ -204,7 +232,7 @@ const AppNavigator = () => {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
           <Stack.Screen name="Main" component={MainNavigator} />

@@ -1,8 +1,9 @@
 // FIX BUG-C008: Call timeout mechanism to mark unanswered calls as 'missed'
 
 import cron from 'node-cron';
-import { Call } from '../models/index.js';
 import { Op } from 'sequelize';
+
+import { Call } from '../models/index.js';
 import { getIO } from '../services/websocket.js';
 import logger from '../utils/logger.js';
 
@@ -73,7 +74,9 @@ export const startCallExpiryJob = () => {
         for (const call of expiredConnectedCalls) {
           call.status = 'ended';
           call.endedAt = new Date();
-          call.durationSeconds = Math.floor((call.endedAt.getTime() - call.startedAt.getTime()) / 1000);
+          call.durationSeconds = Math.floor(
+            (call.endedAt.getTime() - call.startedAt.getTime()) / 1000
+          );
           await call.save();
 
           logger.info('Connected call expired to ended status', {

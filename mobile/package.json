@@ -60,6 +60,7 @@
     "react-native-screens": "^4.17.1",
     "react-native-share": "^12.2.0",
     "react-native-vector-icons": "^10.3.0",
+    "react-native-webrtc": "^124.0.4",
     "socket.io-client": "^4.8.1",
     "zod": "^4.1.12",
     "zustand": "^5.0.8"

@@ -23,7 +23,7 @@ const exportRateLimit = rateLimit({
       message: 'Too many export requests. Maximum 5 per hour.',
     },
   },
-  keyGenerator: (req) => req.user?.id || req.ip,
+  keyGenerator: req => req.user?.id || req.ip,
   standardHeaders: true,
   legacyHeaders: false,
 });

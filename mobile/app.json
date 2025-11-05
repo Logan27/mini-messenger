@@ -21,8 +21,8 @@
       "buildNumber": "1.0.0",
       "requireFullScreen": false,
       "infoPlist": {
-        "NSCameraUsageDescription": "This app needs access to camera to send photos and videos.",
-        "NSMicrophoneUsageDescription": "This app needs access to microphone for voice messages and calls.",
+        "NSCameraUsageDescription": "This app needs access to camera to send photos and videos, and make video calls.",
+        "NSMicrophoneUsageDescription": "This app needs access to microphone for voice messages, voice calls and video calls.",
         "NSPhotoLibraryUsageDescription": "This app needs access to photo library to send photos and videos.",
         "NSContactsUsageDescription": "This app needs access to contacts to help you connect with friends."
       }

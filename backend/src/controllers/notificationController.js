@@ -211,11 +211,9 @@ class NotificationController {
       }
 
       // Mark all as read (within transaction)
-      const affectedRows = await notificationService.markAllAsRead(
-        req.user.id,
-        filters,
-        { transaction }
-      );
+      const affectedRows = await notificationService.markAllAsRead(req.user.id, filters, {
+        transaction,
+      });
 
       // Get unread count (within transaction for consistency)
       const unreadCount = await Notification.getUnreadCount(req.user.id, { transaction });
@@ -247,7 +245,7 @@ class NotificationController {
         error: error.message,
         stack: error.stack,
         userId: req.user?.id,
-        filters: { type, category, priority }
+        filters: { type, category, priority },
       });
 
       res.status(500).json({

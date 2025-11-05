@@ -268,7 +268,7 @@ Contact.sendRequest = async function (fromUserId, toUserId) {
 
   // Check if request already exists (including soft-deleted)
   // First, try to find our own record (where userId = fromUserId)
-  let existing = await Contact.findOne({
+  const existing = await Contact.findOne({
     where: {
       userId: fromUserId,
       contactUserId: toUserId,

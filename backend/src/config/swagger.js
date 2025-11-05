@@ -1,4 +1,5 @@
 import swaggerJsdoc from 'swagger-jsdoc';
+
 import config from './index.js';
 
 const swaggerDefinition = {
@@ -45,22 +46,22 @@ Connect to \`ws://localhost:4000\` for real-time features:
     `,
     contact: {
       name: 'API Support',
-      email: 'support@messenger.local'
+      email: 'support@messenger.local',
     },
     license: {
       name: 'Proprietary',
-      url: 'https://messenger.local/license'
-    }
+      url: 'https://messenger.local/license',
+    },
   },
   servers: [
     {
       url: `http://localhost:${config.port}`,
-      description: 'Development server (local)'
+      description: 'Development server (local)',
     },
     {
       url: `http://localhost:${config.port}/api`,
-      description: 'Development API (local)'
-    }
+      description: 'Development API (local)',
+    },
   ],
   components: {
     securitySchemes: {
@@ -68,8 +69,8 @@ Connect to \`ws://localhost:4000\` for real-time features:
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        description: 'Enter JWT token obtained from /api/auth/login'
-      }
+        description: 'Enter JWT token obtained from /api/auth/login',
+      },
     },
     schemas: {
       User: {
@@ -78,77 +79,77 @@ Connect to \`ws://localhost:4000\` for real-time features:
           id: {
             type: 'string',
             format: 'uuid',
-            description: 'User unique identifier'
+            description: 'User unique identifier',
           },
           username: {
             type: 'string',
             minLength: 3,
             maxLength: 50,
-            description: 'Username (3-50 characters)'
+            description: 'Username (3-50 characters)',
           },
           email: {
             type: 'string',
             format: 'email',
-            description: 'User email address'
+            description: 'User email address',
           },
           firstName: {
             type: 'string',
             nullable: true,
-            description: 'User first name'
+            description: 'User first name',
           },
           lastName: {
             type: 'string',
             nullable: true,
-            description: 'User last name'
+            description: 'User last name',
           },
           avatar: {
             type: 'string',
             format: 'uri',
             nullable: true,
-            description: 'User avatar URL'
+            description: 'User avatar URL',
           },
           bio: {
             type: 'string',
             maxLength: 500,
             nullable: true,
-            description: 'User biography (max 500 characters)'
+            description: 'User biography (max 500 characters)',
           },
           status: {
             type: 'string',
             enum: ['pending', 'active', 'inactive', 'suspended'],
-            description: 'User account status'
+            description: 'User account status',
           },
           onlineStatus: {
             type: 'string',
             enum: ['online', 'offline', 'away', 'busy'],
-            description: 'User online status'
+            description: 'User online status',
           },
           role: {
             type: 'string',
             enum: ['user', 'admin'],
-            description: 'User role'
+            description: 'User role',
           },
           twoFactorEnabled: {
             type: 'boolean',
-            description: '2FA enabled status'
+            description: '2FA enabled status',
           },
           lastSeenAt: {
             type: 'string',
             format: 'date-time',
             nullable: true,
-            description: 'Last seen timestamp'
+            description: 'Last seen timestamp',
           },
           createdAt: {
             type: 'string',
             format: 'date-time',
-            description: 'Account creation timestamp'
+            description: 'Account creation timestamp',
           },
           updatedAt: {
             type: 'string',
             format: 'date-time',
-            description: 'Last update timestamp'
-          }
-        }
+            description: 'Last update timestamp',
+          },
+        },
       },
       Message: {
         type: 'object',
@@ -156,87 +157,87 @@ Connect to \`ws://localhost:4000\` for real-time features:
           id: {
             type: 'string',
             format: 'uuid',
-            description: 'Message unique identifier'
+            description: 'Message unique identifier',
           },
           senderId: {
             type: 'string',
             format: 'uuid',
-            description: 'Sender user ID'
+            description: 'Sender user ID',
           },
           recipientId: {
             type: 'string',
             format: 'uuid',
             nullable: true,
-            description: 'Recipient user ID (for direct messages)'
+            description: 'Recipient user ID (for direct messages)',
           },
           groupId: {
             type: 'string',
             format: 'uuid',
             nullable: true,
-            description: 'Group ID (for group messages)'
+            description: 'Group ID (for group messages)',
           },
           content: {
             type: 'string',
             maxLength: 10000,
-            description: 'Message content (max 10,000 characters)'
+            description: 'Message content (max 10,000 characters)',
           },
           encryptedContent: {
             type: 'string',
             nullable: true,
-            description: 'End-to-end encrypted message content'
+            description: 'End-to-end encrypted message content',
           },
           messageType: {
             type: 'string',
             enum: ['text', 'file', 'image', 'system'],
-            description: 'Message type'
+            description: 'Message type',
           },
           status: {
             type: 'string',
             enum: ['sent', 'delivered', 'read'],
-            description: 'Message delivery status'
+            description: 'Message delivery status',
           },
           isRead: {
             type: 'boolean',
-            description: 'Message read status'
+            description: 'Message read status',
           },
           isDelivered: {
             type: 'boolean',
-            description: 'Message delivered status'
+            description: 'Message delivered status',
           },
           isEdited: {
             type: 'boolean',
-            description: 'Message edited flag'
+            description: 'Message edited flag',
           },
           fileId: {
             type: 'string',
             format: 'uuid',
             nullable: true,
-            description: 'Attached file ID'
+            description: 'Attached file ID',
           },
           replyToId: {
             type: 'string',
             format: 'uuid',
             nullable: true,
-            description: 'Reply to message ID'
+            description: 'Reply to message ID',
           },
           createdAt: {
             type: 'string',
             format: 'date-time',
-            description: 'Message creation timestamp'
+            description: 'Message creation timestamp',
           },
           editedAt: {
             type: 'string',
             format: 'date-time',
             nullable: true,
-            description: 'Message edit timestamp'
+            description: 'Message edit timestamp',
           },
           deletedAt: {
             type: 'string',
             format: 'date-time',
             nullable: true,
-            description: 'Message deletion timestamp'
-          }
-        }
+            description: 'Message deletion timestamp',
+          },
+        },
       },
       Group: {
         type: 'object',
@@ -244,46 +245,46 @@ Connect to \`ws://localhost:4000\` for real-time features:
           id: {
             type: 'string',
             format: 'uuid',
-            description: 'Group unique identifier'
+            description: 'Group unique identifier',
           },
           name: {
             type: 'string',
             minLength: 3,
             maxLength: 100,
-            description: 'Group name (3-100 characters)'
+            description: 'Group name (3-100 characters)',
           },
           description: {
             type: 'string',
             maxLength: 500,
             nullable: true,
-            description: 'Group description (max 500 characters)'
+            description: 'Group description (max 500 characters)',
           },
           avatar: {
             type: 'string',
             format: 'uri',
             nullable: true,
-            description: 'Group avatar URL'
+            description: 'Group avatar URL',
           },
           createdBy: {
             type: 'string',
             format: 'uuid',
-            description: 'Creator user ID'
+            description: 'Creator user ID',
           },
           memberCount: {
             type: 'integer',
-            description: 'Number of members in the group'
+            description: 'Number of members in the group',
           },
           createdAt: {
             type: 'string',
             format: 'date-time',
-            description: 'Group creation timestamp'
+            description: 'Group creation timestamp',
           },
           updatedAt: {
             type: 'string',
             format: 'date-time',
-            description: 'Last update timestamp'
-          }
-        }
+            description: 'Last update timestamp',
+          },
+        },
       },
       File: {
         type: 'object',
@@ -291,47 +292,47 @@ Connect to \`ws://localhost:4000\` for real-time features:
           id: {
             type: 'string',
             format: 'uuid',
-            description: 'File unique identifier'
+            description: 'File unique identifier',
           },
           userId: {
             type: 'string',
             format: 'uuid',
-            description: 'Uploader user ID'
+            description: 'Uploader user ID',
           },
           fileName: {
             type: 'string',
-            description: 'Original file name'
+            description: 'Original file name',
           },
           fileSize: {
             type: 'integer',
-            description: 'File size in bytes'
+            description: 'File size in bytes',
           },
           mimeType: {
             type: 'string',
-            description: 'File MIME type'
+            description: 'File MIME type',
           },
           fileUrl: {
             type: 'string',
             format: 'uri',
-            description: 'File download URL'
+            description: 'File download URL',
           },
           thumbnailUrl: {
             type: 'string',
             format: 'uri',
             nullable: true,
-            description: 'Thumbnail URL (for images/videos)'
+            description: 'Thumbnail URL (for images/videos)',
           },
           virusScanStatus: {
             type: 'string',
             enum: ['pending', 'clean', 'infected', 'skipped'],
-            description: 'ClamAV virus scan status'
+            description: 'ClamAV virus scan status',
           },
           uploadedAt: {
             type: 'string',
             format: 'date-time',
-            description: 'Upload timestamp'
-          }
-        }
+            description: 'Upload timestamp',
+          },
+        },
       },
       Call: {
         type: 'object',
@@ -339,52 +340,52 @@ Connect to \`ws://localhost:4000\` for real-time features:
           id: {
             type: 'string',
             format: 'uuid',
-            description: 'Call unique identifier'
+            description: 'Call unique identifier',
           },
           callerId: {
             type: 'string',
             format: 'uuid',
-            description: 'Caller user ID'
+            description: 'Caller user ID',
           },
           recipientId: {
             type: 'string',
             format: 'uuid',
             nullable: true,
-            description: 'Recipient user ID (for 1-to-1 calls)'
+            description: 'Recipient user ID (for 1-to-1 calls)',
           },
           groupId: {
             type: 'string',
             format: 'uuid',
             nullable: true,
-            description: 'Group ID (for group calls)'
+            description: 'Group ID (for group calls)',
           },
           callType: {
             type: 'string',
             enum: ['video', 'audio'],
-            description: 'Type of call'
+            description: 'Type of call',
           },
           status: {
             type: 'string',
             enum: ['initiated', 'ringing', 'connected', 'ended', 'missed', 'cancelled'],
-            description: 'Call status'
+            description: 'Call status',
           },
           startedAt: {
             type: 'string',
             format: 'date-time',
             nullable: true,
-            description: 'Call start timestamp'
+            description: 'Call start timestamp',
           },
           endedAt: {
             type: 'string',
             format: 'date-time',
             nullable: true,
-            description: 'Call end timestamp'
+            description: 'Call end timestamp',
           },
           durationSeconds: {
             type: 'integer',
-            description: 'Call duration in seconds'
-          }
-        }
+            description: 'Call duration in seconds',
+          },
+        },
       },
       Contact: {
         type: 'object',
@@ -392,29 +393,29 @@ Connect to \`ws://localhost:4000\` for real-time features:
           id: {
             type: 'string',
             format: 'uuid',
-            description: 'Contact relationship ID'
+            description: 'Contact relationship ID',
           },
           userId: {
             type: 'string',
             format: 'uuid',
-            description: 'User ID'
+            description: 'User ID',
           },
           contactId: {
             type: 'string',
             format: 'uuid',
-            description: 'Contact user ID'
+            description: 'Contact user ID',
           },
           status: {
             type: 'string',
             enum: ['pending', 'accepted', 'blocked'],
-            description: 'Contact relationship status'
+            description: 'Contact relationship status',
           },
           addedAt: {
             type: 'string',
             format: 'date-time',
-            description: 'Contact added timestamp'
-          }
-        }
+            description: 'Contact added timestamp',
+          },
+        },
       },
       Notification: {
         type: 'object',
@@ -422,124 +423,124 @@ Connect to \`ws://localhost:4000\` for real-time features:
           id: {
             type: 'string',
             format: 'uuid',
-            description: 'Notification unique identifier'
+            description: 'Notification unique identifier',
           },
           userId: {
             type: 'string',
             format: 'uuid',
-            description: 'Recipient user ID'
+            description: 'Recipient user ID',
           },
           type: {
             type: 'string',
             enum: ['message', 'call', 'contact_request', 'group_invite', 'system'],
-            description: 'Notification type'
+            description: 'Notification type',
           },
           title: {
             type: 'string',
-            description: 'Notification title'
+            description: 'Notification title',
           },
           body: {
             type: 'string',
-            description: 'Notification body text'
+            description: 'Notification body text',
           },
           isRead: {
             type: 'boolean',
-            description: 'Read status'
+            description: 'Read status',
           },
           data: {
             type: 'object',
             nullable: true,
-            description: 'Additional notification data'
+            description: 'Additional notification data',
           },
           createdAt: {
             type: 'string',
             format: 'date-time',
-            description: 'Notification creation timestamp'
-          }
-        }
+            description: 'Notification creation timestamp',
+          },
+        },
       },
       Error: {
         type: 'object',
         properties: {
           success: {
             type: 'boolean',
-            example: false
+            example: false,
           },
           error: {
             type: 'object',
             properties: {
               code: {
                 type: 'string',
-                description: 'Error code'
+                description: 'Error code',
               },
               message: {
                 type: 'string',
-                description: 'Human-readable error message'
+                description: 'Human-readable error message',
               },
               details: {
                 type: 'object',
                 nullable: true,
-                description: 'Additional error details'
-              }
-            }
-          }
-        }
+                description: 'Additional error details',
+              },
+            },
+          },
+        },
       },
       Success: {
         type: 'object',
         properties: {
           success: {
             type: 'boolean',
-            example: true
+            example: true,
           },
           data: {
             type: 'object',
-            description: 'Response data'
+            description: 'Response data',
           },
           message: {
             type: 'string',
             nullable: true,
-            description: 'Optional success message'
-          }
-        }
+            description: 'Optional success message',
+          },
+        },
       },
       PaginatedResponse: {
         type: 'object',
         properties: {
           success: {
             type: 'boolean',
-            example: true
+            example: true,
           },
           data: {
             type: 'array',
             items: {
-              type: 'object'
+              type: 'object',
             },
-            description: 'Paginated data items'
+            description: 'Paginated data items',
           },
           pagination: {
             type: 'object',
             properties: {
               total: {
                 type: 'integer',
-                description: 'Total number of items'
+                description: 'Total number of items',
               },
               page: {
                 type: 'integer',
-                description: 'Current page number'
+                description: 'Current page number',
               },
               limit: {
                 type: 'integer',
-                description: 'Items per page'
+                description: 'Items per page',
               },
               totalPages: {
                 type: 'integer',
-                description: 'Total number of pages'
-              }
-            }
-          }
-        }
-      }
+                description: 'Total number of pages',
+              },
+            },
+          },
+        },
+      },
     },
     responses: {
       Unauthorized: {
@@ -547,58 +548,58 @@ Connect to \`ws://localhost:4000\` for real-time features:
         content: {
           'application/json': {
             schema: {
-              $ref: '#/components/schemas/Error'
+              $ref: '#/components/schemas/Error',
             },
             example: {
               success: false,
               error: {
                 code: 'UNAUTHORIZED',
-                message: 'Authentication required'
-              }
-            }
-          }
-        }
+                message: 'Authentication required',
+              },
+            },
+          },
+        },
       },
       Forbidden: {
         description: 'Insufficient permissions',
         content: {
           'application/json': {
             schema: {
-              $ref: '#/components/schemas/Error'
+              $ref: '#/components/schemas/Error',
             },
             example: {
               success: false,
               error: {
                 code: 'FORBIDDEN',
-                message: 'Insufficient permissions'
-              }
-            }
-          }
-        }
+                message: 'Insufficient permissions',
+              },
+            },
+          },
+        },
       },
       NotFound: {
         description: 'Resource not found',
         content: {
           'application/json': {
             schema: {
-              $ref: '#/components/schemas/Error'
+              $ref: '#/components/schemas/Error',
             },
             example: {
               success: false,
               error: {
                 code: 'NOT_FOUND',
-                message: 'Resource not found'
-              }
-            }
-          }
-        }
+                message: 'Resource not found',
+              },
+            },
+          },
+        },
       },
       ValidationError: {
         description: 'Validation error',
         content: {
           'application/json': {
             schema: {
-              $ref: '#/components/schemas/Error'
+              $ref: '#/components/schemas/Error',
             },
             example: {
               success: false,
@@ -607,19 +608,19 @@ Connect to \`ws://localhost:4000\` for real-time features:
                 message: 'Invalid input data',
                 details: {
                   field: 'email',
-                  issue: 'Invalid email format'
-                }
-              }
-            }
-          }
-        }
+                  issue: 'Invalid email format',
+                },
+              },
+            },
+          },
+        },
       },
       RateLimitExceeded: {
         description: 'Rate limit exceeded',
         content: {
           'application/json': {
             schema: {
-              $ref: '#/components/schemas/Error'
+              $ref: '#/components/schemas/Error',
             },
             example: {
               success: false,
@@ -629,41 +630,41 @@ Connect to \`ws://localhost:4000\` for real-time features:
                 details: {
                   retryAfter: 900,
                   limit: 100,
-                  window: '15 minutes'
-                }
-              }
-            }
-          }
-        }
+                  window: '15 minutes',
+                },
+              },
+            },
+          },
+        },
       },
       ServerError: {
         description: 'Internal server error',
         content: {
           'application/json': {
             schema: {
-              $ref: '#/components/schemas/Error'
+              $ref: '#/components/schemas/Error',
             },
             example: {
               success: false,
               error: {
                 code: 'INTERNAL_SERVER_ERROR',
-                message: 'An unexpected error occurred'
-              }
-            }
-          }
-        }
+                message: 'An unexpected error occurred',
+              },
+            },
+          },
+        },
       },
       SuccessResponse: {
         description: 'Successful operation',
         content: {
           'application/json': {
             schema: {
-              $ref: '#/components/schemas/Success'
-            }
-          }
-        }
-      }
-    }
+              $ref: '#/components/schemas/Success',
+            },
+          },
+        },
+      },
+    },
   },
   tags: [
     {
@@ -679,7 +680,7 @@ Endpoints for user registration, login, logout, password reset, and token manage
 - Email verification (auto-enabled in development)
 - Password reset via email
 - Session management with device tracking
-      `
+      `,
     },
     {
       name: 'Users',
@@ -694,7 +695,7 @@ Endpoints for managing user profiles, settings, and online status.
 - Manage online status
 - Block/unblock users
 - Get user statistics
-      `
+      `,
     },
     {
       name: 'Messages',
@@ -711,7 +712,7 @@ Endpoints for sending and managing messages in 1-to-1 and group chats.
 - File attachments
 - Message search
 - Auto-deletion after 30 days
-      `
+      `,
     },
     {
       name: 'Groups',
@@ -726,7 +727,7 @@ Create and manage group chats with multiple participants.
 - Manage member roles
 - Group avatars and descriptions
 - Maximum 100 users per account limit
-      `
+      `,
     },
     {
       name: 'Contacts',
@@ -740,7 +741,7 @@ Manage user contacts and friend requests.
 - View contact list
 - Block/unblock contacts
 - Search contacts
-      `
+      `,
     },
     {
       name: 'Files',
@@ -755,7 +756,7 @@ Secure file sharing with virus scanning.
 - Thumbnail generation for images
 - Supported formats: images, documents, archives
 - Rate limited: 10 uploads per hour
-      `
+      `,
     },
     {
       name: 'Calls',
@@ -770,7 +771,7 @@ P2P WebRTC-based calling system.
 - Call history
 - STUN/TURN server support
 - Direct peer-to-peer media streams
-      `
+      `,
     },
     {
       name: 'Notifications',
@@ -785,7 +786,7 @@ Real-time and push notification management.
 - Notification preferences
 - Firebase Cloud Messaging integration
 - WebSocket real-time delivery
-      `
+      `,
     },
     {
       name: 'Admin',
@@ -801,7 +802,7 @@ Admin-only endpoints for system management.
 - Audit logs
 - Bulk operations
 - Platform announcements
-      `
+      `,
     },
     {
       name: 'Health',
@@ -816,19 +817,15 @@ System health and monitoring endpoints.
 - Database connection status
 - Redis connection status
 - Prometheus metrics
-      `
-    }
-  ]
+      `,
+    },
+  ],
 };
 
 const options = {
   swaggerDefinition,
   // Path to the API routes files with JSDoc comments
-  apis: [
-    './src/routes/*.js',
-    './src/controllers/*.js',
-    './src/models/*.js'
-  ]
+  apis: ['./src/routes/*.js', './src/controllers/*.js', './src/models/*.js'],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);

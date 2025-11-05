@@ -66,7 +66,7 @@ class MessageService {
       senderId: socket.userId,
       recipientId: messageData.recipientId,
       groupId: messageData.groupId,
-      socketId: socket.id
+      socketId: socket.id,
     });
 
     try {
@@ -121,12 +121,12 @@ class MessageService {
         if (!userSockets || userSockets.size === 0) {
           const devices = await Device.findAll({ where: { userId: recipientId } });
           for (const device of devices) {
-            fcmService.sendPushNotification(
-              device.token,
-              `New message from ${socket.username}`,
-              content,
-              { messageId: messageId.toString() }
-            );
+            await fcmService.sendPushNotification(device.token, `${socket.username}`, content, {
+              type: 'message',
+              messageId: messageId.toString(),
+              conversationId: recipientId.toString(), // For direct messages, we can use recipientId
+              senderId: senderId.toString(),
+            });
           }
         }
 
@@ -166,6 +166,11 @@ class MessageService {
 
         await Promise.all(statusPromises);
 
+        // Get group details for notification
+        const group = await Group.findByPk(groupId, {
+          attributes: ['name'],
+        });
+
         // Broadcast to group room with member information
         getIO()
           .to(`group:${groupId}`)
@@ -180,6 +185,33 @@ class MessageService {
             delivered: false,
             read: false,
           });
+
+        // Send push notifications to offline group members
+        const wsService = getWebSocketService();
+        for (const member of groupMembers) {
+          if (member.userId !== senderId) {
+            const userSockets = wsService.getUserSockets(member.userId);
+            if (!userSockets || userSockets.size === 0) {
+              // User is offline, send push notification
+              const devices = await Device.findAll({ where: { userId: member.userId } });
+              const groupName = group?.name || 'Group';
+
+              for (const device of devices) {
+                await fcmService.sendPushNotification(
+                  device.token,
+                  `${groupName}`,
+                  `${socket.username}: ${content}`,
+                  {
+                    type: 'group_message',
+                    messageId: messageId.toString(),
+                    groupId: groupId.toString(),
+                    senderId: senderId.toString(),
+                  }
+                );
+              }
+            }
+          }
+        }
 
         // Track delivery for all members
         for (const member of groupMembers) {
@@ -280,13 +312,15 @@ class MessageService {
         timestamp: timestamp || new Date().toISOString(),
       });
 
-      logger.info(`👁️ Message read: ${messageId} by ${userId}, notified sender: ${message.senderId}`);
+      logger.info(
+        `👁️ Message read: ${messageId} by ${userId}, notified sender: ${message.senderId}`
+      );
     } catch (error) {
       logger.error('❌ Error handling message read:', {
         error: error.message,
         stack: error.stack,
         messageId: readData?.messageId,
-        userId: socket?.userId
+        userId: socket?.userId,
       });
     }
   }
@@ -375,7 +409,7 @@ class MessageService {
 
   // Handle cross-server message delivery (Redis pub/sub)
   async handleCrossServerMessageDelivery(data) {
-    const { messageId, recipientId, messageData } = data;
+    const { recipientId, messageData } = data;
 
     // Broadcast to local users
     getIO()
@@ -407,7 +441,7 @@ class MessageService {
       userId,
       event,
       room: `user:${userId}`,
-      hasRedis: !!this.redisClient
+      hasRedis: !!this.redisClient,
     });
 
     // SKIP REDIS PUB/SUB - Redis client is in subscriber mode and can't publish
@@ -566,12 +600,14 @@ class MessageService {
   // Update message read status with proper database integration
   async updateMessageReadStatus(messageId, userId, timestamp = null) {
     try {
-      logger.debug(`📖 Attempting to update read status for message: ${messageId} by user: ${userId}`);
+      logger.debug(
+        `📖 Attempting to update read status for message: ${messageId} by user: ${userId}`
+      );
 
       // Validate message exists
       const message = await Message.findByPk(messageId, {
         raw: false, // Get Sequelize instance
-        attributes: ['id', 'senderId', 'recipientId', 'groupId', 'status', 'readAt']
+        attributes: ['id', 'senderId', 'recipientId', 'groupId', 'status', 'readAt'],
       });
 
       if (!message) {
@@ -585,7 +621,7 @@ class MessageService {
         senderId: message.senderId,
         recipientId: message.recipientId,
         groupId: message.groupId,
-        status: message.status
+        status: message.status,
       });
 
       // Validate user is the recipient (skip for group messages)
@@ -596,7 +632,9 @@ class MessageService {
 
       // Handle group messages - update GroupMessageStatus instead of Message.status
       if (message.groupId) {
-        logger.debug(`📖 Handling group message read status for message: ${messageId} by user: ${userId}`);
+        logger.debug(
+          `📖 Handling group message read status for message: ${messageId} by user: ${userId}`
+        );
 
         // Find or create GroupMessageStatus entry
         const [groupStatus, created] = await GroupMessageStatus.findOrCreate({
@@ -672,7 +710,7 @@ class MessageService {
         error: error.message,
         stack: error.stack,
         messageId,
-        userId
+        userId,
       });
       // Don't throw - return gracefully to allow broadcasting to continue
       return { alreadyRead: false, message: null };

@@ -128,7 +128,6 @@ class FileUploadService {
     } = options;
 
     try {
-
       // Validate file with magic number verification
       const validatedMimeType = await fileValidator.validateFile(file);
 
@@ -187,7 +186,10 @@ class FileUploadService {
       if (fileValidator.isImageFile(validatedMimeType)) {
         try {
           // Verify file exists before processing
-          const fileExists = await fs.access(filePath).then(() => true).catch(() => false);
+          const fileExists = await fs
+            .access(filePath)
+            .then(() => true)
+            .catch(() => false);
           if (!fileExists) {
             logger.warn(`File not found for image processing: ${filePath}`);
           } else {
@@ -336,13 +338,20 @@ class FileUploadService {
         logger.warn('Archive file exceeds safe scanning limit (potential ZIP bomb)', {
           filePath,
           fileSize: stats.size,
-          limit: MAX_SCAN_SIZE
+          limit: MAX_SCAN_SIZE,
         });
 
         // Quarantine suspicious archive
-        await this.quarantineInfectedFile(filePath, ['Potential ZIP bomb - file too large'], fileId, userId);
+        await this.quarantineInfectedFile(
+          filePath,
+          ['Potential ZIP bomb - file too large'],
+          fileId,
+          userId
+        );
 
-        throw new Error('Compressed file exceeds safe scanning limit (100MB). File quarantined for manual review.');
+        throw new Error(
+          'Compressed file exceeds safe scanning limit (100MB). File quarantined for manual review.'
+        );
       }
 
       if (!this.clamscan) {
@@ -351,7 +360,7 @@ class FileUploadService {
         if (fileId) {
           await this.updateFileScanStatus(fileId, 'clean', {
             reason: 'Scanner not available - defaulting to clean',
-            scanDate: new Date().toISOString()
+            scanDate: new Date().toISOString(),
           });
         }
         // FIX BUG-F002: Return 'clean' status for files not yet in database (Windows dev environment)

@@ -1,9 +1,9 @@
 import { Op } from 'sequelize';
 
-import { Group, GroupMember, User } from '../models/index.js';
 import { sequelize } from '../config/database.js';
-import logger from '../utils/logger.js';
+import { Group, GroupMember, User } from '../models/index.js';
 import { getIO, WS_EVENTS } from '../services/websocket.js';
+import logger from '../utils/logger.js';
 
 /**
  * Groups Controller
@@ -43,10 +43,10 @@ class GroupsController {
           const users = await User.findAll({
             where: {
               id: uniqueMembers,
-              approvalStatus: 'approved'
+              approvalStatus: 'approved',
             },
             attributes: ['id'],
-            transaction
+            transaction,
           });
 
           if (users.length !== uniqueMembers.length) {
@@ -68,34 +68,43 @@ class GroupsController {
 
       // FIX BUG-G002: Wrap all operations in transaction
       // Create the group
-      const group = await Group.create({
-        name,
-        description,
-        groupType,
-        avatar,
-        creatorId: userId,
-      }, { transaction });
+      const group = await Group.create(
+        {
+          name,
+          description,
+          groupType,
+          avatar,
+          creatorId: userId,
+        },
+        { transaction }
+      );
 
       // Add creator as admin
-      await GroupMember.create({
-        groupId: group.id,
-        userId: userId,
-        role: 'admin',
-        invitedBy: userId,
-        joinedAt: new Date(),
-        isActive: true,
-      }, { transaction });
-
-      // Add validated initial members
-      for (const memberId of validatedMembers) {
-        await GroupMember.create({
+      await GroupMember.create(
+        {
           groupId: group.id,
-          userId: memberId,
-          role: 'member',
+          userId: userId,
+          role: 'admin',
           invitedBy: userId,
           joinedAt: new Date(),
           isActive: true,
-        }, { transaction });
+        },
+        { transaction }
+      );
+
+      // Add validated initial members
+      for (const memberId of validatedMembers) {
+        await GroupMember.create(
+          {
+            groupId: group.id,
+            userId: memberId,
+            role: 'member',
+            invitedBy: userId,
+            joinedAt: new Date(),
+            isActive: true,
+          },
+          { transaction }
+        );
       }
 
       // Commit transaction before fetching group data
@@ -689,14 +698,17 @@ class GroupsController {
       }
 
       // Add member to group within transaction
-      await GroupMember.create({
-        groupId,
-        userId: memberId,
-        role,
-        invitedBy: userId,
-        joinedAt: new Date(),
-        isActive: true,
-      }, { transaction });
+      await GroupMember.create(
+        {
+          groupId,
+          userId: memberId,
+          role,
+          invitedBy: userId,
+          joinedAt: new Date(),
+          isActive: true,
+        },
+        { transaction }
+      );
 
       // Fetch updated group data within transaction
       const updatedGroup = await Group.findByPk(groupId, {
@@ -819,7 +831,15 @@ class GroupsController {
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'status', 'lastLoginAt'],
+                attributes: [
+                  'id',
+                  'username',
+                  'firstName',
+                  'lastName',
+                  'avatar',
+                  'status',
+                  'lastLoginAt',
+                ],
               },
             ],
           },
@@ -1044,7 +1064,7 @@ class GroupsController {
       // Check if user has admin permissions
       const membership = await GroupMember.findOne({
         where: { groupId, userId, isActive: true },
-        transaction
+        transaction,
       });
 
       if (!membership || !membership.isAdmin()) {
@@ -1062,7 +1082,7 @@ class GroupsController {
       const memberToUpdate = await GroupMember.findOne({
         where: { groupId, userId: memberId, isActive: true },
         lock: transaction.LOCK.UPDATE,
-        transaction
+        transaction,
       });
 
       if (!memberToUpdate) {
@@ -1092,7 +1112,7 @@ class GroupsController {
       if (memberToUpdate.role === 'admin' && role !== 'admin') {
         const adminCount = await GroupMember.count({
           where: { groupId, role: 'admin', isActive: true },
-          transaction
+          transaction,
         });
 
         if (adminCount <= 1) {
@@ -1250,7 +1270,7 @@ class GroupsController {
             where: {
               groupId,
               userId: { [Op.ne]: userId },
-              isActive: true
+              isActive: true,
             },
             order: [['joinedAt', 'ASC']],
             transaction,
@@ -1268,10 +1288,13 @@ class GroupsController {
       }
 
       // Mark as left within transaction
-      await membership.update({
-        leftAt: new Date(),
-        isActive: false,
-      }, { transaction });
+      await membership.update(
+        {
+          leftAt: new Date(),
+          isActive: false,
+        },
+        { transaction }
+      );
 
       await transaction.commit();
 

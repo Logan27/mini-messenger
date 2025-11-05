@@ -3,12 +3,42 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  username?: string;
   avatar?: string;
   role: 'user' | 'admin';
   isApproved: boolean;
   createdAt: string;
   lastSeen?: string;
   isOnline?: boolean;
+  profilePicture?: string;
+  onlineStatus?: string;
+}
+
+// Contact types
+export interface Contact {
+  id: string;
+  status: 'pending' | 'accepted' | 'blocked';
+  userId: string; // Request sender
+  contactUserId: string; // Request recipient
+  nickname?: string;
+  notes?: string;
+  isFavorite: boolean;
+  isMuted: boolean;
+  lastContactAt?: string;
+  blockedAt?: string;
+  user: User;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ContactRequest {
+  id: string;
+  status: 'pending';
+  userId: string;
+  contactUserId: string;
+  user: User;
+  createdAt: string;
+  isIncoming: boolean; // true if current user is recipient
 }
 
 export interface AuthState {

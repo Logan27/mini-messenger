@@ -186,9 +186,49 @@ export const userAPI = {
 
   searchUsers: (query: string) =>
     api.get(`/api/v1/users/search?q=${encodeURIComponent(query)}`),
+};
 
-  getContacts: () =>
-    api.get('/api/v1/contacts'),
+export const contactAPI = {
+  getContacts: (status?: 'pending' | 'accepted' | 'blocked', page = 1, limit = 50) => {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+    return api.get(`/api/contacts?${params.toString()}`);
+  },
+
+  addContact: (userId: string, nickname?: string, notes?: string) =>
+    api.post('/api/contacts', { userId, nickname, notes }),
+
+  acceptContact: (contactId: string) =>
+    api.post(`/api/contacts/${contactId}/accept`),
+
+  rejectContact: (contactId: string) =>
+    api.post(`/api/contacts/${contactId}/reject`),
+
+  deleteContact: (contactId: string) =>
+    api.delete(`/api/contacts/${contactId}`),
+
+  blockContact: (contactId: string) =>
+    api.post(`/api/contacts/${contactId}/block`),
+
+  unblockContact: (contactId: string) =>
+    api.delete(`/api/contacts/${contactId}/block`),
+
+  favoriteContact: (contactId: string) =>
+    api.post(`/api/contacts/${contactId}/favorite`),
+
+  unfavoriteContact: (contactId: string) =>
+    api.delete(`/api/contacts/${contactId}/favorite`),
+
+  updateContact: (contactId: string, data: { nickname?: string; notes?: string }) =>
+    api.patch(`/api/contacts/${contactId}`, data),
+
+  muteContact: (contactId: string) =>
+    api.post(`/api/contacts/${contactId}/mute`),
+
+  unmuteContact: (contactId: string) =>
+    api.delete(`/api/contacts/${contactId}/mute`),
 };
 
 export default api;

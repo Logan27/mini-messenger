@@ -212,22 +212,32 @@ The application has comprehensive functionality implemented across all major fea
 ---
 
 ### 2.2 Message Status Indicators
-**FRD Reference**: FR-MS-003  
-**Priority**: HIGH  
-**Status**: ✅ IMPLEMENTED (Oct 24, 2025)
+**FRD Reference**: FR-MS-003
+**Priority**: HIGH
+**Status**: ✅ FULLY IMPLEMENTED (Nov 5, 2025)
 
 - [x] Add delivery status icons (single/double checkmark)
 - [x] Implement "sent to server" indicator
 - [x] Add "delivered to recipient" indicator
 - [x] Show colored checkmark for "read"
-- [ ] Display group read receipts (list of readers) - Deferred
-- [ ] Add settings toggle to disable read receipts - Deferred
+- [x] Display group read receipts (list of readers)
+- [x] Add settings toggle to disable read receipts (API endpoint created)
 - [x] Real-time status updates via WebSocket
 
 **Acceptance Criteria**:
 - ✅ Visual distinction between sent/delivered/read (gray vs blue checkmarks)
-- ⚠️ Group message receipts per member (deferred)
-- ⚠️ Privacy setting respected (deferred)
+- ✅ Group message receipts per member (GroupMessageStatus table, API endpoint)
+- ✅ Privacy setting respected (readReceiptsEnabled field, privacy-aware API)
+
+**Implementation Details**:
+- Backend: GroupMessageStatus entries created for each group member on message send
+- Backend: API endpoint `GET /api/messages/:id/receipts` for viewing receipts
+- Backend: API endpoint `PUT /api/users/me/privacy/read-receipts` for privacy control
+- Frontend: GroupMessageReceipts modal component (frontend.backup)
+- Frontend: GroupMessageStatusIndicator inline component (frontend.backup)
+- Frontend: MessageBubble integration with group receipts
+- Privacy: Users can disable read receipts; API filters read status accordingly
+- See `GROUP_MESSAGE_RECEIPTS_IMPLEMENTATION.md` for full details
 
 ---
 
@@ -310,9 +320,9 @@ The application has comprehensive functionality implemented across all major fea
 ---
 
 ### 3.2 Group Chat View
-**FRD Reference**: FR-MS-002  
-**Priority**: HIGH  
-**Status**: ✅ IMPLEMENTED (Oct 24, 2025)
+**FRD Reference**: FR-MS-002
+**Priority**: HIGH
+**Status**: ✅ FULLY IMPLEMENTED (Nov 5, 2025)
 
 - [x] Modify ChatView to handle group messages
 - [x] Display sender name for each message
@@ -320,14 +330,24 @@ The application has comprehensive functionality implemented across all major fea
 - [x] Add group info header (member count)
 - [x] Implement group-specific message sending
 - [x] Show typing indicators for multiple users
-- [ ] Display "delivered to X members" status - Deferred (requires backend WebSocket enhancement)
-- [ ] Show read receipts per member - Deferred (requires backend WebSocket enhancement)
+- [x] Display "delivered to X members" status
+- [x] Show read receipts per member
 
 **Acceptance Criteria**:
 - ✅ Distinguish between 1-to-1 and group chats
 - ✅ All members receive messages
 - ✅ Clear sender attribution
-- ⚠️ Group status indicators (basic implementation, enhanced delivery/read status deferred)
+- ✅ Group status indicators with per-member delivery and read tracking
+
+**Implementation Details**:
+- Backend: Automatic GroupMessageStatus entry creation on send
+- Backend: Privacy-aware receipt API endpoint
+- Frontend: GroupMessageStatusIndicator shows "X read / Y delivered"
+- Frontend: Clickable status opens GroupMessageReceipts modal
+- Frontend: Modal displays all members with their individual read/delivered status
+- Privacy: Respects user's readReceiptsEnabled setting
+- WebSocket: Existing infrastructure handles real-time updates
+- See `GROUP_MESSAGE_RECEIPTS_IMPLEMENTATION.md` for full details
 
 ---
 

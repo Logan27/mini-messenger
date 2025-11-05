@@ -17,7 +17,19 @@ export const MessageReactions = ({
   currentUserId,
   onReactionClick
 }: MessageReactionsProps) => {
-  if (!reactions || Object.keys(reactions).length === 0) return null;
+  console.log('🎨 MessageReactions rendering:', {
+    reactions,
+    reactionsType: typeof reactions,
+    reactionsKeys: reactions ? Object.keys(reactions) : [],
+    currentUserId,
+  });
+
+  if (!reactions || Object.keys(reactions).length === 0) {
+    console.log('❌ No reactions to display');
+    return null;
+  }
+
+  console.log('✅ Rendering reactions:', Object.entries(reactions));
 
   return (
     <div className="flex flex-wrap gap-1 mt-1">

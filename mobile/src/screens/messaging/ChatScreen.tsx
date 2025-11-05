@@ -19,7 +19,7 @@ import { useMessagingStore } from '../../stores/messagingStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Message, Conversation } from '../../types';
 import { wsService } from '../../services/api';
-import MessageActionsModal from '../../components/messaging/MessageActionsModal';
+import MessageActionsSheet from '../../components/messaging/MessageActionsSheet';
 import MessageStatusIndicator, { MessageStatus } from '../../components/messaging/MessageStatusIndicator';
 import FileAttachmentPicker from '../../components/messaging/FileAttachmentPicker';
 import ImageViewerModal from '../../components/messaging/ImageViewerModal';
@@ -563,16 +563,16 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         )}
       </View>
 
-      {/* Message Actions Modal */}
-      <MessageActionsModal
+      {/* Message Actions Sheet */}
+      <MessageActionsSheet
         visible={showActionsModal}
         message={selectedMessage}
-        isMyMessage={selectedMessage?.senderId === user?.id}
+        isOwnMessage={selectedMessage?.senderId === user?.id}
         onClose={() => setShowActionsModal(false)}
-        onEdit={handleEditMessage}
-        onDelete={handleDeleteMessage}
-        onReply={handleReplyMessage}
-        onCopy={handleCopyMessage}
+        onEdit={selectedMessage ? () => handleEditMessage(selectedMessage) : undefined}
+        onDelete={(deleteForEveryone) => selectedMessage && handleDeleteMessage(selectedMessage, deleteForEveryone)}
+        onReply={() => selectedMessage && handleReplyMessage(selectedMessage)}
+        onCopy={() => selectedMessage && handleCopyMessage(selectedMessage)}
       />
 
       {/* File Attachment Picker */}

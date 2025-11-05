@@ -95,6 +95,15 @@ export interface MessageReaction {
   users: string[]; // Array of user IDs who reacted
 }
 
+export interface LinkPreviewData {
+  url: string;
+  title?: string;
+  description?: string;
+  image?: string;
+  favicon?: string;
+  siteName?: string;
+}
+
 export interface Message {
   id: string;
   conversationId: string;
@@ -109,6 +118,7 @@ export interface Message {
   replyTo?: string;
   file?: FileData;
   reactions?: MessageReaction[];
+  linkPreview?: LinkPreviewData;
   metadata?: Record<string, any>;
 }
 

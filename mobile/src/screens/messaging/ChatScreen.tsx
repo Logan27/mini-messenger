@@ -27,6 +27,8 @@ import TypingIndicator from '../../components/messaging/TypingIndicator';
 import OnlineStatusBadge from '../../components/common/OnlineStatusBadge';
 import ReactionPicker from '../../components/messaging/ReactionPicker';
 import WhoReactedModal from '../../components/messaging/WhoReactedModal';
+import LinkPreview from '../../components/messaging/LinkPreview';
+import { extractFirstUrl, fetchLinkMetadata, containsUrl } from '../../utils/linkPreview';
 
 interface ChatScreenProps {
   route: {
@@ -78,6 +80,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const [reactionTargetMessage, setReactionTargetMessage] = useState<Message | null>(null);
   const [showWhoReacted, setShowWhoReacted] = useState(false);
   const [whoReactedMessage, setWhoReactedMessage] = useState<Message | null>(null);
+  const [linkPreviewsLoading, setLinkPreviewsLoading] = useState<Set<string>>(new Set());
 
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -107,6 +110,48 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
+  }, [conversationMessages]);
+
+  useEffect(() => {
+    // Auto-fetch link previews for text messages with URLs
+    const fetchLinkPreviews = async () => {
+      for (const message of conversationMessages) {
+        // Only process text messages without existing previews
+        if (
+          message.type === 'text' &&
+          !message.linkPreview &&
+          !linkPreviewsLoading.has(message.id) &&
+          containsUrl(message.content)
+        ) {
+          const url = extractFirstUrl(message.content);
+          if (url) {
+            // Mark as loading
+            setLinkPreviewsLoading(prev => new Set([...prev, message.id]));
+
+            try {
+              const metadata = await fetchLinkMetadata(url);
+              if (metadata) {
+                // Update message with link preview
+                // This would normally be done through the store
+                // For now, we'll just remove from loading state
+                // TODO: Add updateMessage with linkPreview to messaging store
+              }
+            } catch (error) {
+              console.error('Failed to fetch link preview:', error);
+            } finally {
+              // Remove from loading state
+              setLinkPreviewsLoading(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(message.id);
+                return newSet;
+              });
+            }
+          }
+        }
+      }
+    };
+
+    fetchLinkPreviews();
   }, [conversationMessages]);
 
   const handleSendMessage = useCallback(async () => {
@@ -439,12 +484,21 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
 
           {/* Message content */}
           {message.type === 'text' ? (
-            <Text style={[
-              styles.messageText,
-              isMyMessage ? styles.myMessageText : styles.otherMessageText,
-            ]}>
-              {message.content}
-            </Text>
+            <>
+              <Text style={[
+                styles.messageText,
+                isMyMessage ? styles.myMessageText : styles.otherMessageText,
+              ]}>
+                {message.content}
+              </Text>
+              {/* Link Preview */}
+              {message.linkPreview && (
+                <LinkPreview
+                  metadata={message.linkPreview}
+                  isLoading={linkPreviewsLoading.has(message.id)}
+                />
+              )}
+            </>
           ) : message.type === 'image' ? (
             <TouchableOpacity
               style={styles.imageContainer}

@@ -66,6 +66,10 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Message[]>([]);
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
 
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -268,6 +272,61 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
       setIsLoadingMore(false);
     }
   }, [conversationId, conversationMessages, isLoadingMore, hasMoreMessages]);
+
+  const handleSearchToggle = useCallback(() => {
+    setShowSearch(!showSearch);
+    if (showSearch) {
+      // Clear search when closing
+      setSearchQuery('');
+      setSearchResults([]);
+      setCurrentSearchIndex(0);
+    }
+  }, [showSearch]);
+
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+
+    if (!query.trim()) {
+      setSearchResults([]);
+      setCurrentSearchIndex(0);
+      return;
+    }
+
+    // Filter messages that contain the search query (case-insensitive)
+    const results = conversationMessages.filter(msg =>
+      msg.type === 'text' && msg.content.toLowerCase().includes(query.toLowerCase())
+    );
+
+    setSearchResults(results);
+    setCurrentSearchIndex(0);
+
+    // Scroll to first result if exists
+    if (results.length > 0) {
+      const firstResultIndex = conversationMessages.findIndex(m => m.id === results[0].id);
+      if (firstResultIndex !== -1) {
+        flatListRef.current?.scrollToIndex({ index: firstResultIndex, animated: true });
+      }
+    }
+  }, [conversationMessages]);
+
+  const handleSearchNavigate = useCallback((direction: 'next' | 'prev') => {
+    if (searchResults.length === 0) return;
+
+    let newIndex = currentSearchIndex;
+    if (direction === 'next') {
+      newIndex = (currentSearchIndex + 1) % searchResults.length;
+    } else {
+      newIndex = currentSearchIndex === 0 ? searchResults.length - 1 : currentSearchIndex - 1;
+    }
+
+    setCurrentSearchIndex(newIndex);
+
+    // Scroll to the result
+    const messageIndex = conversationMessages.findIndex(m => m.id === searchResults[newIndex].id);
+    if (messageIndex !== -1) {
+      flatListRef.current?.scrollToIndex({ index: messageIndex, animated: true });
+    }
+  }, [searchResults, currentSearchIndex, conversationMessages]);
 
   const getMessageStatus = (message: Message): MessageStatus => {
     if (message.senderId !== user?.id) return 'sent';
@@ -508,10 +567,53 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           </Text>
         </TouchableOpacity>
 
+        <TouchableOpacity style={styles.headerButton} onPress={handleSearchToggle}>
+          <Ionicons name="search" size={24} color="#2563eb" />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.headerButton}>
           <Ionicons name="call" size={24} color="#2563eb" />
         </TouchableOpacity>
       </View>
+
+      {/* Search Bar */}
+      {showSearch && (
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search messages..."
+            value={searchQuery}
+            onChangeText={handleSearchChange}
+            autoFocus
+          />
+          {searchQuery.length > 0 && (
+            <>
+              <Text style={styles.searchCount}>
+                {searchResults.length > 0
+                  ? `${currentSearchIndex + 1}/${searchResults.length}`
+                  : '0'}
+              </Text>
+              <TouchableOpacity
+                style={styles.searchNavButton}
+                onPress={() => handleSearchNavigate('prev')}
+                disabled={searchResults.length === 0}
+              >
+                <Ionicons name="chevron-up" size={20} color={searchResults.length > 0 ? "#2563eb" : "#ccc"} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.searchNavButton}
+                onPress={() => handleSearchNavigate('next')}
+                disabled={searchResults.length === 0}
+              >
+                <Ionicons name="chevron-down" size={20} color={searchResults.length > 0 ? "#2563eb" : "#ccc"} />
+              </TouchableOpacity>
+            </>
+          )}
+          <TouchableOpacity style={styles.searchCloseButton} onPress={handleSearchToggle}>
+            <Ionicons name="close" size={20} color="#666" />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Messages */}
       <FlatList
@@ -669,6 +771,43 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     marginLeft: 15,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: '#f9fafb',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  searchCount: {
+    fontSize: 13,
+    color: '#666',
+    marginLeft: 10,
+    minWidth: 50,
+    textAlign: 'center',
+  },
+  searchNavButton: {
+    padding: 4,
+    marginLeft: 4,
+  },
+  searchCloseButton: {
+    padding: 4,
+    marginLeft: 8,
   },
   messagesContainer: {
     padding: 15,

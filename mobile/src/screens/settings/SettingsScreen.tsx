@@ -104,6 +104,13 @@ const SettingsScreen: React.FC = () => {
       title: 'SECURITY',
       items: [
         {
+          icon: 'shield-checkmark',
+          label: 'Two-Factor Authentication',
+          subtitle: 'Add extra security to your account',
+          onPress: () => navigation.navigate('TwoFactorAuth'),
+          showChevron: true,
+        },
+        {
           icon: 'finger-print',
           label: 'Biometric Authentication',
           subtitle: biometricEnabled ? 'Enabled' : 'Disabled',
@@ -124,6 +131,13 @@ const SettingsScreen: React.FC = () => {
           label: 'Active Sessions',
           subtitle: 'Manage logged-in devices',
           onPress: () => Alert.alert('Sessions', 'Session management coming soon!'),
+          showChevron: true,
+        },
+        {
+          icon: 'ban',
+          label: 'Blocked Contacts',
+          subtitle: 'Manage blocked users',
+          onPress: () => navigation.navigate('BlockedContacts'),
           showChevron: true,
         },
       ],
@@ -173,9 +187,23 @@ const SettingsScreen: React.FC = () => {
         },
       ],
     },
+    {
+      title: 'DANGER ZONE',
+      items: [
+        {
+          icon: 'trash',
+          label: 'Delete Account',
+          subtitle: 'Permanently delete your account and data',
+          onPress: () => navigation.navigate('AccountDeletion'),
+          showChevron: true,
+          isDanger: true,
+        },
+      ],
+    },
   ];
 
   const renderSettingItem = (item: any, isLast: boolean) => {
+    const isDanger = item.isDanger || false;
     return (
       <TouchableOpacity
         key={item.label}
@@ -186,10 +214,10 @@ const SettingsScreen: React.FC = () => {
       >
         <View style={styles.settingItemLeft}>
           <View style={styles.iconContainer}>
-            <Ionicons name={item.icon as any} size={24} color="#007AFF" />
+            <Ionicons name={item.icon as any} size={24} color={isDanger ? "#ef4444" : "#007AFF"} />
           </View>
           <View style={styles.settingItemContent}>
-            <Text style={styles.settingItemLabel}>{item.label}</Text>
+            <Text style={[styles.settingItemLabel, isDanger && styles.dangerText]}>{item.label}</Text>
             {item.subtitle && (
               <Text style={styles.settingItemSubtitle}>{item.subtitle}</Text>
             )}
@@ -204,7 +232,7 @@ const SettingsScreen: React.FC = () => {
             thumbColor="#fff"
           />
         ) : item.showChevron ? (
-          <Ionicons name="chevron-forward" size={20} color="#ccc" />
+          <Ionicons name="chevron-forward" size={20} color={isDanger ? "#ef4444" : "#ccc"} />
         ) : null}
       </TouchableOpacity>
     );
@@ -380,6 +408,9 @@ const styles = StyleSheet.create({
   settingItemSubtitle: {
     fontSize: 13,
     color: '#666',
+  },
+  dangerText: {
+    color: '#ef4444',
   },
   bottomSpacing: {
     height: 32,

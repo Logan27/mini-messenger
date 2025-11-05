@@ -187,10 +187,14 @@ export type RootStackParamList = {
   AppearanceSettings: undefined;
   DataStorageSettings: undefined;
   AddContact: undefined;
+  UserSearch: undefined;
   ContactRequests: undefined;
   ContactProfile: { contactId: string };
+  BlockedContacts: undefined;
   CreateGroup: undefined;
   GroupInfo: { groupId: string };
+  TwoFactorAuth: undefined;
+  AccountDeletion: undefined;
 };
 
 export type AuthStackParamList = {

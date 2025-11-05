@@ -28,6 +28,10 @@ import NotificationSettingsScreen from '../screens/settings/NotificationSettings
 import PrivacySettingsScreen from '../screens/settings/PrivacySettingsScreen';
 import AppearanceSettingsScreen from '../screens/settings/AppearanceSettingsScreen';
 import DataStorageSettingsScreen from '../screens/settings/DataStorageSettingsScreen';
+import BlockedContactsScreen from '../screens/contacts/BlockedContactsScreen';
+import AccountDeletionScreen from '../screens/settings/AccountDeletionScreen';
+import TwoFactorAuthScreen from '../screens/settings/TwoFactorAuthScreen';
+import UserSearchScreen from '../screens/contacts/UserSearchScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -154,6 +158,22 @@ const MainNavigator = () => {
       <Stack.Screen
         name="DataStorageSettings"
         component={DataStorageSettingsScreen}
+      />
+      <Stack.Screen
+        name="UserSearch"
+        component={UserSearchScreen}
+      />
+      <Stack.Screen
+        name="BlockedContacts"
+        component={BlockedContactsScreen}
+      />
+      <Stack.Screen
+        name="TwoFactorAuth"
+        component={TwoFactorAuthScreen}
+      />
+      <Stack.Screen
+        name="AccountDeletion"
+        component={AccountDeletionScreen}
       />
     </Stack.Navigator>
   );

@@ -212,15 +212,16 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
                   </span>
                 )}
               </div>
-
-              {message.reactions && Object.keys(message.reactions).length > 0 && (
-                <MessageReactions
-                  reactions={message.reactions}
-                  currentUserId={currentUserId}
-                  onReactionClick={onReaction ? (emoji) => onReaction(message.id, emoji) : undefined}
-                />
-              )}
             </div>
+
+            {/* Message Reactions - moved outside the rounded bubble */}
+            {message.reactions && Object.keys(message.reactions).length > 0 && (
+              <MessageReactions
+                reactions={message.reactions}
+                currentUserId={currentUserId}
+                onReactionClick={onReaction ? (emoji) => onReaction(message.id, emoji) : undefined}
+              />
+            )}
           </div>
 
           {/* Reaction Picker - shown on hover */}

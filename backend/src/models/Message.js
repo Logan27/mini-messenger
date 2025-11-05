@@ -196,6 +196,12 @@ export const Message = sequelize.define(
       allowNull: true,
       defaultValue: {},
     },
+    reactions: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: {},
+      comment: 'Message reactions: { "👍": ["userId1", "userId2"], "❤️": ["userId3"] }',
+    },
     fileName: {
       type: DataTypes.STRING(255),
       allowNull: true,

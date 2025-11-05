@@ -9,7 +9,6 @@ import { userRateLimit } from '../middleware/rateLimit.js';
 import { Contact } from '../models/Contact.js';
 import { Group } from '../models/Group.js';
 import { GroupMember } from '../models/GroupMember.js';
-import { GroupMessageStatus } from '../models/GroupMessageStatus.js';
 import { Message } from '../models/Message.js';
 import { User } from '../models/User.js';
 import messageService from '../services/messageService.js';
@@ -207,33 +206,6 @@ router.post(
           metadata: metadata || {},
         }, { transaction });
 
-        // For group messages, create GroupMessageStatus entries for each member
-        if (groupId) {
-          const groupMembers = await GroupMember.findAll({
-            where: {
-              groupId,
-              isActive: true,
-            },
-            attributes: ['userId'],
-            transaction,
-          });
-
-          // Create status entries for all group members except sender
-          const statusEntries = groupMembers
-            .filter(member => member.userId !== senderId)
-            .map(member => ({
-              id: uuidv4(),
-              messageId,
-              userId: member.userId,
-              status: 'delivered', // Initially marked as delivered when sent
-              deliveredAt: new Date(),
-            }));
-
-          if (statusEntries.length > 0) {
-            await GroupMessageStatus.bulkCreate(statusEntries, { transaction });
-          }
-        }
-
         // Get the created message with sender info
         const messageWithSender = await Message.findByPk(messageId, {
           include: [
@@ -274,6 +246,7 @@ router.post(
               status: messageWithSender.status,
               replyToId: messageWithSender.replyToId,
               metadata: messageWithSender.metadata,
+              reactions: messageWithSender.reactions || {},
               createdAt: messageWithSender.createdAt,
               sender: messageWithSender.sender
                 ? {
@@ -328,6 +301,7 @@ router.post(
             status: messageWithSender.status,
             replyToId: messageWithSender.replyToId,
             metadata: messageWithSender.metadata,
+            reactions: messageWithSender.reactions || {},
             createdAt: messageWithSender.createdAt,
             updatedAt: messageWithSender.updatedAt,
             sender: messageWithSender.sender
@@ -452,8 +426,8 @@ router.get(
       .optional()
       .isInt({ min: 1, max: 100 })
       .withMessage('Limit must be between 1 and 100'),
-    query('before').optional().isISO8601().withMessage('Invalid before timestamp format'),
-    query('after').optional().isISO8601().withMessage('Invalid after timestamp format'),
+    query('before').optional().isUUID().withMessage('Invalid before message ID format'),
+    query('after').optional().isUUID().withMessage('Invalid after message ID format'),
     query().custom((value, { _req }) => {
       if (!value.conversationWith && !value.groupId) {
         throw new Error('Either conversationWith or groupId must be provided');
@@ -558,18 +532,26 @@ router.get(
       // Add soft delete filter (exclude deleted messages)
       whereCondition.deletedAt = null;
 
-      // Add timestamp filters
+      // Add timestamp filters (using message IDs)
       if (before) {
-        whereCondition.createdAt = {
-          ...whereCondition.createdAt,
-          [sequelize.Op.lt]: new Date(before),
-        };
+        // Find the message with this ID to get its timestamp
+        const beforeMessage = await Message.findByPk(before, { attributes: ['createdAt'] });
+        if (beforeMessage) {
+          whereCondition.createdAt = {
+            ...whereCondition.createdAt,
+            [Op.lt]: beforeMessage.createdAt,
+          };
+        }
       }
       if (after) {
-        whereCondition.createdAt = {
-          ...whereCondition.createdAt,
-          [sequelize.Op.gt]: new Date(after),
-        };
+        // Find the message with this ID to get its timestamp
+        const afterMessage = await Message.findByPk(after, { attributes: ['createdAt'] });
+        if (afterMessage) {
+          whereCondition.createdAt = {
+            ...whereCondition.createdAt,
+            [Op.gt]: afterMessage.createdAt,
+          };
+        }
       }
 
       // Add search filter if provided
@@ -628,6 +610,7 @@ router.get(
               }
             : null,
           metadata: message.metadata,
+          reactions: message.reactions || {},
           editedAt: message.editedAt,
           createdAt: message.createdAt,
           updatedAt: message.updatedAt,
@@ -951,6 +934,7 @@ router.put(
           status: message.status,
           replyToId: message.replyToId,
           metadata: message.metadata,
+          reactions: message.reactions || {},
           editedAt: message.editedAt,
           createdAt: message.createdAt,
           updatedAt: message.updatedAt,
@@ -1915,176 +1899,221 @@ router.get(
   }
 );
 
+
 /**
- * @swagger
- * /api/messages/{id}/receipts:
- *   get:
- *     summary: Get group message read receipts
- *     description: Returns delivery and read status for each group member
- *     tags: [Messages]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: Message ID
- *     responses:
- *       200:
- *         description: Read receipts retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success: { type: boolean }
- *                 data:
- *                   type: object
- *                   properties:
- *                     messageId: { type: string }
- *                     groupId: { type: string }
- *                     totalMembers: { type: integer }
- *                     deliveredCount: { type: integer }
- *                     readCount: { type: integer }
- *                     receipts:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           userId: { type: string }
- *                           username: { type: string }
- *                           status: { type: string, enum: [delivered, read] }
- *                           deliveredAt: { type: string, format: date-time }
- *                           readAt: { type: string, format: date-time }
- *       404:
- *         description: Message not found or not a group message
+ * Add reaction to a message
+ * POST /api/messages/:messageId/reactions
  */
-router.get(
-  '/:id/receipts',
-  [param('id').isUUID().withMessage('Invalid message ID format')],
+router.post(
+  '/:messageId/reactions',
+  [
+    param('messageId').isUUID().withMessage('Invalid message ID'),
+    body('emoji')
+      .isString()
+      .trim()
+      .notEmpty()
+      .isLength({ min: 1, max: 10 })
+      .withMessage('Emoji is required and must be 1-10 characters'),
+  ],
   async (req, res) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).json({
           success: false,
-          message: 'Validation failed',
-          errors: errors.array(),
+          error: errors.array()[0].msg,
         });
       }
 
-      const { id: messageId } = req.params;
+      const { messageId } = req.params;
+      const { emoji } = req.body;
       const userId = req.user.id;
 
-      // Get message to check if it's a group message
-      const message = await Message.findByPk(messageId, {
-        attributes: ['id', 'groupId', 'senderId'],
+      // Find the message
+      const message = await Message.findOne({
+        where: {
+          id: messageId,
+          deletedAt: null,
+        },
       });
 
       if (!message) {
         return res.status(404).json({
           success: false,
-          message: 'Message not found',
+          error: 'Message not found',
         });
       }
 
-      if (!message.groupId) {
-        return res.status(400).json({
-          success: false,
-          message: 'This endpoint is only for group messages',
+      // Verify user has access to this message
+      // (either sender, recipient, or group member)
+      let hasAccess = false;
+      if (message.senderId === userId || message.recipientId === userId) {
+        hasAccess = true;
+      } else if (message.groupId) {
+        const member = await GroupMember.findOne({
+          where: {
+            groupId: message.groupId,
+            userId: userId,
+            status: 'active',
+          },
         });
+        hasAccess = !!member;
       }
 
-      // Verify user is a member of the group
-      const membership = await GroupMember.findOne({
-        where: {
-          groupId: message.groupId,
-          userId,
-          isActive: true,
-        },
-      });
-
-      if (!membership) {
+      if (!hasAccess) {
         return res.status(403).json({
           success: false,
-          message: 'You are not a member of this group',
+          error: 'You do not have access to this message',
         });
       }
 
-      // Get all group members (except sender)
-      const groupMembers = await GroupMember.findAll({
-        where: {
-          groupId: message.groupId,
-          userId: { [Op.ne]: message.senderId },
-          isActive: true,
-        },
-        include: [
-          {
-            model: User,
-            as: 'user',
-            attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'readReceiptsEnabled'],
-          },
-        ],
-      });
+      // Update reactions
+      const reactions = message.reactions || {};
+      if (!reactions[emoji]) {
+        reactions[emoji] = [];
+      }
 
-      // Get read receipts for this message
-      const receipts = await GroupMessageStatus.findAll({
-        where: { messageId },
-        include: [
-          {
-            model: User,
-            as: 'user',
-            attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'readReceiptsEnabled'],
-          },
-        ],
-      });
+      // Toggle reaction (add if not present, remove if present)
+      const userIndex = reactions[emoji].indexOf(userId);
+      if (userIndex > -1) {
+        reactions[emoji].splice(userIndex, 1);
+        // Remove emoji key if no users left
+        if (reactions[emoji].length === 0) {
+          delete reactions[emoji];
+        }
+      } else {
+        reactions[emoji].push(userId);
+      }
 
-      // Build receipts array with privacy consideration
-      const receiptsData = receipts.map(receipt => {
-        const user = receipt.user;
-        // Only show read receipt if user has read receipts enabled
-        const showReadStatus = user.readReceiptsEnabled;
+      await message.update({ reactions });
 
-        return {
-          userId: user.id,
-          username: user.username,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          avatar: user.avatar,
-          status: showReadStatus ? receipt.status : 'delivered', // Hide read status if privacy enabled
-          deliveredAt: receipt.deliveredAt,
-          readAt: showReadStatus ? receipt.readAt : null, // Hide read time if privacy enabled
-          readReceiptsEnabled: user.readReceiptsEnabled,
+      // Emit real-time event
+      const { getIO } = await import('../services/websocket.js');
+      const io = getIO();
+      if (io) {
+        const reactionData = {
+          messageId: message.id,
+          reactions: message.reactions,
+          userId: userId,
+          emoji: emoji,
+          action: userIndex > -1 ? 'removed' : 'added',
         };
+
+        // Notify sender
+        io.to(`user:${message.senderId}`).emit('message.reaction', reactionData);
+
+        // Notify recipient if direct message
+        if (message.recipientId) {
+          io.to(`user:${message.recipientId}`).emit('message.reaction', reactionData);
+        }
+
+        // Notify group if group message
+        if (message.groupId) {
+          io.to(`group:${message.groupId}`).emit('message.reaction', reactionData);
+        }
+
+        logger.info('📡 Reaction WebSocket event emitted', {
+          messageId: message.id,
+          emoji,
+          action: userIndex > -1 ? 'removed' : 'added',
+          senderId: message.senderId,
+          recipientId: message.recipientId,
+          groupId: message.groupId,
+        });
+      }
+
+      logger.info(`Reaction ${userIndex > -1 ? 'removed' : 'added'} for message`, {
+        messageId,
+        userId,
+        emoji,
       });
 
-      // Calculate statistics
-      const deliveredCount = receiptsData.length;
-      const readCount = receiptsData.filter(r => r.status === 'read' && r.readReceiptsEnabled).length;
-
-      res.status(200).json({
+      res.json({
         success: true,
         data: {
-          messageId,
-          groupId: message.groupId,
-          totalMembers: groupMembers.length,
-          deliveredCount,
-          readCount,
-          receipts: receiptsData,
+          messageId: message.id,
+          reactions: message.reactions,
         },
       });
     } catch (error) {
-      logger.error('❌ Error getting message receipts:', error);
+      logger.error('Error adding/removing reaction:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to get message receipts',
-        error: error.message,
+        error: 'Failed to update reaction',
       });
     }
   }
 );
+
+/**
+ * Get reactions for a message
+ * GET /api/messages/:messageId/reactions
+ */
+router.get('/:messageId/reactions', [param('messageId').isUUID()], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: errors.array()[0].msg,
+      });
+    }
+
+    const { messageId } = req.params;
+    const userId = req.user.id;
+
+    const message = await Message.findOne({
+      where: {
+        id: messageId,
+        deletedAt: null,
+      },
+      attributes: ['id', 'reactions', 'senderId', 'recipientId', 'groupId'],
+    });
+
+    if (!message) {
+      return res.status(404).json({
+        success: false,
+        error: 'Message not found',
+      });
+    }
+
+    // Verify access
+    let hasAccess = false;
+    if (message.senderId === userId || message.recipientId === userId) {
+      hasAccess = true;
+    } else if (message.groupId) {
+      const member = await GroupMember.findOne({
+        where: {
+          groupId: message.groupId,
+          userId: userId,
+          status: 'active',
+        },
+      });
+      hasAccess = !!member;
+    }
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        error: 'You do not have access to this message',
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        messageId: message.id,
+        reactions: message.reactions || {},
+      },
+    });
+  } catch (error) {
+    logger.error('Error getting reactions:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get reactions',
+    });
+  }
+});
+
 
 export default router;

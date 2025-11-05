@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { User, Session } from '../models/index.js';
 import emailService from '../services/emailService.js';
+import auditService from '../services/auditService.js';
 import { generateTokens } from '../utils/jwt.js';
 import logger from '../utils/logger.js';
 import { getRedisClient } from '../config/redis.js';
@@ -111,6 +112,21 @@ class AuthController {
       const user = await User.findByEmailOrUsername(identifier);
 
       if (!user) {
+        // Log failed login attempt
+        await auditService.logAuthEvent({
+          userId: null,
+          action: 'user_login_failed',
+          details: {
+            identifier: identifier,
+            reason: 'user_not_found',
+          },
+          ipAddress: req.ip || req.connection?.remoteAddress,
+          userAgent: req.get('User-Agent'),
+          severity: 'medium',
+          status: 'failure',
+          errorMessage: 'Invalid credentials',
+        });
+
         return res.status(401).json({
           success: false,
           error: {
@@ -165,6 +181,22 @@ class AuthController {
           await user.incrementFailedAttempts();
         }
 
+        // Log failed login attempt (invalid password)
+        await auditService.logAuthEvent({
+          userId: user.id,
+          action: 'user_login_failed',
+          details: {
+            username: user.username,
+            email: user.email,
+            reason: 'invalid_password',
+          },
+          ipAddress: req.ip || req.connection?.remoteAddress,
+          userAgent: req.get('User-Agent'),
+          severity: 'medium',
+          status: 'failure',
+          errorMessage: 'Invalid password',
+        });
+
         return res.status(401).json({
           success: false,
           error: {
@@ -196,6 +228,21 @@ class AuthController {
       await AuthController.storeSessionInRedis(session);
 
       logger.info(`User logged in: ${user.username} (${user.email})`);
+
+      // Log successful login to audit log
+      await auditService.logAuthEvent({
+        userId: user.id,
+        action: 'user_login',
+        details: {
+          username: user.username,
+          email: user.email,
+          loginMethod: 'password',
+        },
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.get('User-Agent'),
+        severity: 'low',
+        status: 'success',
+      });
 
       return res.status(200).json({
         success: true,
@@ -367,6 +414,20 @@ class AuthController {
       }
 
       logger.info(`User logged out: ${req.user.username}`, { userId: req.user.id });
+
+      // Log logout to audit log
+      await auditService.logAuthEvent({
+        userId: req.user.id,
+        action: 'user_logout',
+        details: {
+          username: req.user.username,
+          email: req.user.email,
+        },
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.get('User-Agent'),
+        severity: 'low',
+        status: 'success',
+      });
 
       return res.status(200).json({
         success: true,

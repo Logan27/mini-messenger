@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Check, CheckCheck, Clock, AlertCircle } from 'lucide-react';
+import { GroupMessageReceipts, GroupMessageStatusIndicator } from '@/features/messaging/components/GroupMessageReceipts';
 
 type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
 
@@ -17,6 +18,11 @@ interface MessageBubbleProps {
   senderName?: string;
   showAvatar?: boolean;
   isGroupChat?: boolean;
+  groupReceiptStats?: {
+    deliveredCount: number;
+    readCount: number;
+    totalMembers: number;
+  };
 }
 
 const StatusIcon = ({ status }: { status: MessageStatus }) => {
@@ -32,6 +38,7 @@ const StatusIcon = ({ status }: { status: MessageStatus }) => {
 };
 
 export const MessageBubble = ({
+  id,
   content,
   sender,
   timestamp,
@@ -41,8 +48,10 @@ export const MessageBubble = ({
   senderName,
   showAvatar = true,
   isGroupChat = false,
+  groupReceiptStats,
 }: MessageBubbleProps) => {
   const isMe = sender === 'me';
+  const [showReceiptsModal, setShowReceiptsModal] = useState(false);
 
   return (
     <div
@@ -103,10 +112,28 @@ export const MessageBubble = ({
             <span className="opacity-70" aria-label={`Sent at ${format(timestamp, 'HH:mm')}`}>
               {format(timestamp, 'HH:mm')}
             </span>
-            {isMe && <StatusIcon status={status} />}
+            {isMe && isGroupChat && groupReceiptStats ? (
+              <GroupMessageStatusIndicator
+                deliveredCount={groupReceiptStats.deliveredCount}
+                readCount={groupReceiptStats.readCount}
+                totalMembers={groupReceiptStats.totalMembers}
+                onClick={() => setShowReceiptsModal(true)}
+              />
+            ) : isMe ? (
+              <StatusIcon status={status} />
+            ) : null}
           </div>
         </div>
       </div>
+
+      {/* Group Receipts Modal */}
+      {isGroupChat && groupReceiptStats && (
+        <GroupMessageReceipts
+          messageId={id}
+          isOpen={showReceiptsModal}
+          onClose={() => setShowReceiptsModal(false)}
+        />
+      )}
     </div>
   );
 };

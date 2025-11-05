@@ -9,6 +9,7 @@ import { userRateLimit } from '../middleware/rateLimit.js';
 import { Contact } from '../models/Contact.js';
 import { Group } from '../models/Group.js';
 import { GroupMember } from '../models/GroupMember.js';
+import { GroupMessageStatus } from '../models/GroupMessageStatus.js';
 import { Message } from '../models/Message.js';
 import { User } from '../models/User.js';
 import messageService from '../services/messageService.js';
@@ -205,6 +206,33 @@ router.post(
           replyToId: replyToId || null,
           metadata: metadata || {},
         }, { transaction });
+
+        // For group messages, create GroupMessageStatus entries for each member
+        if (groupId) {
+          const groupMembers = await GroupMember.findAll({
+            where: {
+              groupId,
+              isActive: true,
+            },
+            attributes: ['userId'],
+            transaction,
+          });
+
+          // Create status entries for all group members except sender
+          const statusEntries = groupMembers
+            .filter(member => member.userId !== senderId)
+            .map(member => ({
+              id: uuidv4(),
+              messageId,
+              userId: member.userId,
+              status: 'delivered', // Initially marked as delivered when sent
+              deliveredAt: new Date(),
+            }));
+
+          if (statusEntries.length > 0) {
+            await GroupMessageStatus.bulkCreate(statusEntries, { transaction });
+          }
+        }
 
         // Get the created message with sender info
         const messageWithSender = await Message.findByPk(messageId, {
@@ -1881,6 +1909,178 @@ router.get(
       res.status(500).json({
         success: false,
         message: 'Failed to get conversations',
+        error: error.message,
+      });
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /api/messages/{id}/receipts:
+ *   get:
+ *     summary: Get group message read receipts
+ *     description: Returns delivery and read status for each group member
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Message ID
+ *     responses:
+ *       200:
+ *         description: Read receipts retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     messageId: { type: string }
+ *                     groupId: { type: string }
+ *                     totalMembers: { type: integer }
+ *                     deliveredCount: { type: integer }
+ *                     readCount: { type: integer }
+ *                     receipts:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           userId: { type: string }
+ *                           username: { type: string }
+ *                           status: { type: string, enum: [delivered, read] }
+ *                           deliveredAt: { type: string, format: date-time }
+ *                           readAt: { type: string, format: date-time }
+ *       404:
+ *         description: Message not found or not a group message
+ */
+router.get(
+  '/:id/receipts',
+  [param('id').isUUID().withMessage('Invalid message ID format')],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: errors.array(),
+        });
+      }
+
+      const { id: messageId } = req.params;
+      const userId = req.user.id;
+
+      // Get message to check if it's a group message
+      const message = await Message.findByPk(messageId, {
+        attributes: ['id', 'groupId', 'senderId'],
+      });
+
+      if (!message) {
+        return res.status(404).json({
+          success: false,
+          message: 'Message not found',
+        });
+      }
+
+      if (!message.groupId) {
+        return res.status(400).json({
+          success: false,
+          message: 'This endpoint is only for group messages',
+        });
+      }
+
+      // Verify user is a member of the group
+      const membership = await GroupMember.findOne({
+        where: {
+          groupId: message.groupId,
+          userId,
+          isActive: true,
+        },
+      });
+
+      if (!membership) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not a member of this group',
+        });
+      }
+
+      // Get all group members (except sender)
+      const groupMembers = await GroupMember.findAll({
+        where: {
+          groupId: message.groupId,
+          userId: { [Op.ne]: message.senderId },
+          isActive: true,
+        },
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'readReceiptsEnabled'],
+          },
+        ],
+      });
+
+      // Get read receipts for this message
+      const receipts = await GroupMessageStatus.findAll({
+        where: { messageId },
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'readReceiptsEnabled'],
+          },
+        ],
+      });
+
+      // Build receipts array with privacy consideration
+      const receiptsData = receipts.map(receipt => {
+        const user = receipt.user;
+        // Only show read receipt if user has read receipts enabled
+        const showReadStatus = user.readReceiptsEnabled;
+
+        return {
+          userId: user.id,
+          username: user.username,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          avatar: user.avatar,
+          status: showReadStatus ? receipt.status : 'delivered', // Hide read status if privacy enabled
+          deliveredAt: receipt.deliveredAt,
+          readAt: showReadStatus ? receipt.readAt : null, // Hide read time if privacy enabled
+          readReceiptsEnabled: user.readReceiptsEnabled,
+        };
+      });
+
+      // Calculate statistics
+      const deliveredCount = receiptsData.length;
+      const readCount = receiptsData.filter(r => r.status === 'read' && r.readReceiptsEnabled).length;
+
+      res.status(200).json({
+        success: true,
+        data: {
+          messageId,
+          groupId: message.groupId,
+          totalMembers: groupMembers.length,
+          deliveredCount,
+          readCount,
+          receipts: receiptsData,
+        },
+      });
+    } catch (error) {
+      logger.error('❌ Error getting message receipts:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get message receipts',
         error: error.message,
       });
     }

@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Clipboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +19,9 @@ import { useMessagingStore } from '../../stores/messagingStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Message, Conversation } from '../../types';
 import { wsService } from '../../services/api';
+import MessageActionsModal from '../../components/messaging/MessageActionsModal';
+import MessageStatusIndicator, { MessageStatus } from '../../components/messaging/MessageStatusIndicator';
+import FileAttachmentPicker from '../../components/messaging/FileAttachmentPicker';
 
 interface ChatScreenProps {
   route: {
@@ -40,6 +44,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     error,
     loadMessages,
     sendMessage,
+    editMessage,
+    deleteMessage,
     markAsRead,
     setTyping,
     typingUsers,
@@ -48,6 +54,14 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isTyping, setIsTypingLocal] = useState(false);
+  const [editingMessage, setEditingMessage] = useState<Message | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [showActionsModal, setShowActionsModal] = useState(false);
+  const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
+  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -70,8 +84,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   }, [conversationId]);
 
   useEffect(() => {
-    // Scroll to bottom when new messages arrive
-    if (conversationMessages.length > 0) {
+    // Scroll to bottom when new messages arrive (but not when loading more)
+    if (conversationMessages.length > 0 && !isLoadingMore) {
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
@@ -81,9 +95,22 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const handleSendMessage = useCallback(async () => {
     if (!messageText.trim() || isSending) return;
 
+    const messageToSend = messageText.trim();
+    const messageToEdit = editingMessage;
+    const replyTo = replyToMessage;
+
     setIsSending(true);
     try {
-      await sendMessage(conversationId, messageText.trim());
+      if (messageToEdit) {
+        // Edit existing message
+        await editMessage(conversationId, messageToEdit.id, messageToSend);
+        setEditingMessage(null);
+      } else {
+        // Send new message
+        await sendMessage(conversationId, messageToSend, replyTo?.id);
+        setReplyToMessage(null);
+      }
+
       setMessageText('');
 
       // Stop typing indicator
@@ -92,11 +119,16 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         setTyping(conversationId, user!.id, false);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to send message. Please try again.');
+      Alert.alert(
+        'Error',
+        messageToEdit
+          ? 'Failed to edit message. Please try again.'
+          : 'Failed to send message. Please try again.'
+      );
     } finally {
       setIsSending(false);
     }
-  }, [messageText, isSending, conversationId, sendMessage, setTyping, user, isTyping]);
+  }, [messageText, isSending, conversationId, sendMessage, editMessage, setTyping, user, isTyping, editingMessage, replyToMessage]);
 
   const handleTextChange = useCallback((text: string) => {
     setMessageText(text);
@@ -131,9 +163,103 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     }
   }, [conversationId, markAsRead, user]);
 
+  const handleMessageLongPress = useCallback((message: Message) => {
+    setSelectedMessage(message);
+    setShowActionsModal(true);
+  }, []);
+
+  const handleEditMessage = useCallback((message: Message) => {
+    setEditingMessage(message);
+    setMessageText(message.content);
+  }, []);
+
+  const handleDeleteMessage = useCallback(async (message: Message, deleteForEveryone: boolean) => {
+    Alert.alert(
+      'Delete Message',
+      deleteForEveryone
+        ? 'This message will be deleted for everyone. This action cannot be undone.'
+        : 'This message will be deleted for you only.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteMessage(conversationId, message.id, deleteForEveryone);
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete message. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  }, [conversationId, deleteMessage]);
+
+  const handleReplyMessage = useCallback((message: Message) => {
+    setReplyToMessage(message);
+  }, []);
+
+  const handleCopyMessage = useCallback((message: Message) => {
+    Clipboard.setString(message.content);
+    Alert.alert('Copied', 'Message copied to clipboard');
+  }, []);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingMessage(null);
+    setMessageText('');
+  }, []);
+
+  const handleCancelReply = useCallback(() => {
+    setReplyToMessage(null);
+  }, []);
+
+  const handleFileSelected = useCallback(async (file: any) => {
+    try {
+      setIsSending(true);
+      // TODO: Implement file upload to server
+      // For now, just show a placeholder
+      await sendMessage(conversationId, `📎 ${file.name}`, undefined, file);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send file. Please try again.');
+    } finally {
+      setIsSending(false);
+    }
+  }, [conversationId, sendMessage]);
+
+  const handleLoadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMoreMessages) return;
+
+    setIsLoadingMore(true);
+    try {
+      // TODO: Implement pagination
+      // const olderMessages = await loadOlderMessages(conversationId, conversationMessages[0]?.id);
+      // if (olderMessages.length === 0) {
+      //   setHasMoreMessages(false);
+      // }
+    } catch (error) {
+      console.error('Load more messages error:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [conversationId, conversationMessages, isLoadingMore, hasMoreMessages]);
+
+  const getMessageStatus = (message: Message): MessageStatus => {
+    if (message.senderId !== user?.id) return 'sent';
+
+    // TODO: Implement proper status tracking
+    if (message.isRead) return 'read';
+    // if (message.isDelivered) return 'delivered';
+    return 'sent';
+  };
+
   const renderMessage = ({ item: message }: { item: Message }) => {
     const isMyMessage = message.senderId === user?.id;
     const showAvatar = !isMyMessage && message.type === 'text';
+    const messageStatus = getMessageStatus(message);
 
     return (
       <TouchableOpacity
@@ -142,6 +268,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           isMyMessage ? styles.myMessage : styles.otherMessage,
         ]}
         onPress={() => handleMessagePress(message)}
+        onLongPress={() => handleMessageLongPress(message)}
       >
         {showAvatar && (
           <View style={styles.avatarContainer}>
@@ -155,6 +282,19 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           styles.messageBubble,
           isMyMessage ? styles.myBubble : styles.otherBubble,
         ]}>
+          {/* Reply indicator */}
+          {message.replyTo && (
+            <View style={styles.replyContainer}>
+              <View style={styles.replyBar} />
+              <View style={styles.replyContent}>
+                <Text style={styles.replyText} numberOfLines={1}>
+                  Reply to message
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Message content */}
           {message.type === 'text' ? (
             <Text style={[
               styles.messageText,
@@ -175,12 +315,29 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
             </Text>
           )}
 
-          <Text style={[
-            styles.messageTime,
-            isMyMessage ? styles.myMessageTime : styles.otherMessageTime,
-          ]}>
-            {formatMessageTime(message.createdAt)}
-          </Text>
+          {/* Message footer */}
+          <View style={styles.messageFooter}>
+            {message.editedAt && (
+              <Text style={[
+                styles.editedText,
+                isMyMessage ? styles.myEditedText : styles.otherEditedText,
+              ]}>
+                edited
+              </Text>
+            )}
+            <Text style={[
+              styles.messageTime,
+              isMyMessage ? styles.myMessageTime : styles.otherMessageTime,
+            ]}>
+              {formatMessageTime(message.createdAt)}
+            </Text>
+            {isMyMessage && (
+              <MessageStatusIndicator
+                status={messageStatus}
+                color={isMyMessage ? 'rgba(255, 255, 255, 0.7)' : '#6b7280'}
+              />
+            )}
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -213,6 +370,17 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     );
   };
 
+  const renderHeader = () => {
+    if (isLoadingMore) {
+      return (
+        <View style={styles.loadMoreContainer}>
+          <ActivityIndicator size="small" color="#2563eb" />
+        </View>
+      );
+    }
+    return null;
+  };
+
   if (!conversation) {
     return (
       <View style={styles.centerContainer}>
@@ -225,6 +393,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     <KeyboardAvoidingView
       style={[styles.container, { paddingTop: insets.top }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       {/* Header */}
       <View style={styles.header}>
@@ -256,19 +425,56 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         renderItem={renderMessage}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.messagesContainer}
+        ListHeaderComponent={renderHeader}
         ListFooterComponent={renderTypingIndicator}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        onContentSizeChange={() => !isLoadingMore && flatListRef.current?.scrollToEnd({ animated: true })}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
       />
+
+      {/* Reply Bar */}
+      {replyToMessage && (
+        <View style={styles.replyBar}>
+          <View style={styles.replyBarContent}>
+            <Ionicons name="arrow-undo" size={20} color="#6b7280" />
+            <View style={styles.replyBarText}>
+              <Text style={styles.replyBarTitle}>Replying to</Text>
+              <Text style={styles.replyBarMessage} numberOfLines={1}>
+                {replyToMessage.content}
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity onPress={handleCancelReply}>
+            <Ionicons name="close" size={24} color="#6b7280" />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Edit Bar */}
+      {editingMessage && (
+        <View style={styles.editBar}>
+          <View style={styles.editBarContent}>
+            <Ionicons name="create-outline" size={20} color="#2563eb" />
+            <Text style={styles.editBarText}>Editing message</Text>
+          </View>
+          <TouchableOpacity onPress={handleCancelEdit}>
+            <Ionicons name="close" size={24} color="#2563eb" />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Message Input */}
       <View style={[styles.inputContainer, { paddingBottom: insets.bottom }]}>
-        <TouchableOpacity style={styles.attachButton}>
+        <TouchableOpacity
+          style={styles.attachButton}
+          onPress={() => setShowAttachmentPicker(true)}
+        >
           <Ionicons name="add" size={24} color="#666" />
         </TouchableOpacity>
 
         <TextInput
           style={styles.textInput}
-          placeholder="Type a message..."
+          placeholder={editingMessage ? "Edit message..." : "Type a message..."}
           value={messageText}
           onChangeText={handleTextChange}
           multiline
@@ -293,6 +499,25 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Message Actions Modal */}
+      <MessageActionsModal
+        visible={showActionsModal}
+        message={selectedMessage}
+        isMyMessage={selectedMessage?.senderId === user?.id}
+        onClose={() => setShowActionsModal(false)}
+        onEdit={handleEditMessage}
+        onDelete={handleDeleteMessage}
+        onReply={handleReplyMessage}
+        onCopy={handleCopyMessage}
+      />
+
+      {/* File Attachment Picker */}
+      <FileAttachmentPicker
+        visible={showAttachmentPicker}
+        onClose={() => setShowAttachmentPicker(false)}
+        onFileSelected={handleFileSelected}
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -337,6 +562,10 @@ const styles = StyleSheet.create({
     padding: 15,
     paddingBottom: 20,
   },
+  loadMoreContainer: {
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
   messageContainer: {
     flexDirection: 'row',
     marginBottom: 10,
@@ -373,6 +602,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#f1f5f9',
     borderBottomLeftRadius: 4,
   },
+  replyContainer: {
+    flexDirection: 'row',
+    marginBottom: 6,
+    paddingLeft: 8,
+  },
+  replyBar: {
+    width: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 2,
+    marginRight: 8,
+  },
+  replyContent: {
+    flex: 1,
+  },
+  replyText: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontStyle: 'italic',
+  },
   messageText: {
     fontSize: 16,
     lineHeight: 20,
@@ -383,13 +631,27 @@ const styles = StyleSheet.create({
   otherMessageText: {
     color: '#000',
   },
+  messageFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  editedText: {
+    fontSize: 11,
+    fontStyle: 'italic',
+    marginRight: 4,
+  },
+  myEditedText: {
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+  otherEditedText: {
+    color: '#9ca3af',
+  },
   messageTime: {
     fontSize: 12,
-    marginTop: 4,
   },
   myMessageTime: {
     color: 'rgba(255, 255, 255, 0.7)',
-    textAlign: 'right',
   },
   otherMessageTime: {
     color: '#666',
@@ -405,6 +667,54 @@ const styles = StyleSheet.create({
   typingBubble: {
     paddingVertical: 12,
     paddingHorizontal: 16,
+  },
+  replyBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: '#f9fafb',
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  replyBarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  replyBarText: {
+    marginLeft: 10,
+    flex: 1,
+  },
+  replyBarTitle: {
+    fontSize: 12,
+    color: '#6b7280',
+    fontWeight: '600',
+  },
+  replyBarMessage: {
+    fontSize: 14,
+    color: '#1f2937',
+  },
+  editBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: '#eff6ff',
+    borderTopWidth: 1,
+    borderTopColor: '#bfdbfe',
+  },
+  editBarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  editBarText: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: '#2563eb',
+    fontWeight: '600',
   },
   inputContainer: {
     flexDirection: 'row',

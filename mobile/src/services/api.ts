@@ -140,14 +140,16 @@ export const messagingAPI = {
   getConversation: (conversationId: string) =>
     api.get(`/api/v1/conversations/${conversationId}`),
 
-  sendMessage: (conversationId: string, content: string, type: string = 'text') =>
-    api.post(`/api/v1/conversations/${conversationId}/messages`, { content, type }),
+  sendMessage: (conversationId: string, content: string, type: string = 'text', replyTo?: string, file?: any) =>
+    api.post(`/api/v1/conversations/${conversationId}/messages`, { content, type, replyTo, file }),
 
   editMessage: (conversationId: string, messageId: string, content: string) =>
     api.put(`/api/v1/conversations/${conversationId}/messages/${messageId}`, { content }),
 
-  deleteMessage: (conversationId: string, messageId: string) =>
-    api.delete(`/api/v1/conversations/${conversationId}/messages/${messageId}`),
+  deleteMessage: (conversationId: string, messageId: string, deleteForEveryone: boolean = false) =>
+    api.delete(`/api/v1/conversations/${conversationId}/messages/${messageId}`, {
+      params: { deleteForEveryone }
+    }),
 
   markAsRead: (conversationId: string, messageId: string) =>
     api.post(`/api/v1/conversations/${conversationId}/messages/${messageId}/read`),

@@ -12,9 +12,9 @@ interface MessagingState {
   // Actions
   loadConversations: () => Promise<void>;
   loadMessages: (conversationId: string) => Promise<void>;
-  sendMessage: (conversationId: string, content: string, type?: string) => Promise<void>;
+  sendMessage: (conversationId: string, content: string, replyTo?: string, file?: any) => Promise<void>;
   editMessage: (conversationId: string, messageId: string, content: string) => Promise<void>;
-  deleteMessage: (conversationId: string, messageId: string) => Promise<void>;
+  deleteMessage: (conversationId: string, messageId: string, deleteForEveryone?: boolean) => Promise<void>;
   markAsRead: (conversationId: string, messageId: string) => Promise<void>;
   setActiveConversation: (conversation: Conversation | null) => void;
   addMessage: (message: Message) => void;
@@ -68,9 +68,9 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
     }
   },
 
-  sendMessage: async (conversationId: string, content: string, type: string = 'text') => {
+  sendMessage: async (conversationId: string, content: string, replyTo?: string, file?: any) => {
     try {
-      const response = await messagingAPI.sendMessage(conversationId, content, type);
+      const response = await messagingAPI.sendMessage(conversationId, content, 'text', replyTo, file);
       const newMessage = response.data;
 
       set((state) => ({
@@ -118,9 +118,9 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
     }
   },
 
-  deleteMessage: async (conversationId: string, messageId: string) => {
+  deleteMessage: async (conversationId: string, messageId: string, deleteForEveryone: boolean = false) => {
     try {
-      await messagingAPI.deleteMessage(conversationId, messageId);
+      await messagingAPI.deleteMessage(conversationId, messageId, deleteForEveryone);
 
       set((state) => ({
         messages: {

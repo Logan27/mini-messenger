@@ -213,15 +213,6 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
                 )}
               </div>
             </div>
-
-            {/* Message Reactions - moved outside the rounded bubble */}
-            {message.reactions && Object.keys(message.reactions).length > 0 && (
-              <MessageReactions
-                reactions={message.reactions}
-                currentUserId={currentUserId}
-                onReactionClick={onReaction ? (emoji) => onReaction(message.id, emoji) : undefined}
-              />
-            )}
           </div>
 
           {/* Reaction Picker - shown on hover */}
@@ -280,6 +271,20 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        {/* Message Reactions - completely outside all flex containers */}
+        {message.reactions && Object.keys(message.reactions).length > 0 && (
+          <div className={cn(
+            "w-full",
+            message.isOwn ? "flex justify-end" : "flex justify-start"
+          )}>
+            <MessageReactions
+              reactions={message.reactions}
+              currentUserId={currentUserId}
+              onReactionClick={onReaction ? (emoji) => onReaction(message.id, emoji) : undefined}
+            />
+          </div>
+        )}
       </div>
 
       {/* File Preview Modal */}

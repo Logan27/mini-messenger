@@ -194,6 +194,12 @@ export const User = sequelize.define(
       allowNull: true,
       comment: 'Base64-encoded public key for E2E encryption (libsodium)',
     },
+    readReceiptsEnabled: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+      allowNull: false,
+      comment: 'Privacy setting: whether to send read receipts to other users',
+    },
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -243,6 +249,10 @@ export const User = sequelize.define(
       {
         fields: ['approvalStatus'],
         name: 'idx_users_approval_status',
+      },
+      {
+        fields: ['readReceiptsEnabled'],
+        name: 'idx_users_read_receipts_enabled',
       },
     ],
     timestamps: true,

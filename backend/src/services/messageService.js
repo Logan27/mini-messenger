@@ -592,6 +592,41 @@ class MessageService {
         return { alreadyRead: false, message: null };
       }
 
+      // Handle group messages - update GroupMessageStatus instead of Message.status
+      if (message.groupId) {
+        logger.debug(`📖 Handling group message read status for message: ${messageId} by user: ${userId}`);
+
+        // Find or create GroupMessageStatus entry
+        const [groupStatus, created] = await GroupMessageStatus.findOrCreate({
+          where: { messageId, userId },
+          defaults: {
+            messageId,
+            userId,
+            status: 'read',
+            deliveredAt: new Date(),
+            readAt: timestamp || new Date(),
+          },
+        });
+
+        // If already exists and is read, skip
+        if (!created && groupStatus.status === 'read') {
+          logger.debug(`Group message already marked as read: ${messageId} by ${userId}`);
+          return { alreadyRead: true, message };
+        }
+
+        // Update to read status
+        if (!created) {
+          await groupStatus.update({
+            status: 'read',
+            readAt: timestamp || new Date(),
+          });
+        }
+
+        logger.info(`👁️ Group message read status updated: ${messageId} by ${userId}`);
+        return { alreadyRead: false, message };
+      }
+
+      // For 1-to-1 messages, update the Message table
       // FIX BUG-MSG-007: Make markAsRead idempotent
       // Check status field
       if (message.status === 'read') {

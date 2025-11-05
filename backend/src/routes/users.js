@@ -1605,4 +1605,89 @@ router.delete('/me', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/users/me/privacy/read-receipts:
+ *   put:
+ *     summary: Update read receipts privacy setting
+ *     description: Enable or disable sending read receipts to other users
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - enabled
+ *             properties:
+ *               enabled:
+ *                 type: boolean
+ *                 description: Whether to send read receipts
+ *                 example: true
+ *     responses:
+ *       200:
+ *         description: Read receipts setting updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 message: { type: string }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     readReceiptsEnabled: { type: boolean }
+ *       400:
+ *         description: Invalid request body
+ *       401:
+ *         description: Unauthorized
+ */
+router.put('/me/privacy/read-receipts', authenticate, [
+  body('enabled').isBoolean().withMessage('enabled must be a boolean'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array(),
+      });
+    }
+
+    const { enabled } = req.body;
+    const userId = req.user.id;
+
+    // Update user's read receipts setting
+    await User.update(
+      { readReceiptsEnabled: enabled },
+      { where: { id: userId } }
+    );
+
+    logger.info(`User ${userId} updated read receipts setting to: ${enabled}`);
+
+    res.json({
+      success: true,
+      message: 'Read receipts setting updated successfully',
+      data: {
+        readReceiptsEnabled: enabled,
+      },
+    });
+  } catch (error) {
+    logger.error('Error updating read receipts setting', {
+      error: error.message,
+      stack: error.stack,
+    });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update read receipts setting',
+      error: error.message,
+    });
+  }
+});
+
 export default router;

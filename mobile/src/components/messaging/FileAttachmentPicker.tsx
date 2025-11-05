@@ -124,7 +124,7 @@ const FileAttachmentPicker: React.FC<FileAttachmentPickerProps> = ({
           uri: file.uri,
           type: 'document',
           name: file.name || 'document',
-          size: file.size,
+          size: file.size ?? undefined,
         });
         onClose();
       }

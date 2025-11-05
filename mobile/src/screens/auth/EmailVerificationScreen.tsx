@@ -143,7 +143,7 @@ export default function EmailVerificationScreen({
         },
         {
           text: 'Verify',
-          onPress: (verificationToken) => {
+          onPress: (verificationToken?: string) => {
             if (verificationToken) {
               verifyEmail(verificationToken);
             }

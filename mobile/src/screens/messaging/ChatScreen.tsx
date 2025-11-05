@@ -63,7 +63,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const conversation = conversations.find(c => c.id === conversationId);
   const conversationMessages = messages[conversationId] || [];
@@ -72,7 +72,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     if (conversationId) {
       loadMessages(conversationId);
     }
-  }, [conversationId]);
+  }, [conversationId, loadMessages]);
 
   useEffect(() => {
     // Join conversation for real-time updates
@@ -434,7 +434,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
 
       {/* Reply Bar */}
       {replyToMessage && (
-        <View style={styles.replyBar}>
+        <View style={styles.replyInputBar}>
           <View style={styles.replyBarContent}>
             <Ionicons name="arrow-undo" size={20} color="#6b7280" />
             <View style={styles.replyBarText}>
@@ -668,7 +668,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
-  replyBar: {
+  replyInputBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

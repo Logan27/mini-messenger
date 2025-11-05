@@ -1,25 +1,32 @@
 # Frontend Implementation Tasks
 
-**Analysis Date**: October 24, 2025  
-**Based on**: FRD v1.0 (frd.md)  
-**Status**: Partial Implementation - Critical Features Missing
+**Analysis Date**: November 5, 2025
+**Based on**: FRD v1.0 (frd.md)
+**Status**: Near Production Ready - Minor Gaps Remain
 
 ---
 
 ## Executive Summary
 
-The frontend has basic messaging functionality implemented (login, register, chat, settings, contacts, file upload, message edit/delete). However, **major feature areas are completely missing**:
+The application has comprehensive functionality implemented across all major feature areas. **Completed implementations**:
 
-- ❌ **No Admin Panel** (10+ admin features required)
-- ❌ **No Video/Voice Calling** (10 call features required)
-- ❌ **No Group Chat UI** (7 group features required)
-- ❌ **No Password Reset Flow** (forgot password, reset, email verification)
-- ❌ **No Notifications UI** (in-app notification center)
-- ❌ **No 2FA Setup Flow** (QR code, backup codes)
-- ❌ **No Search Features** (user search, message search)
-- ❌ **No GDPR Compliance UI** (data export, account deletion)
-- ❌ **No Call History**
-- ❌ **No Blocked Contacts Management**
+- ✅ **Admin Panel Complete** (User management, approvals, audit logs, system settings)
+- ✅ **Video/Voice Calling Complete** (WebRTC, call controls, quality monitoring)
+- ✅ **Group Chat Complete** (Create, manage members, group settings)
+- ✅ **Password Reset Flow** (Forgot password, reset, email verification)
+- ✅ **Notifications UI** (In-app notification center, preferences, WebSocket sync)
+- ✅ **Search Features** (User search, message search with filters)
+- ✅ **GDPR Compliance** (Data export, account deletion with 30-day grace period)
+- ✅ **Call History** (Complete with filters, pagination)
+- ✅ **Blocked Contacts Management** (Block/unblock functionality)
+- ✅ **File Management** (Preview, gallery, upload with progress)
+- ✅ **UI/UX Polish** (Empty states, skeletons, error handling, keyboard shortcuts, dark mode)
+
+**Remaining Gaps** (3 critical items):
+
+- ❌ **No 2FA Setup Flow** (QR code, backup codes, TOTP verification) - Backend + Frontend needed
+- ❌ **No Privacy Policy Pages** (LEGAL BLOCKER - Required for GDPR compliance)
+- ❌ **No Push Notifications** (Browser push notification setup for mobile/PWA)
 
 ---
 
@@ -145,24 +152,29 @@ The frontend has basic messaging functionality implemented (login, register, cha
 ---
 
 ### 1.6 Two-Factor Authentication Setup
-**FRD Reference**: FR-UM-008  
-**Priority**: HIGH  
-**Status**: ✅ IMPLEMENTED (Oct 24, 2025)
+**FRD Reference**: FR-UM-008
+**Priority**: HIGH
+**Status**: ❌ Not Implemented
 
-- [x] Create 2FA setup wizard/modal
-- [x] Display QR code for authenticator app
-- [x] Show backup codes (10 single-use codes)
-- [x] Implement verification step (test TOTP code)
-- [x] Add "Download backup codes" button
-- [x] Show 2FA status indicator
-- [x] Add 2FA disable flow (requires password + current code)
-- [x] Integrate with `/api/auth/2fa/*` endpoints
+- [ ] Create 2FA setup wizard/modal
+- [ ] Display QR code for authenticator app
+- [ ] Show backup codes (10 single-use codes)
+- [ ] Implement verification step (test TOTP code)
+- [ ] Add "Download backup codes" button
+- [ ] Show 2FA status indicator
+- [ ] Add 2FA disable flow (requires password + current code)
+- [ ] Integrate with `/api/auth/2fa/*` endpoints
+- [ ] Backend: Add 2FA fields to User model (twoFactorSecret, twoFactorEnabled, backupCodes)
+- [ ] Backend: Implement TOTP generation and verification library
+- [ ] Backend: Create `/api/auth/2fa/*` endpoints
 
 **Acceptance Criteria**:
-- ✅ QR code generation
-- ✅ TOTP verification
-- ✅ Backup codes displayed and downloadable
-- ✅ Cannot disable without verification
+- QR code generation
+- TOTP verification
+- Backup codes displayed and downloadable
+- Cannot disable without verification
+
+**Note**: Originally marked as implemented, but codebase verification found no 2FA implementation in backend (no User.twoFactorSecret field, no /api/auth/2fa routes, no TOTP library).
 
 ---
 
@@ -913,7 +925,6 @@ The frontend has basic messaging functionality implemented (login, register, cha
 - [ ] Add consent checkboxes in registration:
   - [ ] Accept Terms of Service
   - [ ] Accept Privacy Policy
-  - [ ] Marketing emails (optional)
 - [ ] Show "last updated" date on policy pages
 - [ ] Add footer links to policies
 - [ ] Log consent acceptance in database
@@ -1341,34 +1352,50 @@ These features are required by FRD and legal compliance:
 
 1. **Avatar Upload**: Settings page uses URL input instead of file upload
 2. **Message Reactions**: Component exists but not fully integrated
-3. **Typing Indicators**: Component exists but needs verification
-4. **Infinite Scroll**: Message history pagination needs improvement
-5. **WebSocket Reconnection**: Needs testing and improvement
-6. **Optimistic Updates**: Not implemented consistently
-7. **Error Boundaries**: Not implemented
-8. **Accessibility Audit**: Not performed
-9. **Performance Testing**: Load testing with 40 concurrent users needed
-10. **Mobile Responsiveness**: Needs comprehensive testing
+3. **Optimistic Updates**: Not implemented consistently
+4. **Accessibility Audit**: Not performed (WCAG AA compliance)
+5. **Performance Testing**: Load testing with 40 concurrent users needed
+6. **Mobile Responsiveness**: Needs comprehensive testing on actual devices
+7. **Service Worker**: No PWA offline support yet
+8. **Code Splitting**: Basic Vite lazy loading, needs route-based optimization
+9. **Image Optimization**: No WebP conversion or responsive srcset
+10. **Testing Coverage**: No unit/integration/E2E tests (0% coverage)
+
+**Resolved Technical Debt**:
+- ✅ **Error Boundaries**: Implemented and integrated in App.tsx
+- ✅ **Typing Indicators**: Verified working with WebSocket integration
+- ✅ **Infinite Scroll**: Implemented with IntersectionObserver
+- ✅ **WebSocket Reconnection**: Implemented with ReconnectingIndicator component
 
 ---
 
 ## Conclusion
 
-The frontend has **strong implementation** of core features with **64% of FRD requirements complete** (104/162 story points):
+The application has **comprehensive implementation** of core features with **59% of FRD requirements complete** (96/162 story points):
 
-- ✅ **Implemented**: Login, Register, Chat (1-to-1), Settings, Contacts, File Upload, Message Edit/Delete, **Admin Panel (complete)**, **Group Chat (complete)**, **Video/Voice Calls (complete)**, **Call History**, **Password Reset**, **Email Verification**, **GDPR Export/Deletion**, **Blocked Contacts**, **Audit Logs**
-- ❌ **Missing**: Privacy Policy Pages (LEGAL BLOCKER), Notification Center, Push Notifications, 2FA Setup, Message Search, Active Sessions
+- ✅ **Implemented**: Login, Register, Chat (1-to-1 & Groups), Settings, Contacts, File Upload, Message Edit/Delete, **Admin Panel (complete)**, **Group Chat (complete)**, **Video/Voice Calls (complete)**, **Call History**, **Password Reset**, **Email Verification**, **GDPR Export/Deletion**, **Blocked Contacts**, **Audit Logs**, **Notification Center**, **User Search**, **Message Search**, **File Preview Gallery**, **UI/UX Components** (empty states, skeletons, error handling, keyboard shortcuts, dark mode)
 
-**Completed effort**: 104 story points across 3 major implementation phases  
-**Remaining effort**: 58 story points (~4-5 days for focused development)
+- ❌ **Missing**: Privacy Policy Pages (LEGAL BLOCKER), 2FA Setup (Backend + Frontend), Push Notifications, Active Sessions Management
 
-**Production Status**: ⚠️ 80% ready - Needs Privacy Policy pages (LEGAL), Notification Center (UX), and Push Notifications (MOBILE) before launch
+**Completed effort**: 96 story points (revised after 2FA verification)
+**Remaining effort**: 66 story points (~5-6 days for focused development)
 
-**Recommendation**: Implement Privacy Policy pages immediately (3 points), then Notification Center (8 points), then 2FA (5 points) for v1.0 launch.
+**Production Status**: ⚠️ **85% ready** - Needs **Privacy Policy pages (LEGAL REQUIREMENT)** before launch. 2FA and Push Notifications recommended for v1.1.
+
+**Critical Path to v1.0 Launch**:
+1. **Privacy Policy & Terms pages** (3 points, ~4 hours) - LEGAL BLOCKER
+2. Load testing and bug fixes (8 points, ~1 day)
+3. Security audit (5 points, ~6 hours)
+
+**Recommended for v1.1**:
+- 2FA Setup (8 points, ~1 day) - Full backend + frontend implementation
+- Push Notifications (8 points, ~1 day) - FCM integration
+- Active Sessions Management (5 points, ~6 hours)
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: October 24, 2025  
-**Author**: AI Code Analysis  
-**Status**: Ready for Review
+**Document Version**: 2.0
+**Last Updated**: November 5, 2025
+**Verification Status**: ✅ Codebase verified, 2FA status corrected, marketing tasks removed
+**Author**: AI Code Analysis
+**Status**: Production Planning Ready

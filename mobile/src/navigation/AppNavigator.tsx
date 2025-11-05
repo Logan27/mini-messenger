@@ -18,6 +18,7 @@ import ChatScreen from '../screens/messaging/ChatScreen';
 import ContactsListScreen from '../screens/contacts/ContactsListScreen';
 import AddContactScreen from '../screens/contacts/AddContactScreen';
 import ContactRequestsScreen from '../screens/contacts/ContactRequestsScreen';
+import GroupsScreen from '../screens/groups/GroupsScreen';
 import CreateGroupScreen from '../screens/groups/CreateGroupScreen';
 import GroupInfoScreen from '../screens/groups/GroupInfoScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
@@ -54,6 +55,8 @@ const MainTabNavigator = () => {
 
           if (route.name === 'Conversations') {
             iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+          } else if (route.name === 'Groups') {
+            iconName = focused ? 'people-circle' : 'people-circle-outline';
           } else if (route.name === 'Contacts') {
             iconName = focused ? 'people' : 'people-outline';
           } else if (route.name === 'Profile') {
@@ -73,6 +76,11 @@ const MainTabNavigator = () => {
         name="Conversations"
         component={ConversationsScreen}
         options={{ tabBarLabel: 'Chats' }}
+      />
+      <Tab.Screen
+        name="Groups"
+        component={GroupsScreen}
+        options={{ tabBarLabel: 'Groups' }}
       />
       <Tab.Screen
         name="Contacts"

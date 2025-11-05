@@ -225,6 +225,30 @@ const ConversationsScreen = ({ navigation }: any) => {
         }
         contentContainerStyle={filteredConversations.length === 0 ? styles.emptyContainer : undefined}
       />
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => {
+          Alert.alert(
+            'New Conversation',
+            'Choose an option',
+            [
+              {
+                text: 'New Group',
+                onPress: () => navigation.navigate('CreateGroup'),
+              },
+              {
+                text: 'New Chat',
+                onPress: () => navigation.navigate('Contacts'),
+              },
+              { text: 'Cancel', style: 'cancel' },
+            ]
+          );
+        }}
+      >
+        <Ionicons name="add" size={28} color="#fff" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -385,6 +409,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     marginTop: 5,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#2563eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
 });
 

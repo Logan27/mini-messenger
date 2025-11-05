@@ -260,6 +260,12 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     const isMyMessage = message.senderId === user?.id;
     const showAvatar = !isMyMessage && message.type === 'text';
     const messageStatus = getMessageStatus(message);
+    const isGroupChat = conversation?.type === 'group';
+
+    // Find sender info for group chats
+    const sender = !isMyMessage && isGroupChat
+      ? conversation?.participants.find(p => p.id === message.senderId)
+      : null;
 
     return (
       <TouchableOpacity
@@ -282,6 +288,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           styles.messageBubble,
           isMyMessage ? styles.myBubble : styles.otherBubble,
         ]}>
+          {/* Sender name for group chats */}
+          {!isMyMessage && isGroupChat && sender && (
+            <Text style={styles.senderName}>{sender.name}</Text>
+          )}
+
           {/* Reply indicator */}
           {message.replyTo && (
             <View style={styles.replyContainer}>
@@ -404,14 +415,27 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           <Ionicons name="arrow-back" size={24} color="#2563eb" />
         </TouchableOpacity>
 
-        <View style={styles.headerInfo}>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            {conversation.name || 'Chat'}
-          </Text>
+        <TouchableOpacity
+          style={styles.headerInfo}
+          onPress={() => {
+            if (conversation.type === 'group' && conversation.id) {
+              navigation.navigate('GroupInfo', { groupId: conversation.id });
+            }
+          }}
+          disabled={conversation.type !== 'group'}
+        >
+          <View style={styles.headerTitleRow}>
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              {conversation.name || 'Chat'}
+            </Text>
+            {conversation.type === 'group' && (
+              <Ionicons name="people" size={16} color="#666" style={styles.groupIcon} />
+            )}
+          </View>
           <Text style={styles.headerSubtitle}>
             {conversation.participants.length} participants
           </Text>
-        </View>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.headerButton}>
           <Ionicons name="call" size={24} color="#2563eb" />
@@ -546,10 +570,17 @@ const styles = StyleSheet.create({
   headerInfo: {
     flex: 1,
   },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#000',
+  },
+  groupIcon: {
+    marginLeft: 6,
   },
   headerSubtitle: {
     fontSize: 14,
@@ -601,6 +632,12 @@ const styles = StyleSheet.create({
   otherBubble: {
     backgroundColor: '#f1f5f9',
     borderBottomLeftRadius: 4,
+  },
+  senderName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#007AFF',
+    marginBottom: 4,
   },
   replyContainer: {
     flexDirection: 'row',

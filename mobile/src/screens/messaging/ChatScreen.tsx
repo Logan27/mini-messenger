@@ -25,6 +25,8 @@ import FileAttachmentPicker from '../../components/messaging/FileAttachmentPicke
 import ImageViewerModal from '../../components/messaging/ImageViewerModal';
 import TypingIndicator from '../../components/messaging/TypingIndicator';
 import OnlineStatusBadge from '../../components/common/OnlineStatusBadge';
+import ReactionPicker from '../../components/messaging/ReactionPicker';
+import WhoReactedModal from '../../components/messaging/WhoReactedModal';
 
 interface ChatScreenProps {
   route: {
@@ -52,6 +54,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     markAsRead,
     setTyping,
     typingUsers,
+    addReaction,
+    removeReaction,
   } = useMessagingStore();
 
   const [messageText, setMessageText] = useState('');
@@ -70,6 +74,10 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Message[]>([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [reactionTargetMessage, setReactionTargetMessage] = useState<Message | null>(null);
+  const [showWhoReacted, setShowWhoReacted] = useState(false);
+  const [whoReactedMessage, setWhoReactedMessage] = useState<Message | null>(null);
 
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -328,6 +336,49 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     }
   }, [searchResults, currentSearchIndex, conversationMessages]);
 
+  const handleOpenReactionPicker = useCallback((message: Message) => {
+    setReactionTargetMessage(message);
+    setShowReactionPicker(true);
+    setShowActionsModal(false);
+  }, []);
+
+  const handleSelectReaction = useCallback(async (emoji: string) => {
+    if (!reactionTargetMessage) return;
+
+    const existingReaction = reactionTargetMessage.reactions?.find(r => r.emoji === emoji);
+    const userHasReacted = existingReaction?.users.includes(user!.id);
+
+    if (userHasReacted) {
+      // Remove reaction if user already reacted with this emoji
+      await removeReaction(conversationId, reactionTargetMessage.id, emoji);
+    } else {
+      // Add reaction
+      await addReaction(conversationId, reactionTargetMessage.id, emoji);
+    }
+  }, [conversationId, reactionTargetMessage, user, addReaction, removeReaction]);
+
+  const handleToggleReaction = useCallback(async (message: Message, emoji: string) => {
+    const existingReaction = message.reactions?.find(r => r.emoji === emoji);
+    const userHasReacted = existingReaction?.users.includes(user!.id);
+
+    if (userHasReacted) {
+      await removeReaction(conversationId, message.id, emoji);
+    } else {
+      await addReaction(conversationId, message.id, emoji);
+    }
+  }, [conversationId, user, addReaction, removeReaction]);
+
+  const handleShowWhoReacted = useCallback((message: Message) => {
+    setWhoReactedMessage(message);
+    setShowWhoReacted(true);
+  }, []);
+
+  const getUserName = useCallback((userId: string) => {
+    if (userId === user?.id) return 'You';
+    const participant = conversation?.participants.find(p => p.id === userId);
+    return participant?.name || 'Unknown User';
+  }, [user, conversation]);
+
   const getMessageStatus = (message: Message): MessageStatus => {
     if (message.senderId !== user?.id) return 'sent';
 
@@ -449,7 +500,54 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
               />
             )}
           </View>
+
+          {/* Reactions */}
+          {message.reactions && message.reactions.length > 0 && (
+            <View style={styles.reactionsContainer}>
+              {message.reactions.map((reaction, index) => {
+                const userHasReacted = reaction.users.includes(user!.id);
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.reactionBubble,
+                      userHasReacted && styles.reactionBubbleActive,
+                    ]}
+                    onPress={() => handleToggleReaction(message, reaction.emoji)}
+                    onLongPress={() => handleShowWhoReacted(message)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
+                    <Text style={[
+                      styles.reactionCount,
+                      userHasReacted && styles.reactionCountActive,
+                    ]}>
+                      {reaction.users.length}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+              <TouchableOpacity
+                style={styles.addReactionButton}
+                onPress={() => handleOpenReactionPicker(message)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="add" size={16} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
+
+        {/* Add reaction button for messages without reactions */}
+        {(!message.reactions || message.reactions.length === 0) && (
+          <TouchableOpacity
+            style={styles.addReactionIcon}
+            onPress={() => handleOpenReactionPicker(message)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add-circle-outline" size={20} color="#9ca3af" />
+          </TouchableOpacity>
+        )}
       </TouchableOpacity>
     );
   };
@@ -707,6 +805,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         onDelete={(deleteForEveryone) => selectedMessage && handleDeleteMessage(selectedMessage, deleteForEveryone)}
         onReply={() => selectedMessage && handleReplyMessage(selectedMessage)}
         onCopy={() => selectedMessage && handleCopyMessage(selectedMessage)}
+        onReact={() => selectedMessage && handleOpenReactionPicker(selectedMessage)}
       />
 
       {/* File Attachment Picker */}
@@ -721,6 +820,21 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         visible={showImageViewer}
         imageUri={viewingImageUri}
         onClose={() => setShowImageViewer(false)}
+      />
+
+      {/* Reaction Picker */}
+      <ReactionPicker
+        visible={showReactionPicker}
+        onClose={() => setShowReactionPicker(false)}
+        onSelectReaction={handleSelectReaction}
+      />
+
+      {/* Who Reacted Modal */}
+      <WhoReactedModal
+        visible={showWhoReacted}
+        onClose={() => setShowWhoReacted(false)}
+        reactions={whoReactedMessage?.reactions || []}
+        getUserName={getUserName}
       />
     </KeyboardAvoidingView>
   );
@@ -1027,6 +1141,52 @@ const styles = StyleSheet.create({
   micButton: {
     padding: 8,
     marginLeft: 10,
+  },
+  reactionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 6,
+    gap: 6,
+  },
+  reactionBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  reactionBubbleActive: {
+    backgroundColor: '#dbeafe',
+    borderColor: '#2563eb',
+  },
+  reactionEmoji: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+  reactionCount: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  reactionCountActive: {
+    color: '#2563eb',
+  },
+  addReactionButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addReactionIcon: {
+    marginLeft: 8,
+    opacity: 0.6,
   },
 });
 

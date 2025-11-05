@@ -90,6 +90,11 @@ export interface AuthState {
 }
 
 // Message types
+export interface MessageReaction {
+  emoji: string;
+  users: string[]; // Array of user IDs who reacted
+}
+
 export interface Message {
   id: string;
   conversationId: string;
@@ -103,6 +108,7 @@ export interface Message {
   readBy?: string[];
   replyTo?: string;
   file?: FileData;
+  reactions?: MessageReaction[];
   metadata?: Record<string, any>;
 }
 

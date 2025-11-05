@@ -28,6 +28,7 @@ interface MessageActionsSheetProps {
   onDelete: (deleteForEveryone: boolean) => void;
   onCopy?: () => void;
   onForward?: () => void;
+  onReact?: () => void;
 }
 
 const MessageActionsSheet: React.FC<MessageActionsSheetProps> = ({
@@ -40,6 +41,7 @@ const MessageActionsSheet: React.FC<MessageActionsSheetProps> = ({
   onDelete,
   onCopy,
   onForward,
+  onReact,
 }) => {
   if (!message) return null;
 
@@ -53,6 +55,18 @@ const MessageActionsSheet: React.FC<MessageActionsSheetProps> = ({
   };
 
   const actions: MessageAction[] = [];
+
+  // React is available for all messages
+  if (onReact) {
+    actions.push({
+      icon: 'happy-outline',
+      label: 'React',
+      onPress: () => {
+        onReact();
+        onClose();
+      },
+    });
+  }
 
   // Reply is available for all messages
   actions.push({

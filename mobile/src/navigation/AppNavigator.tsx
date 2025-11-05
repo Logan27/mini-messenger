@@ -18,6 +18,7 @@ import ChatScreen from '../screens/messaging/ChatScreen';
 import ContactsListScreen from '../screens/contacts/ContactsListScreen';
 import AddContactScreen from '../screens/contacts/AddContactScreen';
 import ContactRequestsScreen from '../screens/contacts/ContactRequestsScreen';
+import ContactProfileScreen from '../screens/contacts/ContactProfileScreen';
 import GroupsScreen from '../screens/groups/GroupsScreen';
 import CreateGroupScreen from '../screens/groups/CreateGroupScreen';
 import GroupInfoScreen from '../screens/groups/GroupInfoScreen';
@@ -128,6 +129,10 @@ const MainNavigator = () => {
       <Stack.Screen
         name="ContactRequests"
         component={ContactRequestsScreen}
+      />
+      <Stack.Screen
+        name="ContactProfile"
+        component={ContactProfileScreen}
       />
       <Stack.Screen
         name="CreateGroup"

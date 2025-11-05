@@ -1929,6 +1929,12 @@ router.post(
       const { emoji } = req.body;
       const userId = req.user.id;
 
+      console.log('🎯 Reaction endpoint called:', {
+        messageId,
+        emoji,
+        userId,
+      });
+
       // Find the message
       const message = await Message.findOne({
         where: {

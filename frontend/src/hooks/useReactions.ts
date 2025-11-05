@@ -21,17 +21,28 @@ export function useAddReaction() {
         messageIdIsEmpty: messageId === '',
       });
 
-      const response = await apiClient.post(`/messages/${messageId}/reactions`, {
-        emoji,
-      });
-      return response.data;
+      try {
+        const response = await apiClient.post(`/messages/${messageId}/reactions`, {
+          emoji,
+        });
+        console.log('✅ Reaction API response:', response.data);
+        return response.data;
+      } catch (error: any) {
+        console.error('❌ Reaction API error:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message,
+        });
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Reaction mutation succeeded, invalidating queries');
       // Invalidate messages query to refetch with updated reactions
       queryClient.invalidateQueries({ queryKey: ['messages'] });
     },
     onError: (error: any) => {
-      console.error('Failed to add reaction:', error);
+      console.error('❌ Reaction mutation failed:', error);
       toast.error(error.response?.data?.error || 'Failed to add reaction');
     },
   });

@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMessagingStore } from '../../stores/messagingStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { Message, Conversation } from '../../types';
 import { wsService } from '../../services/api';
 import MessageActionsSheet from '../../components/messaging/MessageActionsSheet';
@@ -29,6 +30,7 @@ import ReactionPicker from '../../components/messaging/ReactionPicker';
 import WhoReactedModal from '../../components/messaging/WhoReactedModal';
 import LinkPreview from '../../components/messaging/LinkPreview';
 import { extractFirstUrl, fetchLinkMetadata, containsUrl } from '../../utils/linkPreview';
+import { saveDraft, loadDraft, clearDraft } from '../../utils/draftMessages';
 
 interface ChatScreenProps {
   route: {
@@ -43,6 +45,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const { conversationId } = route.params;
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
+  const { privacy } = useSettingsStore();
   const {
     conversations,
     messages,
@@ -93,6 +96,17 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
       loadMessages(conversationId);
     }
   }, [conversationId, loadMessages]);
+
+  useEffect(() => {
+    // Load draft message for this conversation
+    const loadDraftMessage = async () => {
+      const draft = await loadDraft(conversationId);
+      if (draft && !editingMessage) {
+        setMessageText(draft);
+      }
+    };
+    loadDraftMessage();
+  }, [conversationId]);
 
   useEffect(() => {
     // Join conversation for real-time updates
@@ -175,6 +189,9 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
 
       setMessageText('');
 
+      // Clear draft message
+      await clearDraft(conversationId);
+
       // Stop typing indicator
       if (isTyping) {
         setIsTypingLocal(false);
@@ -206,24 +223,28 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // Set new timeout to stop typing indicator
+    // Set new timeout to stop typing indicator and save draft
     if (text) {
       typingTimeoutRef.current = setTimeout(() => {
         setIsTypingLocal(false);
         setTyping(conversationId, user!.id, false);
+        // Save draft after user stops typing
+        saveDraft(conversationId, text);
       }, 1000);
     } else {
       setIsTypingLocal(false);
       setTyping(conversationId, user!.id, false);
+      // Clear draft if text is empty
+      clearDraft(conversationId);
     }
   }, [conversationId, setTyping, user, isTyping]);
 
   const handleMessagePress = useCallback((message: Message) => {
-    // Mark message as read
-    if (!message.isRead && message.senderId !== user?.id) {
+    // Mark message as read (only if read receipts are enabled)
+    if (!message.isRead && message.senderId !== user?.id && privacy.showReadReceipts) {
       markAsRead(conversationId, message.id);
     }
-  }, [conversationId, markAsRead, user]);
+  }, [conversationId, markAsRead, user, privacy.showReadReceipts]);
 
   const handleMessageLongPress = useCallback((message: Message) => {
     setSelectedMessage(message);

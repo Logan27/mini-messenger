@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,18 +11,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 const PrivacySettingsScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { privacy, loadSettings, updatePrivacy } = useSettingsStore();
 
-  // Privacy preferences state
-  const [showOnlineStatus, setShowOnlineStatus] = useState(true);
-  const [showLastSeen, setShowLastSeen] = useState(true);
-  const [showProfilePhoto, setShowProfilePhoto] = useState(true);
-  const [showReadReceipts, setShowReadReceipts] = useState(true);
-  const [showTypingIndicator, setShowTypingIndicator] = useState(true);
-  const [allowContactRequests, setAllowContactRequests] = useState(true);
-  const [allowGroupInvites, setAllowGroupInvites] = useState(true);
+  useEffect(() => {
+    loadSettings();
+  }, []);
 
   const handleBlockedContacts = () => {
     Alert.alert('Blocked Contacts', 'Blocked contacts management coming soon!');
@@ -61,20 +58,20 @@ const PrivacySettingsScreen: React.FC = () => {
         {
           label: 'Online Status',
           subtitle: 'Show when you\'re online',
-          value: showOnlineStatus,
-          onValueChange: setShowOnlineStatus,
+          value: privacy.showOnlineStatus,
+          onValueChange: (value: boolean) => updatePrivacy({ showOnlineStatus: value }),
         },
         {
           label: 'Last Seen',
           subtitle: 'Show when you were last active',
-          value: showLastSeen,
-          onValueChange: setShowLastSeen,
+          value: privacy.showLastSeen,
+          onValueChange: (value: boolean) => updatePrivacy({ showLastSeen: value }),
         },
         {
           label: 'Profile Photo',
           subtitle: 'Who can see your profile photo',
-          value: showProfilePhoto,
-          onValueChange: setShowProfilePhoto,
+          value: privacy.showProfilePhoto,
+          onValueChange: (value: boolean) => updatePrivacy({ showProfilePhoto: value }),
         },
       ],
     },
@@ -84,14 +81,14 @@ const PrivacySettingsScreen: React.FC = () => {
         {
           label: 'Read Receipts',
           subtitle: 'Show when you\'ve read messages',
-          value: showReadReceipts,
-          onValueChange: setShowReadReceipts,
+          value: privacy.showReadReceipts,
+          onValueChange: (value: boolean) => updatePrivacy({ showReadReceipts: value }),
         },
         {
           label: 'Typing Indicator',
           subtitle: 'Show when you\'re typing',
-          value: showTypingIndicator,
-          onValueChange: setShowTypingIndicator,
+          value: privacy.showTypingIndicator,
+          onValueChange: (value: boolean) => updatePrivacy({ showTypingIndicator: value }),
         },
       ],
     },
@@ -101,14 +98,14 @@ const PrivacySettingsScreen: React.FC = () => {
         {
           label: 'Allow Contact Requests',
           subtitle: 'Let others send you contact requests',
-          value: allowContactRequests,
-          onValueChange: setAllowContactRequests,
+          value: privacy.allowContactRequests,
+          onValueChange: (value: boolean) => updatePrivacy({ allowContactRequests: value }),
         },
         {
           label: 'Allow Group Invites',
           subtitle: 'Let others add you to groups',
-          value: allowGroupInvites,
-          onValueChange: setAllowGroupInvites,
+          value: privacy.allowGroupInvites,
+          onValueChange: (value: boolean) => updatePrivacy({ allowGroupInvites: value }),
         },
       ],
     },

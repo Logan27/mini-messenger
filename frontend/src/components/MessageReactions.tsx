@@ -32,10 +32,12 @@ export const MessageReactions = ({
   console.log('✅ Rendering reactions:', Object.entries(reactions));
 
   return (
-    <div className="flex flex-wrap gap-1 mt-1">
+    <div className="flex flex-wrap gap-1 mt-1" style={{ backgroundColor: 'rgba(255, 0, 0, 0.1)' }}>
       {Object.entries(reactions).map(([emoji, userIds]) => {
         const count = userIds.length;
         const hasReacted = userIds.includes(currentUserId);
+
+        console.log('🎨 Rendering reaction button:', { emoji, userIds, count, hasReacted });
 
         return (
           <TooltipProvider key={emoji}>
@@ -49,9 +51,10 @@ export const MessageReactions = ({
                       ? "bg-primary/20 border border-primary hover:bg-primary/30"
                       : "bg-muted border border-border hover:bg-muted/80"
                   )}
+                  style={{ backgroundColor: 'yellow', minWidth: '50px', minHeight: '30px' }}
                 >
-                  <span className="text-sm">{emoji}</span>
-                  {count > 1 && <span className="text-xs font-medium">{count}</span>}
+                  <span className="text-sm" style={{ color: 'black' }}>{emoji}</span>
+                  {count > 1 && <span className="text-xs font-medium" style={{ color: 'black' }}>{count}</span>}
                 </button>
               </TooltipTrigger>
               <TooltipContent>

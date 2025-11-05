@@ -1298,57 +1298,40 @@ router.delete('/:userId', authenticate, async (req, res) => {
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.post('/me/device-token', authenticate, async (req, res) => {
-  try {
-    const requestId = req.id;
-    const userId = req.user?.id;
-    // Accept both 'deviceToken' and 'token' for flexibility
-    const { deviceToken, token, platform } = req.body;
-    const finalToken = deviceToken || token;
+router.post('/me/device-token', authenticate, (req, res) => {
+  const requestId = req.id;
+  const userId = req.user?.id;
+  // Accept both 'deviceToken' and 'token' for flexibility
+  const { deviceToken, token } = req.body;
+  const finalToken = deviceToken || token;
 
-    if (!userId) {
-      logger.warn('Unauthorized device token registration attempt', {
-        requestId,
-        ip: req.ip,
-      });
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required',
-      });
-    }
-
-    if (!finalToken) {
-      return res.status(400).json({
-        success: false,
-        error: 'Device token is required',
-      });
-    }
-
-    // Store device token (simplified implementation)
-    // In a real implementation, you would store this in a database
-    logger.info('Device token registered', {
+  if (!userId) {
+    logger.warn('Unauthorized device token registration attempt', {
       requestId,
-      userId,
-      deviceToken: finalToken,
-      platform,
       ip: req.ip,
     });
-
-    res.json({
-      success: true,
-      message: 'Device token registered successfully',
-    });
-  } catch (error) {
-    logger.error('Error registering device token', {
-      requestId: req.id,
-      error: error.message,
-      stack: error.stack,
-    });
-    res.status(500).json({
+    return res.status(401).json({
       success: false,
-      error: 'Failed to register device token',
+      error: 'Authentication required',
     });
   }
+
+  if (!finalToken) {
+    return res.status(400).json({
+      success: false,
+      error: 'Device token is required',
+    });
+  }
+
+  // Store device token in database
+  req.body.token = finalToken; // Normalize to 'token'
+  logger.info('Device token registration', {
+    requestId,
+    userId,
+    platform: req.body.platform,
+    ip: req.ip,
+  });
+  return userController.registerDeviceToken(req, res);
 });
 
 /**
@@ -1393,46 +1376,38 @@ router.post('/me/device-token', authenticate, async (req, res) => {
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.delete('/me/device-token', authenticate, async (req, res) => {
-  try {
-    const requestId = req.id;
-    const userId = req.user?.id;
-    const { deviceToken } = req.body;
+router.delete('/me/device-token', authenticate, (req, res) => {
+  const requestId = req.id;
+  const userId = req.user?.id;
+  const { deviceToken, token } = req.body;
+  const finalToken = deviceToken || token;
 
-    if (!userId) {
-      logger.warn('Unauthorized device token removal attempt', {
-        requestId,
-        ip: req.ip,
-      });
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required',
-      });
-    }
-
-    // Remove device token (simplified implementation)
-    // In a real implementation, you would remove this from a database
-    logger.info('Device token removed', {
+  if (!userId) {
+    logger.warn('Unauthorized device token removal attempt', {
       requestId,
-      userId,
       ip: req.ip,
     });
-
-    res.json({
-      success: true,
-      message: 'Device token removed successfully',
-    });
-  } catch (error) {
-    logger.error('Error removing device token', {
-      requestId: req.id,
-      error: error.message,
-      stack: error.stack,
-    });
-    res.status(500).json({
+    return res.status(401).json({
       success: false,
-      error: 'Failed to remove device token',
+      error: 'Authentication required',
     });
   }
+
+  if (!finalToken) {
+    return res.status(400).json({
+      success: false,
+      error: 'Device token is required',
+    });
+  }
+
+  // Remove device token from database
+  req.body.token = finalToken; // Normalize to 'token'
+  logger.info('Device token removal', {
+    requestId,
+    userId,
+    ip: req.ip,
+  });
+  return userController.unregisterDeviceToken(req, res);
 });
 
 /**

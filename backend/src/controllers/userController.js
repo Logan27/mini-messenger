@@ -66,6 +66,51 @@ class UserController {
     }
   }
 
+  async unregisterDeviceToken(req, res) {
+    const { token } = req.body;
+    const userId = req.user.id;
+
+    if (!token) {
+      return res.status(400).json({ message: 'Device token is required' });
+    }
+
+    try {
+      // Find and delete the device token
+      const device = await Device.findOne({
+        where: { userId, token }
+      });
+
+      if (!device) {
+        return res.status(404).json({
+          success: false,
+          message: 'Device token not found'
+        });
+      }
+
+      await device.destroy();
+
+      logger.info('Device token unregistered', {
+        deviceId: device.id,
+        userId,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Device token removed successfully'
+      });
+    } catch (error) {
+      logger.error('Error unregistering device token:', {
+        error: error.message,
+        stack: error.stack,
+        userId,
+      });
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+
   async exportUserData(req, res) {
     try {
       const userId = req.user.id;

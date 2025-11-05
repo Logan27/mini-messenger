@@ -15,6 +15,7 @@ import { useMessagingStore } from '../../stores/messagingStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Conversation } from '../../types';
 import { wsService } from '../../services/api';
+import OnlineStatusBadge from '../../components/common/OnlineStatusBadge';
 
 const ConversationsScreen = ({ navigation }: any) => {
   const { user } = useAuthStore();
@@ -112,10 +113,19 @@ const ConversationsScreen = ({ navigation }: any) => {
               <Ionicons name="person" size={20} color="#666" />
             </View>
           )}
-          {conversation.type === 'group' && (
+          {conversation.type === 'group' ? (
             <View style={styles.groupIndicator}>
               <Ionicons name="people" size={12} color="#fff" />
             </View>
+          ) : (
+            // Show online status for direct conversations
+            otherParticipants[0]?.isOnline && (
+              <OnlineStatusBadge
+                isOnline={true}
+                size={14}
+                style={styles.onlineStatusBadge}
+              />
+            )
           )}
         </View>
 
@@ -326,6 +336,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#fff',
+  },
+  onlineStatusBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
   },
   conversationInfo: {
     flex: 1,

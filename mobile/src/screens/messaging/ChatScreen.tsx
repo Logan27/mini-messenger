@@ -23,6 +23,8 @@ import MessageActionsSheet from '../../components/messaging/MessageActionsSheet'
 import MessageStatusIndicator, { MessageStatus } from '../../components/messaging/MessageStatusIndicator';
 import FileAttachmentPicker from '../../components/messaging/FileAttachmentPicker';
 import ImageViewerModal from '../../components/messaging/ImageViewerModal';
+import TypingIndicator from '../../components/messaging/TypingIndicator';
+import OnlineStatusBadge from '../../components/common/OnlineStatusBadge';
 
 interface ChatScreenProps {
   route: {
@@ -404,6 +406,17 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
 
     if (otherTypingUsers.length === 0) return null;
 
+    // Get names of typing users
+    const typingUserNames = otherTypingUsers
+      .map(id => conversation?.participants.find(p => p.id === id)?.name)
+      .filter(Boolean);
+
+    const typingText = typingUserNames.length === 1
+      ? `${typingUserNames[0]} is typing`
+      : typingUserNames.length === 2
+      ? `${typingUserNames[0]} and ${typingUserNames[1]} are typing`
+      : `${typingUserNames.length} people are typing`;
+
     return (
       <View style={[styles.messageContainer, styles.otherMessage]}>
         <View style={styles.avatarContainer}>
@@ -412,9 +425,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           </View>
         </View>
         <View style={[styles.messageBubble, styles.otherBubble, styles.typingBubble]}>
-          <Text style={[styles.messageText, styles.otherMessageText]}>
-            Typing...
-          </Text>
+          <Text style={styles.typingText}>{typingText}</Text>
+          <TypingIndicator color="#666" dotSize={6} />
         </View>
       </View>
     );
@@ -470,9 +482,29 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
             {conversation.type === 'group' && (
               <Ionicons name="people" size={16} color="#666" style={styles.groupIcon} />
             )}
+            {conversation.type === 'direct' && (() => {
+              const otherUser = conversation.participants.find(p => p.id !== user?.id);
+              return otherUser?.isOnline && (
+                <OnlineStatusBadge isOnline={true} size={10} style={styles.onlineBadge} />
+              );
+            })()}
           </View>
           <Text style={styles.headerSubtitle}>
-            {conversation.participants.length} participants
+            {(() => {
+              const typingUserIds = typingUsers[conversationId] || [];
+              const otherTypingUsers = typingUserIds.filter(id => id !== user?.id);
+
+              if (otherTypingUsers.length > 0) {
+                return 'typing...';
+              }
+
+              if (conversation.type === 'direct') {
+                const otherUser = conversation.participants.find(p => p.id !== user?.id);
+                return otherUser?.isOnline ? 'online' : 'offline';
+              }
+
+              return `${conversation.participants.length} participants`;
+            })()}
           </Text>
         </TouchableOpacity>
 
@@ -628,6 +660,9 @@ const styles = StyleSheet.create({
   groupIcon: {
     marginLeft: 6,
   },
+  onlineBadge: {
+    marginLeft: 6,
+  },
   headerSubtitle: {
     fontSize: 14,
     color: '#666',
@@ -758,6 +793,14 @@ const styles = StyleSheet.create({
   typingBubble: {
     paddingVertical: 12,
     paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  typingText: {
+    fontSize: 13,
+    color: '#666',
+    fontStyle: 'italic',
   },
   replyInputBar: {
     flexDirection: 'row',

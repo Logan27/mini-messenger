@@ -37,8 +37,41 @@ export function useAddReaction() {
       }
     },
     onSuccess: (data) => {
-      console.log('✅ Reaction mutation succeeded, invalidating queries');
-      // Invalidate messages query to refetch with updated reactions
+      console.log('✅ Reaction mutation succeeded:', data);
+
+      // Optimistically update the cache with the new reactions from the API response
+      if (data?.data?.reactions) {
+        const messageId = data.data.messageId;
+        const newReactions = data.data.reactions;
+
+        console.log('🔄 Optimistically updating reactions in cache:', {
+          messageId,
+          newReactions,
+        });
+
+        // Update all message queries
+        queryClient.setQueriesData({ queryKey: ['messages'] }, (old: any) => {
+          if (!old) return old;
+
+          const newPages = old.pages.map((page: any[]) =>
+            page.map((msg: any) => {
+              if (msg.id === messageId) {
+                console.log('✅ Updated message in cache:', {
+                  messageId,
+                  oldReactions: msg.reactions,
+                  newReactions,
+                });
+                return { ...msg, reactions: newReactions };
+              }
+              return msg;
+            })
+          );
+
+          return { ...old, pages: newPages };
+        });
+      }
+
+      // Also invalidate to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['messages'] });
     },
     onError: (error: any) => {

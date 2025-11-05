@@ -143,6 +143,25 @@ const SettingsScreen: React.FC = () => {
       ],
     },
     {
+      title: 'PRIVACY & DATA',
+      items: [
+        {
+          icon: 'document-text-outline',
+          label: 'Consent Management',
+          subtitle: 'Manage your privacy consents',
+          onPress: () => navigation.navigate('ConsentManagement'),
+          showChevron: true,
+        },
+        {
+          icon: 'download-outline',
+          label: 'Export My Data',
+          subtitle: 'Download your personal data (GDPR)',
+          onPress: () => navigation.navigate('DataExport'),
+          showChevron: true,
+        },
+      ],
+    },
+    {
       title: 'SUPPORT',
       items: [
         {

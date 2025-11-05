@@ -32,6 +32,8 @@ import BlockedContactsScreen from '../screens/contacts/BlockedContactsScreen';
 import AccountDeletionScreen from '../screens/settings/AccountDeletionScreen';
 import TwoFactorAuthScreen from '../screens/settings/TwoFactorAuthScreen';
 import UserSearchScreen from '../screens/contacts/UserSearchScreen';
+import DataExportScreen from '../screens/settings/DataExportScreen';
+import ConsentManagementScreen from '../screens/settings/ConsentManagementScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -174,6 +176,14 @@ const MainNavigator = () => {
       <Stack.Screen
         name="AccountDeletion"
         component={AccountDeletionScreen}
+      />
+      <Stack.Screen
+        name="DataExport"
+        component={DataExportScreen}
+      />
+      <Stack.Screen
+        name="ConsentManagement"
+        component={ConsentManagementScreen}
       />
     </Stack.Navigator>
   );

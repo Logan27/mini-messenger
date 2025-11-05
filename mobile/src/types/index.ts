@@ -195,6 +195,8 @@ export type RootStackParamList = {
   GroupInfo: { groupId: string };
   TwoFactorAuth: undefined;
   AccountDeletion: undefined;
+  DataExport: undefined;
+  ConsentManagement: undefined;
 };
 
 export type AuthStackParamList = {

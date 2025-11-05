@@ -7,8 +7,10 @@ import { authenticate } from '../middleware/auth.js';
 import { userRateLimit } from '../middleware/rateLimit.js';
 import { Contact } from '../models/Contact.js';
 import { User } from '../models/User.js';
+import { Device } from '../models/Device.js';
 import logger from '../utils/logger.js';
 import { getWebSocketService } from '../services/websocket.js';
+import fcmService from '../services/fcmService.js';
 
 const router = express.Router();
 
@@ -315,6 +317,54 @@ router.post(
       } catch (wsError) {
         logger.error('❌ Failed to send contact request notification via WebSocket:', wsError);
         // Don't fail the request if WebSocket notification fails
+      }
+
+      // Send push notification if user is offline
+      try {
+        const wsService = getWebSocketService();
+        const userSockets = wsService.getUserSockets(contactUserId);
+
+        // Only send push notification if user has no active connections
+        if (!userSockets || userSockets.size === 0) {
+          const devices = await Device.findAll({
+            where: { userId: contactUserId }
+          });
+
+          if (devices.length > 0) {
+            const requesterUser = await User.findByPk(currentUserId, {
+              attributes: ['id', 'username', 'firstName', 'lastName'],
+            });
+
+            const senderName = requesterUser.username ||
+                              requesterUser.firstName ||
+                              'Someone';
+
+            for (const device of devices) {
+              try {
+                await fcmService.sendPushNotification(
+                  device.token,
+                  'New Contact Request',
+                  `${senderName} wants to connect with you`,
+                  {
+                    type: 'contact_request',
+                    contactId: contact.id.toString(),
+                    senderId: currentUserId.toString(),
+                  }
+                );
+                logger.info(`✅ Push notification sent to device ${device.id} for contact request`);
+              } catch (fcmError) {
+                logger.error(`❌ Failed to send push notification to device ${device.id}:`, fcmError);
+              }
+            }
+          } else {
+            logger.info(`ℹ️ No devices registered for user ${contactUserId}`);
+          }
+        } else {
+          logger.info(`ℹ️ User ${contactUserId} is online, skipping push notification`);
+        }
+      } catch (pushError) {
+        logger.error('❌ Failed to send contact request push notification:', pushError);
+        // Don't fail the request if push notification fails
       }
 
       res.status(201).json({

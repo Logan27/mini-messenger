@@ -121,11 +121,16 @@ class MessageService {
         if (!userSockets || userSockets.size === 0) {
           const devices = await Device.findAll({ where: { userId: recipientId } });
           for (const device of devices) {
-            fcmService.sendPushNotification(
+            await fcmService.sendPushNotification(
               device.token,
-              `New message from ${socket.username}`,
+              `${socket.username}`,
               content,
-              { messageId: messageId.toString() }
+              {
+                type: 'message',
+                messageId: messageId.toString(),
+                conversationId: recipientId.toString(), // For direct messages, we can use recipientId
+                senderId: senderId.toString(),
+              }
             );
           }
         }
@@ -166,6 +171,11 @@ class MessageService {
 
         await Promise.all(statusPromises);
 
+        // Get group details for notification
+        const group = await Group.findByPk(groupId, {
+          attributes: ['name'],
+        });
+
         // Broadcast to group room with member information
         getIO()
           .to(`group:${groupId}`)
@@ -180,6 +190,33 @@ class MessageService {
             delivered: false,
             read: false,
           });
+
+        // Send push notifications to offline group members
+        const wsService = getWebSocketService();
+        for (const member of groupMembers) {
+          if (member.userId !== senderId) {
+            const userSockets = wsService.getUserSockets(member.userId);
+            if (!userSockets || userSockets.size === 0) {
+              // User is offline, send push notification
+              const devices = await Device.findAll({ where: { userId: member.userId } });
+              const groupName = group?.name || 'Group';
+
+              for (const device of devices) {
+                await fcmService.sendPushNotification(
+                  device.token,
+                  `${groupName}`,
+                  `${socket.username}: ${content}`,
+                  {
+                    type: 'group_message',
+                    messageId: messageId.toString(),
+                    groupId: groupId.toString(),
+                    senderId: senderId.toString(),
+                  }
+                );
+              }
+            }
+          }
+        }
 
         // Track delivery for all members
         for (const member of groupMembers) {

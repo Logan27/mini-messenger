@@ -6,10 +6,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../stores/authStore';
 import { RootStackParamList, MainTabParamList, AuthStackParamList } from '../types';
 
-// Import screens (we'll create these next)
+// Import screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen';
+import EmailVerificationScreen from '../screens/auth/EmailVerificationScreen';
+import AccountPendingScreen from '../screens/auth/AccountPendingScreen';
 import ConversationsScreen from '../screens/messaging/ConversationsScreen';
 import ChatScreen from '../screens/messaging/ChatScreen';
 import ContactsScreen from '../screens/profile/ContactsScreen';
@@ -30,6 +33,9 @@ const AuthNavigator = () => {
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Register" component={RegisterScreen} />
       <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <AuthStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+      <AuthStack.Screen name="EmailVerification" component={EmailVerificationScreen} />
+      <AuthStack.Screen name="AccountPending" component={AccountPendingScreen} />
     </AuthStack.Navigator>
   );
 };

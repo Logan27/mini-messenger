@@ -4,21 +4,34 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { authAPI } from '../services/api';
 import { User, AuthState, LoginForm, RegisterForm, BiometricAuthResult } from '../types';
+import * as SecureStore from 'expo-secure-store';
+
+type AccountStatus = 'pending' | 'approved' | 'rejected' | 'suspended' | 'active';
 
 interface AuthStore extends AuthState {
   // Actions
   login: (credentials: LoginForm) => Promise<void>;
   register: (userData: RegisterForm) => Promise<void>;
   logout: () => Promise<void>;
+  logoutAll: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  refreshToken: () => Promise<boolean>;
+  checkAccountStatus: (email: string) => Promise<AccountStatus>;
   authenticateWithBiometric: () => Promise<BiometricAuthResult>;
   enableBiometric: () => Promise<boolean>;
   disableBiometric: () => void;
+  storeBiometricCredentials: (email: string, password: string) => Promise<void>;
+  getBiometricCredentials: () => Promise<{ email: string; password: string } | null>;
+  clearBiometricCredentials: () => Promise<void>;
 
   // State
   biometricAvailable: boolean;
   biometricEnabled: boolean;
   isBiometricLoading: boolean;
+  accountStatus: AccountStatus | null;
+  refreshTokenInProgress: boolean;
+  error: string | null;
+  lastTokenRefresh: Date | null;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -32,6 +45,10 @@ export const useAuthStore = create<AuthStore>()(
       biometricAvailable: false,
       biometricEnabled: false,
       isBiometricLoading: false,
+      accountStatus: null,
+      refreshTokenInProgress: false,
+      error: null,
+      lastTokenRefresh: null,
 
       // Actions
       login: async (credentials: LoginForm) => {
@@ -79,10 +96,31 @@ export const useAuthStore = create<AuthStore>()(
             user: null,
             token: null,
             isAuthenticated: false,
-            biometricEnabled: false,
+            error: null,
           });
 
-          await AsyncStorage.multiRemove(['authToken', 'user']);
+          await AsyncStorage.multiRemove(['authToken', 'user', 'refreshToken']);
+          // Don't clear biometric credentials or biometricEnabled
+        }
+      },
+
+      logoutAll: async () => {
+        try {
+          await authAPI.post('/auth/logout-all');
+        } catch (error) {
+          console.error('Logout all error:', error);
+        } finally {
+          // Clear everything including biometric
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            biometricEnabled: false,
+            error: null,
+          });
+
+          await AsyncStorage.multiRemove(['authToken', 'user', 'refreshToken']);
+          await get().clearBiometricCredentials();
         }
       },
 
@@ -96,18 +134,19 @@ export const useAuthStore = create<AuthStore>()(
           if (token && userString) {
             const user = JSON.parse(userString);
 
-            // Verify token is still valid
-            const response = await authAPI.refreshToken();
+            // Try to refresh token if needed
+            const refreshSuccess = await get().refreshToken();
 
-            set({
-              user,
-              token: response.data.token,
-              isAuthenticated: true,
-              isLoading: false,
-            });
-
-            // Update stored token
-            await AsyncStorage.setItem('authToken', response.data.token);
+            if (refreshSuccess) {
+              set({
+                user,
+                isAuthenticated: true,
+                isLoading: false,
+                error: null,
+              });
+            } else {
+              throw new Error('Token refresh failed');
+            }
           } else {
             set({
               user: null,
@@ -123,9 +162,63 @@ export const useAuthStore = create<AuthStore>()(
             token: null,
             isAuthenticated: false,
             isLoading: false,
+            error: 'Session expired. Please log in again.',
           });
 
-          await AsyncStorage.multiRemove(['authToken', 'user']);
+          await AsyncStorage.multiRemove(['authToken', 'user', 'refreshToken']);
+        }
+      },
+
+      refreshToken: async (): Promise<boolean> => {
+        // Prevent concurrent refresh requests
+        if (get().refreshTokenInProgress) {
+          return false;
+        }
+
+        set({ refreshTokenInProgress: true });
+
+        try {
+          const response = await authAPI.post('/auth/refresh');
+          const { token: newToken } = response.data;
+
+          set({
+            token: newToken,
+            refreshTokenInProgress: false,
+            lastTokenRefresh: new Date(),
+            error: null,
+          });
+
+          await AsyncStorage.setItem('authToken', newToken);
+          return true;
+        } catch (error: any) {
+          console.error('Token refresh error:', error);
+          set({
+            refreshTokenInProgress: false,
+            error: 'Failed to refresh session',
+          });
+          return false;
+        }
+      },
+
+      checkAccountStatus: async (email: string): Promise<AccountStatus> => {
+        try {
+          const response = await authAPI.get('/auth/account-status', {
+            params: { email },
+          });
+
+          const status: AccountStatus = response.data.status;
+          set({ accountStatus: status });
+          return status;
+        } catch (error: any) {
+          console.error('Check account status error:', error);
+
+          // If 401/403, likely pending
+          if (error.response?.status === 401 || error.response?.status === 403) {
+            set({ accountStatus: 'pending' });
+            return 'pending';
+          }
+
+          throw error;
         }
       },
 
@@ -175,13 +268,49 @@ export const useAuthStore = create<AuthStore>()(
       disableBiometric: () => {
         set({ biometricEnabled: false });
       },
+
+      storeBiometricCredentials: async (email: string, password: string) => {
+        try {
+          await SecureStore.setItemAsync('biometric_email', email);
+          await SecureStore.setItemAsync('biometric_password', password);
+        } catch (error) {
+          console.error('Store biometric credentials error:', error);
+          throw error;
+        }
+      },
+
+      getBiometricCredentials: async () => {
+        try {
+          const email = await SecureStore.getItemAsync('biometric_email');
+          const password = await SecureStore.getItemAsync('biometric_password');
+
+          if (email && password) {
+            return { email, password };
+          }
+
+          return null;
+        } catch (error) {
+          console.error('Get biometric credentials error:', error);
+          return null;
+        }
+      },
+
+      clearBiometricCredentials: async () => {
+        try {
+          await SecureStore.deleteItemAsync('biometric_email');
+          await SecureStore.deleteItemAsync('biometric_password');
+        } catch (error) {
+          console.error('Clear biometric credentials error:', error);
+        }
+      },
     }),
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         biometricEnabled: state.biometricEnabled,
-        // Don't persist sensitive data like tokens
+        accountStatus: state.accountStatus,
+        // Don't persist sensitive data like tokens, user, or credentials
       }),
     }
   )

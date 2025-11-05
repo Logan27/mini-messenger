@@ -116,8 +116,9 @@ export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
-  ResetPassword: { token: string };
-  VerifyEmail: { token: string };
+  ResetPassword: { token?: string; email?: string };
+  EmailVerification: { email?: string; token?: string; autoVerify?: boolean };
+  AccountPending: { email?: string; username?: string };
 };
 
 export type MainTabParamList = {

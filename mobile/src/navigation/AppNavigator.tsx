@@ -6,14 +6,35 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../stores/authStore';
 import { RootStackParamList, MainTabParamList, AuthStackParamList } from '../types';
 
-// Import screens (we'll create these next)
+// Import screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen';
+import EmailVerificationScreen from '../screens/auth/EmailVerificationScreen';
+import AccountPendingScreen from '../screens/auth/AccountPendingScreen';
 import ConversationsScreen from '../screens/messaging/ConversationsScreen';
 import ChatScreen from '../screens/messaging/ChatScreen';
-import ContactsScreen from '../screens/profile/ContactsScreen';
+import ContactsListScreen from '../screens/contacts/ContactsListScreen';
+import AddContactScreen from '../screens/contacts/AddContactScreen';
+import ContactRequestsScreen from '../screens/contacts/ContactRequestsScreen';
+import ContactProfileScreen from '../screens/contacts/ContactProfileScreen';
+import GroupsScreen from '../screens/groups/GroupsScreen';
+import CreateGroupScreen from '../screens/groups/CreateGroupScreen';
+import GroupInfoScreen from '../screens/groups/GroupInfoScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
+import EditProfileScreen from '../screens/profile/EditProfileScreen';
+import SettingsScreen from '../screens/settings/SettingsScreen';
+import NotificationSettingsScreen from '../screens/settings/NotificationSettingsScreen';
+import PrivacySettingsScreen from '../screens/settings/PrivacySettingsScreen';
+import AppearanceSettingsScreen from '../screens/settings/AppearanceSettingsScreen';
+import DataStorageSettingsScreen from '../screens/settings/DataStorageSettingsScreen';
+import BlockedContactsScreen from '../screens/contacts/BlockedContactsScreen';
+import AccountDeletionScreen from '../screens/settings/AccountDeletionScreen';
+import TwoFactorAuthScreen from '../screens/settings/TwoFactorAuthScreen';
+import UserSearchScreen from '../screens/contacts/UserSearchScreen';
+import DataExportScreen from '../screens/settings/DataExportScreen';
+import ConsentManagementScreen from '../screens/settings/ConsentManagementScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -30,6 +51,9 @@ const AuthNavigator = () => {
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Register" component={RegisterScreen} />
       <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <AuthStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+      <AuthStack.Screen name="EmailVerification" component={EmailVerificationScreen} />
+      <AuthStack.Screen name="AccountPending" component={AccountPendingScreen} />
     </AuthStack.Navigator>
   );
 };
@@ -44,6 +68,8 @@ const MainTabNavigator = () => {
 
           if (route.name === 'Conversations') {
             iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+          } else if (route.name === 'Groups') {
+            iconName = focused ? 'people-circle' : 'people-circle-outline';
           } else if (route.name === 'Contacts') {
             iconName = focused ? 'people' : 'people-outline';
           } else if (route.name === 'Profile') {
@@ -65,8 +91,13 @@ const MainTabNavigator = () => {
         options={{ tabBarLabel: 'Chats' }}
       />
       <Tab.Screen
+        name="Groups"
+        component={GroupsScreen}
+        options={{ tabBarLabel: 'Groups' }}
+      />
+      <Tab.Screen
         name="Contacts"
-        component={ContactsScreen}
+        component={ContactsListScreen}
         options={{ tabBarLabel: 'Contacts' }}
       />
       <Tab.Screen
@@ -89,8 +120,75 @@ const MainNavigator = () => {
         options={{
           headerShown: true,
           headerTitle: 'Chat',
-          headerBackTitleVisible: false,
         }}
+      />
+      <Stack.Screen
+        name="AddContact"
+        component={AddContactScreen}
+      />
+      <Stack.Screen
+        name="ContactRequests"
+        component={ContactRequestsScreen}
+      />
+      <Stack.Screen
+        name="ContactProfile"
+        component={ContactProfileScreen}
+      />
+      <Stack.Screen
+        name="CreateGroup"
+        component={CreateGroupScreen}
+      />
+      <Stack.Screen
+        name="GroupInfo"
+        component={GroupInfoScreen}
+      />
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+      />
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+      />
+      <Stack.Screen
+        name="NotificationSettings"
+        component={NotificationSettingsScreen}
+      />
+      <Stack.Screen
+        name="PrivacySettings"
+        component={PrivacySettingsScreen}
+      />
+      <Stack.Screen
+        name="AppearanceSettings"
+        component={AppearanceSettingsScreen}
+      />
+      <Stack.Screen
+        name="DataStorageSettings"
+        component={DataStorageSettingsScreen}
+      />
+      <Stack.Screen
+        name="UserSearch"
+        component={UserSearchScreen}
+      />
+      <Stack.Screen
+        name="BlockedContacts"
+        component={BlockedContactsScreen}
+      />
+      <Stack.Screen
+        name="TwoFactorAuth"
+        component={TwoFactorAuthScreen}
+      />
+      <Stack.Screen
+        name="AccountDeletion"
+        component={AccountDeletionScreen}
+      />
+      <Stack.Screen
+        name="DataExport"
+        component={DataExportScreen}
+      />
+      <Stack.Screen
+        name="ConsentManagement"
+        component={ConsentManagementScreen}
       />
     </Stack.Navigator>
   );

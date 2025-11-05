@@ -42,7 +42,7 @@ const ProfileScreen = ({ navigation }: any) => {
     {
       title: 'Settings',
       icon: 'settings',
-      onPress: () => Alert.alert('Settings', 'Settings screen coming soon!'),
+      onPress: () => navigation.navigate('Settings'),
     },
     {
       title: 'Privacy & Security',
@@ -96,7 +96,10 @@ const ProfileScreen = ({ navigation }: any) => {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.editButton}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => navigation.navigate('EditProfile')}
+        >
           <Ionicons name="pencil" size={20} color="#2563eb" />
         </TouchableOpacity>
       </View>

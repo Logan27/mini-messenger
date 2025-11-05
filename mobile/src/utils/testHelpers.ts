@@ -1,5 +1,5 @@
 // Test helpers for React Native testing
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 
 // Mock data for testing
 export const mockUser = {

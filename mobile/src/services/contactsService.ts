@@ -76,7 +76,7 @@ export class ContactsService {
           label: email.label,
         })),
         imageAvailable: contact.imageAvailable || false,
-        image: contact.image,
+        image: contact.image?.uri ? { uri: contact.image.uri } : undefined,
       }));
     } catch (error) {
       console.error('Error getting device contacts:', error);

@@ -15,6 +15,7 @@ import { useMessagingStore } from '../../stores/messagingStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Conversation } from '../../types';
 import { wsService } from '../../services/api';
+import OnlineStatusBadge from '../../components/common/OnlineStatusBadge';
 
 const ConversationsScreen = ({ navigation }: any) => {
   const { user } = useAuthStore();
@@ -112,10 +113,19 @@ const ConversationsScreen = ({ navigation }: any) => {
               <Ionicons name="person" size={20} color="#666" />
             </View>
           )}
-          {conversation.type === 'group' && (
+          {conversation.type === 'group' ? (
             <View style={styles.groupIndicator}>
               <Ionicons name="people" size={12} color="#fff" />
             </View>
+          ) : (
+            // Show online status for direct conversations
+            otherParticipants[0]?.isOnline && (
+              <OnlineStatusBadge
+                isOnline={true}
+                size={14}
+                style={styles.onlineStatusBadge}
+              />
+            )
           )}
         </View>
 
@@ -225,6 +235,30 @@ const ConversationsScreen = ({ navigation }: any) => {
         }
         contentContainerStyle={filteredConversations.length === 0 ? styles.emptyContainer : undefined}
       />
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => {
+          Alert.alert(
+            'New Conversation',
+            'Choose an option',
+            [
+              {
+                text: 'New Group',
+                onPress: () => navigation.navigate('CreateGroup'),
+              },
+              {
+                text: 'New Chat',
+                onPress: () => navigation.navigate('Contacts'),
+              },
+              { text: 'Cancel', style: 'cancel' },
+            ]
+          );
+        }}
+      >
+        <Ionicons name="add" size={28} color="#fff" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -302,6 +336,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#fff',
+  },
+  onlineStatusBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
   },
   conversationInfo: {
     flex: 1,
@@ -385,6 +424,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     marginTop: 5,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#2563eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
 });
 

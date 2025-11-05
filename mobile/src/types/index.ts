@@ -3,12 +3,83 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  username?: string;
   avatar?: string;
+  bio?: string;
+  phoneNumber?: string;
   role: 'user' | 'admin';
   isApproved: boolean;
   createdAt: string;
   lastSeen?: string;
   isOnline?: boolean;
+  profilePicture?: string;
+  onlineStatus?: string;
+}
+
+// Contact types
+export interface Contact {
+  id: string;
+  status: 'pending' | 'accepted' | 'blocked';
+  userId: string; // Request sender
+  contactUserId: string; // Request recipient
+  nickname?: string;
+  notes?: string;
+  isFavorite: boolean;
+  isMuted: boolean;
+  lastContactAt?: string;
+  blockedAt?: string;
+  user: User;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ContactRequest {
+  id: string;
+  status: 'pending';
+  userId: string;
+  contactUserId: string;
+  user: User;
+  createdAt: string;
+  isIncoming: boolean; // true if current user is recipient
+}
+
+// Group types
+export interface Group {
+  id: string;
+  name: string;
+  description?: string;
+  groupType: 'private' | 'public';
+  avatar?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  memberCount: number;
+  unreadCount?: number;
+  lastMessage?: Message;
+  isMuted?: boolean;
+}
+
+export interface GroupMember {
+  id: string;
+  groupId: string;
+  userId: string;
+  user: User;
+  role: 'admin' | 'moderator' | 'member';
+  joinedAt: string;
+  isMuted: boolean;
+  addedBy?: string;
+}
+
+export interface GroupSettings {
+  groupId: string;
+  onlyAdminsCanPost: boolean;
+  onlyAdminsCanAddMembers: boolean;
+  onlyAdminsCanEditInfo: boolean;
+  enableReadReceipts: boolean;
+  enableTypingIndicators: boolean;
+  maxMembers: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuthState {
@@ -19,12 +90,26 @@ export interface AuthState {
 }
 
 // Message types
+export interface MessageReaction {
+  emoji: string;
+  users: string[]; // Array of user IDs who reacted
+}
+
+export interface LinkPreviewData {
+  url: string;
+  title?: string;
+  description?: string;
+  image?: string;
+  favicon?: string;
+  siteName?: string;
+}
+
 export interface Message {
   id: string;
   conversationId: string;
   senderId: string;
   content: string;
-  type: 'text' | 'image' | 'file' | 'voice' | 'system';
+  type: 'text' | 'image' | 'video' | 'file' | 'voice' | 'system';
   createdAt: string;
   updatedAt?: string;
   editedAt?: string;
@@ -32,6 +117,8 @@ export interface Message {
   readBy?: string[];
   replyTo?: string;
   file?: FileData;
+  reactions?: MessageReaction[];
+  linkPreview?: LinkPreviewData;
   metadata?: Record<string, any>;
 }
 
@@ -107,21 +194,39 @@ export interface ResetPasswordForm {
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
-  Chat: { conversationId: string };
+  Chat: { conversationId: string; contactId?: string };
   Profile: { userId: string };
+  EditProfile: undefined;
   Settings: undefined;
+  NotificationSettings: undefined;
+  PrivacySettings: undefined;
+  AppearanceSettings: undefined;
+  DataStorageSettings: undefined;
+  AddContact: undefined;
+  UserSearch: undefined;
+  ContactRequests: undefined;
+  ContactProfile: { contactId: string };
+  BlockedContacts: undefined;
+  CreateGroup: undefined;
+  GroupInfo: { groupId: string };
+  TwoFactorAuth: undefined;
+  AccountDeletion: undefined;
+  DataExport: undefined;
+  ConsentManagement: undefined;
 };
 
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
-  ResetPassword: { token: string };
-  VerifyEmail: { token: string };
+  ResetPassword: { token?: string; email?: string };
+  EmailVerification: { email?: string; token?: string; autoVerify?: boolean };
+  AccountPending: { email?: string; username?: string };
 };
 
 export type MainTabParamList = {
   Conversations: undefined;
+  Groups: undefined;
   Contacts: undefined;
   Profile: undefined;
 };

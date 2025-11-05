@@ -1,10 +1,9 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 
-// API Configuration
-const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:4000';
-const WS_BASE_URL = Constants.expoConfig?.extra?.wsUrl || 'ws://localhost:4000';
+// API Configuration from environment variables
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
+const WS_BASE_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://localhost:4000';
 
 // Create axios instance
 const api = axios.create({
@@ -140,14 +139,16 @@ export const messagingAPI = {
   getConversation: (conversationId: string) =>
     api.get(`/api/v1/conversations/${conversationId}`),
 
-  sendMessage: (conversationId: string, content: string, type: string = 'text') =>
-    api.post(`/api/v1/conversations/${conversationId}/messages`, { content, type }),
+  sendMessage: (conversationId: string, content: string, type: string = 'text', replyTo?: string, file?: any) =>
+    api.post(`/api/v1/conversations/${conversationId}/messages`, { content, type, replyTo, file }),
 
   editMessage: (conversationId: string, messageId: string, content: string) =>
     api.put(`/api/v1/conversations/${conversationId}/messages/${messageId}`, { content }),
 
-  deleteMessage: (conversationId: string, messageId: string) =>
-    api.delete(`/api/v1/conversations/${conversationId}/messages/${messageId}`),
+  deleteMessage: (conversationId: string, messageId: string, deleteForEveryone: boolean = false) =>
+    api.delete(`/api/v1/conversations/${conversationId}/messages/${messageId}`, {
+      params: { deleteForEveryone }
+    }),
 
   markAsRead: (conversationId: string, messageId: string) =>
     api.post(`/api/v1/conversations/${conversationId}/messages/${messageId}/read`),
@@ -185,9 +186,118 @@ export const userAPI = {
 
   searchUsers: (query: string) =>
     api.get(`/api/v1/users/search?q=${encodeURIComponent(query)}`),
+};
 
-  getContacts: () =>
-    api.get('/api/v1/contacts'),
+export const groupAPI = {
+  // Group CRUD
+  getUserGroups: (page = 1, limit = 20, search?: string, groupType?: 'private' | 'public') => {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+    if (search) params.append('search', search);
+    if (groupType) params.append('groupType', groupType);
+    return api.get(`/api/groups?${params.toString()}`);
+  },
+
+  getGroup: (groupId: string) =>
+    api.get(`/api/groups/${groupId}`),
+
+  createGroup: (data: {
+    name: string;
+    description?: string;
+    groupType?: 'private' | 'public';
+    avatar?: string;
+    initialMembers?: string[];
+  }) =>
+    api.post('/api/groups', data),
+
+  updateGroup: (groupId: string, data: {
+    name?: string;
+    description?: string;
+    avatar?: string;
+  }) =>
+    api.put(`/api/groups/${groupId}`, data),
+
+  deleteGroup: (groupId: string) =>
+    api.delete(`/api/groups/${groupId}`),
+
+  leaveGroup: (groupId: string) =>
+    api.post(`/api/groups/${groupId}/leave`),
+
+  muteGroup: (groupId: string) =>
+    api.post(`/api/groups/${groupId}/mute`),
+
+  unmuteGroup: (groupId: string) =>
+    api.delete(`/api/groups/${groupId}/mute`),
+
+  // Group Members
+  getGroupMembers: (groupId: string) =>
+    api.get(`/api/groups/${groupId}/members`),
+
+  addGroupMembers: (groupId: string, userIds: string[]) =>
+    api.post(`/api/groups/${groupId}/members`, { userIds }),
+
+  removeGroupMember: (groupId: string, userId: string) =>
+    api.delete(`/api/groups/${groupId}/members/${userId}`),
+
+  updateMemberRole: (groupId: string, userId: string, role: 'admin' | 'moderator' | 'member') =>
+    api.put(`/api/groups/${groupId}/members/${userId}/role`, { role }),
+
+  // Group Settings
+  getGroupSettings: (groupId: string) =>
+    api.get(`/api/groups/${groupId}/settings`),
+
+  updateGroupSettings: (groupId: string, settings: {
+    onlyAdminsCanPost?: boolean;
+    onlyAdminsCanAddMembers?: boolean;
+    onlyAdminsCanEditInfo?: boolean;
+    enableReadReceipts?: boolean;
+    enableTypingIndicators?: boolean;
+  }) =>
+    api.put(`/api/groups/${groupId}/settings`, settings),
+};
+
+export const contactAPI = {
+  getContacts: (status?: 'pending' | 'accepted' | 'blocked', page = 1, limit = 50) => {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+    return api.get(`/api/contacts?${params.toString()}`);
+  },
+
+  addContact: (userId: string, nickname?: string, notes?: string) =>
+    api.post('/api/contacts', { userId, nickname, notes }),
+
+  acceptContact: (contactId: string) =>
+    api.post(`/api/contacts/${contactId}/accept`),
+
+  rejectContact: (contactId: string) =>
+    api.post(`/api/contacts/${contactId}/reject`),
+
+  deleteContact: (contactId: string) =>
+    api.delete(`/api/contacts/${contactId}`),
+
+  blockContact: (contactId: string) =>
+    api.post(`/api/contacts/${contactId}/block`),
+
+  unblockContact: (contactId: string) =>
+    api.delete(`/api/contacts/${contactId}/block`),
+
+  favoriteContact: (contactId: string) =>
+    api.post(`/api/contacts/${contactId}/favorite`),
+
+  unfavoriteContact: (contactId: string) =>
+    api.delete(`/api/contacts/${contactId}/favorite`),
+
+  updateContact: (contactId: string, data: { nickname?: string; notes?: string }) =>
+    api.patch(`/api/contacts/${contactId}`, data),
+
+  muteContact: (contactId: string) =>
+    api.post(`/api/contacts/${contactId}/mute`),
+
+  unmuteContact: (contactId: string) =>
+    api.delete(`/api/contacts/${contactId}/mute`),
 };
 
 export default api;

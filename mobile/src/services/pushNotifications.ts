@@ -19,6 +19,8 @@ export class PushNotificationService {
         shouldShowAlert: true,
         shouldPlaySound: true,
         shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
       }),
     });
 
@@ -55,7 +57,10 @@ export class PushNotificationService {
         body,
         data: data || {},
       },
-      trigger: { seconds: 2 },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 2,
+      },
     });
   }
 

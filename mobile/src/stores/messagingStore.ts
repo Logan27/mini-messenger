@@ -12,9 +12,9 @@ interface MessagingState {
   // Actions
   loadConversations: () => Promise<void>;
   loadMessages: (conversationId: string) => Promise<void>;
-  sendMessage: (conversationId: string, content: string, type?: string) => Promise<void>;
+  sendMessage: (conversationId: string, content: string, replyTo?: string, file?: any) => Promise<void>;
   editMessage: (conversationId: string, messageId: string, content: string) => Promise<void>;
-  deleteMessage: (conversationId: string, messageId: string) => Promise<void>;
+  deleteMessage: (conversationId: string, messageId: string, deleteForEveryone?: boolean) => Promise<void>;
   markAsRead: (conversationId: string, messageId: string) => Promise<void>;
   setActiveConversation: (conversation: Conversation | null) => void;
   addMessage: (message: Message) => void;
@@ -26,6 +26,10 @@ interface MessagingState {
   setTyping: (conversationId: string, userId: string, isTyping: boolean) => void;
   joinConversation: (conversationId: string) => void;
   leaveConversation: (conversationId: string) => void;
+
+  // Reactions
+  addReaction: (conversationId: string, messageId: string, emoji: string) => Promise<void>;
+  removeReaction: (conversationId: string, messageId: string, emoji: string) => Promise<void>;
 }
 
 export const useMessagingStore = create<MessagingState>((set, get) => ({
@@ -68,9 +72,9 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
     }
   },
 
-  sendMessage: async (conversationId: string, content: string, type: string = 'text') => {
+  sendMessage: async (conversationId: string, content: string, replyTo?: string, file?: any) => {
     try {
-      const response = await messagingAPI.sendMessage(conversationId, content, type);
+      const response = await messagingAPI.sendMessage(conversationId, content, 'text', replyTo, file);
       const newMessage = response.data;
 
       set((state) => ({
@@ -118,9 +122,9 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
     }
   },
 
-  deleteMessage: async (conversationId: string, messageId: string) => {
+  deleteMessage: async (conversationId: string, messageId: string, deleteForEveryone: boolean = false) => {
     try {
-      await messagingAPI.deleteMessage(conversationId, messageId);
+      await messagingAPI.deleteMessage(conversationId, messageId, deleteForEveryone);
 
       set((state) => ({
         messages: {
@@ -230,5 +234,84 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
 
   leaveConversation: (conversationId: string) => {
     wsService.emit('leaveConversation', conversationId);
+  },
+
+  addReaction: async (conversationId: string, messageId: string, emoji: string) => {
+    try {
+      const { user } = require('./authStore').useAuthStore.getState();
+
+      // Optimistic update
+      set((state) => ({
+        messages: {
+          ...state.messages,
+          [conversationId]: (state.messages[conversationId] || []).map((msg) => {
+            if (msg.id === messageId) {
+              const reactions = msg.reactions || [];
+              const existingReaction = reactions.find(r => r.emoji === emoji);
+
+              if (existingReaction) {
+                // Add user to existing reaction
+                if (!existingReaction.users.includes(user.id)) {
+                  return {
+                    ...msg,
+                    reactions: reactions.map(r =>
+                      r.emoji === emoji
+                        ? { ...r, users: [...r.users, user.id] }
+                        : r
+                    ),
+                  };
+                }
+              } else {
+                // Create new reaction
+                return {
+                  ...msg,
+                  reactions: [...reactions, { emoji, users: [user.id] }],
+                };
+              }
+            }
+            return msg;
+          }),
+        },
+      }));
+
+      // TODO: API call to persist reaction
+      // await messagingAPI.addReaction(conversationId, messageId, emoji);
+    } catch (error: any) {
+      console.error('Failed to add reaction:', error);
+    }
+  },
+
+  removeReaction: async (conversationId: string, messageId: string, emoji: string) => {
+    try {
+      const { user } = require('./authStore').useAuthStore.getState();
+
+      // Optimistic update
+      set((state) => ({
+        messages: {
+          ...state.messages,
+          [conversationId]: (state.messages[conversationId] || []).map((msg) => {
+            if (msg.id === messageId) {
+              const reactions = msg.reactions || [];
+              return {
+                ...msg,
+                reactions: reactions
+                  .map(r =>
+                    r.emoji === emoji
+                      ? { ...r, users: r.users.filter(uid => uid !== user.id) }
+                      : r
+                  )
+                  .filter(r => r.users.length > 0), // Remove reactions with no users
+              };
+            }
+            return msg;
+          }),
+        },
+      }));
+
+      // TODO: API call to persist reaction removal
+      // await messagingAPI.removeReaction(conversationId, messageId, emoji);
+    } catch (error: any) {
+      console.error('Failed to remove reaction:', error);
+    }
   },
 }));

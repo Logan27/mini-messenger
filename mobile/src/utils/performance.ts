@@ -252,7 +252,7 @@ class PerformanceOptimizer {
 
   public throttle(func: Function, limit: number): Function {
     let inThrottle: boolean;
-    return function executedFunction(...args: any[]) {
+    return function executedFunction(this: any, ...args: any[]) {
       if (!inThrottle) {
         func.apply(this, args);
         inThrottle = true;

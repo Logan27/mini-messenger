@@ -39,13 +39,23 @@
         "RECORD_AUDIO",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO",
+        "READ_MEDIA_AUDIO",
         "READ_CONTACTS",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
         "INTERNET",
         "ACCESS_NETWORK_STATE",
-        "WAKE_LOCK"
-      ]
+        "WAKE_LOCK",
+        "MODIFY_AUDIO_SETTINGS",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
+      ],
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy"
+      },
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -36,6 +36,15 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
   const [showActions, setShowActions] = useState(false);
   const [showFilePreview, setShowFilePreview] = useState(false);
 
+  // Debug: Log message reactions on every render
+  if (message.reactions && Object.keys(message.reactions).length > 0) {
+    console.log('💬 MessageBubble received message with reactions:', {
+      messageId: message.id,
+      reactions: message.reactions,
+      reactionsKeys: Object.keys(message.reactions),
+    });
+  }
+
   const handleCopy = () => {
     if (message.text) {
       navigator.clipboard.writeText(message.text);

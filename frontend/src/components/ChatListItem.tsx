@@ -11,6 +11,10 @@ interface ChatListItemProps {
   chat: Chat;
   isActive: boolean;
   onClick: () => void;
+  onStartCall?: (contactId: string, callType: 'voice' | 'video') => void;
+  onMuteToggle?: (chatId: string, isMuted: boolean) => void;
+  onDelete?: (chatId: string) => void;
+  onBlock?: (chatId: string) => void;
 }
 
 const getStatusText = (chat: Chat) => {
@@ -33,10 +37,14 @@ const getStatusText = (chat: Chat) => {
   return null;
 };
 
-export const ChatListItem = ({ 
-  chat, 
-  isActive, 
-  onClick
+export const ChatListItem = ({
+  chat,
+  isActive,
+  onClick,
+  onStartCall,
+  onMuteToggle,
+  onDelete,
+  onBlock
 }: ChatListItemProps) => {
 
   return (

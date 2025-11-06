@@ -13,6 +13,10 @@ interface User {
   role: string;
   bio?: string;
   phone?: string;
+  firstName?: string;
+  lastName?: string;
+  lastLogin?: string;
+  twoFactorEnabled?: boolean;
   settings?: {
     showOnlineStatus?: boolean;
     sendReadReceipts?: boolean;

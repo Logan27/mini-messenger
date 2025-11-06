@@ -113,7 +113,7 @@ export default function Settings() {
     setIsUpdatingProfile(true);
     try {
       // Send all profile fields to ensure nothing gets cleared
-      const updateData: any = {
+      const updateData = {
         firstName: firstName || "",
         lastName: lastName || "",
         bio: bio || "",
@@ -127,11 +127,12 @@ export default function Settings() {
         title: "Profile updated",
         description: "Your profile has been updated successfully",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string; message?: string } } };
       toast({
         variant: "destructive",
         title: "Failed to update profile",
-        description: error.response?.data?.error || error.response?.data?.message || "Please try again",
+        description: err.response?.data?.error || err.response?.data?.message || "Please try again",
       });
     } finally {
       setIsUpdatingProfile(false);
@@ -172,11 +173,12 @@ export default function Settings() {
         title: "Password updated",
         description: "Your password has been changed successfully",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       toast({
         variant: "destructive",
         title: "Failed to update password",
-        description: error.response?.data?.message || "Please try again",
+        description: err.response?.data?.message || "Please try again",
       });
     } finally {
       setIsUpdatingPassword(false);
@@ -197,11 +199,12 @@ export default function Settings() {
         title: "Privacy settings updated",
         description: "Your privacy preferences have been saved",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       toast({
         variant: "destructive",
         title: "Failed to update settings",
-        description: error.response?.data?.message || "Please try again",
+        description: err.response?.data?.message || "Please try again",
       });
     }
   };
@@ -574,11 +577,12 @@ export default function Settings() {
                           title: "Export complete",
                           description: "Your data has been downloaded successfully"
                         });
-                      } catch (error: any) {
+                      } catch (error: unknown) {
+                        const err = error as { response?: { data?: { message?: string } } };
                         toast({
                           variant: "destructive",
                           title: "Export failed",
-                          description: error.response?.data?.message || "Please try again"
+                          description: err.response?.data?.message || "Please try again"
                         });
                       } finally {
                         setIsRequestingExport(false);
@@ -686,16 +690,17 @@ export default function Settings() {
                                 title: "Account deletion requested",
                                 description: "Your account will be deleted in 30 days. You can cancel this within the grace period."
                               });
-                              
+
                               // Logout after deletion request
                               setTimeout(async () => {
                                 await logout();
                               }, 2000);
-                            } catch (error: any) {
+                            } catch (error: unknown) {
+                              const err = error as { response?: { data?: { message?: string } } };
                               toast({
                                 variant: "destructive",
                                 title: "Deletion failed",
-                                description: error.response?.data?.message || "Please try again"
+                                description: err.response?.data?.message || "Please try again"
                               });
                             } finally {
                               setIsDeletingAccount(false);

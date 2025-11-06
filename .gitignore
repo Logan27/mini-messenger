@@ -20,6 +20,9 @@ nul
 *_GUIDE.md
 *_VISUAL*.md
 *_REFERENCE.md
+*_IMPLEMENTATION*.md
+*_PROGRESS*.md
+SESSION_*.md
 *TEST*.md
 *-test*.bat
 *-test*.js
@@ -34,6 +37,7 @@ test-*.js
 test-*.json
 test-*.html
 test-*.png
+test-*.sh
 extract-ids*.ps1
 create-test-*.js
 fix-test-script.py
@@ -43,6 +47,7 @@ show-calls.js
 cleanup-calls.js
 test-results/
 test-files/
+temp/
 *.beforereorder
 test_results*.txt
 temp_*.json
@@ -85,7 +90,10 @@ docker-compose.production.yml
 
 # SQL temp files
 *.sql.tmp
-create_admin.sql
+fix-*.sql
+# Keep admin SQL scripts - exclude from ignore
+!create_admin.sql
+!unlock-admin.sql
 
 # Logs
 *.log
@@ -93,6 +101,20 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Development scripts and utilities
+fix-*.sh
+speckit.*.md
+# Keep start scripts - exclude from ignore
+!start.bat
+!start.sh
+
+# Media test files
+*.mp3
+*.wav
+*.mp4
+# Keep specific media file - exclude from ignore
+!Fly_Me_To_The_Moon-639051-mobiles24.mp3
 
 # OS files
 .DS_Store

@@ -31,6 +31,9 @@ api-test-*.bat
 test-*.bat
 test-*.ps1
 test-*.js
+test-*.json
+test-*.html
+test-*.png
 extract-ids*.ps1
 create-test-*.js
 fix-test-script.py
@@ -38,6 +41,14 @@ fix-test-script.py
 *-api-test*.md
 show-calls.js
 cleanup-calls.js
+test-results/
+test-files/
+*.beforereorder
+test_results*.txt
+temp_*.json
+*_token.txt
+token.txt
+admin_token.txt
 
 # Temporary uploads and quarantine
 backend/uploads/files/*
@@ -52,6 +63,11 @@ backend/temp_search.txt
 *.tmp
 *.bak
 *.backup
+*.backup2
+*.backup3
+*.backup[0-9]
+frontend.backup/
+backend.backup/
 
 # VS Code and IDE
 .vscode/

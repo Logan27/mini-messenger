@@ -112,6 +112,8 @@ export const ChatView = ({
   const markedAsReadRef = useRef<Set<string>>(new Set()); // Track which messages we've marked as read
   const isTypingRef = useRef<boolean>(false); // Track if we're currently in typing state
   const isMountedRef = useRef<boolean>(false); // Track if component is actually mounted and visible
+  const isInitialLoadRef = useRef<boolean>(true); // Track if this is the initial message load
+  const previousMessageCountRef = useRef<number>(0); // Track previous message count
 
   const { user } = useAuth();
   const sendMessage = useSendMessage();
@@ -134,11 +136,9 @@ export const ChatView = ({
   // Track when component is mounted and visible
   useEffect(() => {
     isMountedRef.current = true;
-    console.log('📱 ChatView mounted - ready to mark messages as read');
-    
+
     return () => {
       isMountedRef.current = false;
-      console.log('📱 ChatView unmounted - stopping mark as read');
     };
   }, []);
 
@@ -168,10 +168,12 @@ export const ChatView = ({
     return () => container.removeEventListener('scroll', handleScroll);
   }, [hasMoreMessages, isLoadingMore, onLoadMore]);
 
-  // Restore scroll position after loading more messages
+  // Restore scroll position after loading more messages (but not on initial load)
   useEffect(() => {
     const container = messagesContainerRef.current;
-    if (!container || isLoadingMore) return;
+
+    // Don't run on initial load or while loading
+    if (!container || isLoadingMore || isInitialLoadRef.current) return;
 
     // Give the DOM time to update
     const timer = setTimeout(() => {
@@ -218,9 +220,60 @@ export const ChatView = ({
     }
   }, [recipientId]);
 
+  // Reset initial load flag when conversation changes
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    isInitialLoadRef.current = true;
+    previousMessageCountRef.current = 0;
+  }, [recipientId, groupId]);
+
+  // Smart scroll: only scroll to bottom for new messages, not on initial load or when loading history
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container || messages.length === 0) return;
+
+    const currentMessageCount = messages.length;
+    const previousMessageCount = previousMessageCountRef.current;
+
+    // First load: restore scroll position or scroll to bottom
+    if (isInitialLoadRef.current && currentMessageCount > 0) {
+      const savedScrollKey = `chat_scroll_${recipientId || groupId}`;
+      const savedMessageId = localStorage.getItem(savedScrollKey);
+
+      // Use requestAnimationFrame to ensure DOM is painted
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (savedMessageId && messageRefs.current.has(savedMessageId)) {
+            const messageElement = messageRefs.current.get(savedMessageId);
+            if (messageElement) {
+              messageElement.scrollIntoView({ block: 'center', behavior: 'auto' });
+            } else {
+              scrollToBottom();
+            }
+          } else {
+            scrollToBottom();
+          }
+          isInitialLoadRef.current = false;
+        });
+      });
+
+      previousMessageCountRef.current = currentMessageCount;
+      return;
+    }
+
+    // Check if user is near bottom (within 150px)
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+
+    // New message arrived (count increased)
+    if (currentMessageCount > previousMessageCount && !isInitialLoadRef.current) {
+      // Only auto-scroll if user was already near bottom
+      if (isNearBottom) {
+        scrollToBottom();
+      }
+    }
+
+    previousMessageCountRef.current = currentMessageCount;
+  }, [messages, recipientId, groupId]);
 
   // Auto-scroll when typing indicator appears/disappears
   useEffect(() => {
@@ -230,18 +283,51 @@ export const ChatView = ({
   }, [isTyping]);
 
   useEffect(() => {
+    let scrollTimeout: NodeJS.Timeout;
+
     const handleScroll = () => {
       if (messagesContainerRef.current) {
         const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
         const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
         setShowScrollButton(!isNearBottom);
+
+        // Debounce the scroll position saving
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          // Save the message ID that's currently in the center of the viewport
+          const savedScrollKey = `chat_scroll_${recipientId || groupId}`;
+          const viewportCenter = scrollTop + clientHeight / 2;
+
+          // Find the message closest to the viewport center
+          let closestMessage = null;
+          let closestDistance = Infinity;
+
+          messageRefs.current.forEach((element, messageId) => {
+            const rect = element.getBoundingClientRect();
+            const containerRect = messagesContainerRef.current!.getBoundingClientRect();
+            const messageCenter = rect.top - containerRect.top + scrollTop + rect.height / 2;
+            const distance = Math.abs(messageCenter - viewportCenter);
+
+            if (distance < closestDistance) {
+              closestDistance = distance;
+              closestMessage = messageId;
+            }
+          });
+
+          if (closestMessage) {
+            localStorage.setItem(savedScrollKey, closestMessage);
+          }
+        }, 200); // Wait 200ms after scrolling stops
       }
     };
 
     const container = messagesContainerRef.current;
     container?.addEventListener("scroll", handleScroll);
-    return () => container?.removeEventListener("scroll", handleScroll);
-  }, []);
+    return () => {
+      container?.removeEventListener("scroll", handleScroll);
+      clearTimeout(scrollTimeout);
+    };
+  }, [recipientId, groupId, messages]);
 
   // Listen for typing indicators
   useEffect(() => {
@@ -488,19 +574,9 @@ export const ChatView = ({
   };
 
   const handleReaction = async (messageId: string, emoji: string) => {
-    console.log('🎯 handleReaction called:', {
-      messageId,
-      emoji,
-      messageIdType: typeof messageId,
-      messageIdIsUndefined: messageId === undefined,
-      messageIdIsNull: messageId === null,
-      messageIdIsEmpty: messageId === '',
-    });
-
     try {
       await addReaction.mutateAsync({ messageId, emoji });
     } catch (error: any) {
-      console.error('Failed to add reaction:', error);
       toast({
         variant: "destructive",
         title: "Failed to add reaction",
@@ -888,6 +964,7 @@ export const ChatView = ({
                     onDelete={handleDelete}
                     onReplyClick={handleReplyClick}
                     onReaction={handleReaction}
+                    isGroupMessage={!!groupId}
                   />
                 )}
               </div>

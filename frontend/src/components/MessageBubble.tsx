@@ -22,6 +22,7 @@ interface MessageBubbleProps {
   onDelete?: (messageId: string) => void;
   onReplyClick?: (messageId: string) => void;
   onReaction?: (messageId: string, emoji: string) => void;
+  isGroupMessage?: boolean;
 }
 
 const formatMessageTime = (date: Date) => {
@@ -32,18 +33,9 @@ const formatMessageTime = (date: Date) => {
   });
 };
 
-export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelete, onReplyClick, onReaction }: MessageBubbleProps) => {
+export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelete, onReplyClick, onReaction, isGroupMessage = false }: MessageBubbleProps) => {
   const [showActions, setShowActions] = useState(false);
   const [showFilePreview, setShowFilePreview] = useState(false);
-
-  // Debug: Log message reactions on every render
-  if (message.reactions && Object.keys(message.reactions).length > 0) {
-    console.log('💬 MessageBubble received message with reactions:', {
-      messageId: message.id,
-      reactions: message.reactions,
-      reactionsKeys: Object.keys(message.reactions),
-    });
-  }
 
   const handleCopy = () => {
     if (message.text) {
@@ -197,21 +189,35 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
                     {message.status === 'sending' && (
                       <Clock className="h-3 w-3 text-white/60" />
                     )}
-                    {message.status === 'sent' && (
-                      <Check className="h-3 w-3 text-white/80" />
-                    )}
-                    {message.status === 'delivered' && (
-                      <CheckCheck className="h-3 w-3 text-white/80" />
-                    )}
-                    {message.status === 'read' && (
-                      <CheckCheck className="h-3 w-3 text-white" />
-                    )}
                     {message.status === 'failed' && (
                       <Clock className="h-3 w-3 text-red-300" />
+                    )}
+                    {/* Group messages: show simple sent indicator */}
+                    {isGroupMessage && message.status !== 'sending' && message.status !== 'failed' && (
+                      <Check className="h-3 w-3 text-white/80" />
+                    )}
+                    {/* Direct messages: show detailed delivery status */}
+                    {!isGroupMessage && message.status === 'sent' && (
+                      <Check className="h-3 w-3 text-white/80" />
+                    )}
+                    {!isGroupMessage && message.status === 'delivered' && (
+                      <CheckCheck className="h-3 w-3 text-white/80" />
+                    )}
+                    {!isGroupMessage && message.status === 'read' && (
+                      <CheckCheck className="h-3 w-3 text-white" />
                     )}
                   </span>
                 )}
               </div>
+
+              {/* Message Reactions - positioned below message content */}
+              {message.reactions && Object.keys(message.reactions).length > 0 && (
+                <MessageReactions
+                  reactions={message.reactions}
+                  currentUserId={currentUserId}
+                  onReactionClick={onReaction ? (emoji) => onReaction(message.id, emoji) : undefined}
+                />
+              )}
             </div>
           </div>
 
@@ -221,14 +227,7 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
             message.isOwn && "order-1"
           )}>
             <ReactionPicker
-              onReactionSelect={(emoji) => {
-                console.log('🎯 Reaction selected in MessageBubble:', {
-                  messageId: message.id,
-                  emoji,
-                  hasOnReaction: !!onReaction,
-                });
-                onReaction?.(message.id, emoji);
-              }}
+              onReactionSelect={(emoji) => onReaction?.(message.id, emoji)}
             />
           </div>
 
@@ -271,20 +270,6 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-
-        {/* Message Reactions - completely outside all flex containers */}
-        {message.reactions && Object.keys(message.reactions).length > 0 && (
-          <div className={cn(
-            "w-full",
-            message.isOwn ? "flex justify-end" : "flex justify-start"
-          )}>
-            <MessageReactions
-              reactions={message.reactions}
-              currentUserId={currentUserId}
-              onReactionClick={onReaction ? (emoji) => onReaction(message.id, emoji) : undefined}
-            />
-          </div>
-        )}
       </div>
 
       {/* File Preview Modal */}

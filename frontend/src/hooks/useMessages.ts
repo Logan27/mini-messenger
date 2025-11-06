@@ -188,31 +188,15 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
 
     // Listen for reaction updates
     const unsubscribeReaction = socketService.on('message.reaction', (data: any) => {
-      console.log('👍 Reaction event received:', {
-        data,
-        messageId: data?.messageId,
-        reactions: data?.reactions,
-        recipientId,
-        groupId,
-      });
       const { messageId, reactions } = data;
       const queryKey = ['messages', recipientId, groupId];
 
       queryClient.setQueryData(queryKey, (old: any) => {
-        if (!old) {
-          console.log('❌ No old data found for queryKey:', queryKey);
-          return old;
-        }
+        if (!old) return old;
 
-        console.log('🔄 Updating message reactions in cache');
         const newPages = old.pages.map((page: any[]) =>
           page.map((msg: any) => {
             if (msg.id === messageId) {
-              console.log('✅ Found message to update:', {
-                messageId,
-                oldReactions: msg.reactions,
-                newReactions: reactions,
-              });
               return { ...msg, reactions: reactions || {} };
             }
             return msg;

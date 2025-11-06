@@ -299,14 +299,12 @@ class SocketService {
       this.listeners.set(event, new Set());
     }
     this.listeners.get(event)!.add(callback);
-    console.log(`🔔 Registered listener for event: ${event}, total listeners: ${this.listeners.get(event)!.size}`);
 
     // Return unsubscribe function
     return () => {
       const callbacks = this.listeners.get(event);
       if (callbacks) {
         callbacks.delete(callback);
-        console.log(`🔕 Unregistered listener for event: ${event}, remaining: ${callbacks.size}`);
         if (callbacks.size === 0) {
           this.listeners.delete(event);
         }
@@ -317,15 +315,8 @@ class SocketService {
   // Emit to local listeners
   private emit(event: string, data: any) {
     const callbacks = this.listeners.get(event);
-    console.log(`📢 Emitting event: ${event}, listeners: ${callbacks?.size || 0}`, data);
     if (callbacks) {
       callbacks.forEach((callback) => callback(data));
-      console.log(`✅ Called ${callbacks.size} listeners for event: ${event}`);
-    } else {
-      // Only warn for important events (not typing indicators, status updates, or call events which are expected to have no listeners sometimes)
-      if (!['message.typing', 'user.status', 'call.incoming', 'call.ended', 'connection.status'].includes(event)) {
-        console.warn(`⚠️ No listeners registered for event: ${event}, data:`, data);
-      }
     }
   }
 

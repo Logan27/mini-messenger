@@ -153,15 +153,6 @@ const Index = () => {
         } : undefined,
       };
 
-      // Debug: Log reactions if present
-      if (Object.keys(transformed.reactions).length > 0) {
-        console.log('👍 Message with reactions:', {
-          id: transformed.id,
-          text: transformed.text?.substring(0, 30),
-          reactions: transformed.reactions
-        });
-      }
-
       return transformed;
     })
   ) || []).reverse();

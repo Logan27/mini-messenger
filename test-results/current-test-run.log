@@ -1,8 +1,0 @@
-npm error Missing script: "test:api"
-npm error
-npm error Did you mean this?
-npm error   npm run test:all # run the "test:all" package script
-npm error
-npm error To see a list of scripts, run:
-npm error   npm run
-npm error A complete log of this run can be found in: C:\Users\anton\AppData\Local\npm-cache\_logs\2025-10-21T14_55_24_374Z-debug-0.log

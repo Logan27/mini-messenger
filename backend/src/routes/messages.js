@@ -1935,12 +1935,6 @@ router.post(
       const { emoji } = req.body;
       const userId = req.user.id;
 
-      console.log('🎯 Reaction endpoint called:', {
-        messageId,
-        emoji,
-        userId,
-      });
-
       // Find the message
       const message = await Message.findOne({
         where: {
@@ -1966,7 +1960,7 @@ router.post(
           where: {
             groupId: message.groupId,
             userId: userId,
-            status: 'active',
+            isActive: true,
           },
         });
         hasAccess = !!member;
@@ -1979,25 +1973,33 @@ router.post(
         });
       }
 
-      // Update reactions
-      const reactions = message.reactions || {};
+      // Update reactions (deep clone to avoid reference issues)
+      const reactions = JSON.parse(JSON.stringify(message.reactions || {}));
+
       if (!reactions[emoji]) {
         reactions[emoji] = [];
       }
 
       // Toggle reaction (add if not present, remove if present)
       const userIndex = reactions[emoji].indexOf(userId);
+      const action = userIndex > -1 ? 'removed' : 'added';
+
       if (userIndex > -1) {
+        // User already reacted, remove it
         reactions[emoji].splice(userIndex, 1);
         // Remove emoji key if no users left
         if (reactions[emoji].length === 0) {
           delete reactions[emoji];
         }
       } else {
+        // User hasn't reacted, add it
         reactions[emoji].push(userId);
       }
 
-      await message.update({ reactions });
+      // Mark as changed for Sequelize JSONB field
+      message.reactions = reactions;
+      message.changed('reactions', true);
+      await message.save();
 
       // Emit real-time event
       const { getIO } = await import('../services/websocket.js');
@@ -2005,18 +2007,11 @@ router.post(
       if (io) {
         const reactionData = {
           messageId: message.id,
-          reactions: message.reactions,
+          reactions: reactions, // Use the updated reactions object, not message.reactions
           userId: userId,
           emoji: emoji,
-          action: userIndex > -1 ? 'removed' : 'added',
+          action: action,
         };
-
-        console.log('🎯 Emitting reaction event:', {
-          reactionData,
-          senderRoom: `user:${message.senderId}`,
-          recipientRoom: message.recipientId ? `user:${message.recipientId}` : null,
-          groupRoom: message.groupId ? `group:${message.groupId}` : null,
-        });
 
         // Notify sender
         io.to(`user:${message.senderId}`).emit('message.reaction', reactionData);
@@ -2030,28 +2025,13 @@ router.post(
         if (message.groupId) {
           io.to(`group:${message.groupId}`).emit('message.reaction', reactionData);
         }
-
-        logger.info('📡 Reaction WebSocket event emitted', {
-          messageId: message.id,
-          emoji,
-          action: userIndex > -1 ? 'removed' : 'added',
-          senderId: message.senderId,
-          recipientId: message.recipientId,
-          groupId: message.groupId,
-        });
       }
-
-      logger.info(`Reaction ${userIndex > -1 ? 'removed' : 'added'} for message`, {
-        messageId,
-        userId,
-        emoji,
-      });
 
       res.json({
         success: true,
         data: {
           messageId: message.id,
-          reactions: message.reactions,
+          reactions: reactions, // Use the updated reactions object
         },
       });
     } catch (error) {
@@ -2105,7 +2085,7 @@ router.get('/:messageId/reactions', [param('messageId').isUUID()], async (req, r
         where: {
           groupId: message.groupId,
           userId: userId,
-          status: 'active',
+          isActive: true,
         },
       });
       hasAccess = !!member;

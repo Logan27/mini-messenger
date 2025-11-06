@@ -44,18 +44,7 @@ export const messageService = {
     
     const response = await apiClient.get('/messages', { params: apiParams });
 
-    // Debug: Log messages with reactions
-    const messages = response.data.data;
-    const messagesWithReactions = messages.filter((msg: any) =>
-      msg.reactions && Object.keys(msg.reactions).length > 0
-    );
-    if (messagesWithReactions.length > 0) {
-      console.log('📦 API returned messages with reactions:', messagesWithReactions);
-    } else {
-      console.log('📦 API returned NO messages with reactions');
-    }
-
-    return messages;
+    return response.data.data;
   },
 
   async sendMessage(data: {

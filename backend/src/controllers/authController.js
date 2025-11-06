@@ -48,6 +48,10 @@ class AuthController {
         avatar,
         emailVerified,
         emailVerificationToken,
+        termsAcceptedAt: new Date(),
+        privacyAcceptedAt: new Date(),
+        termsVersion: '1.0',
+        privacyVersion: '1.0',
       });
 
       if (!autoVerifyEmail) {

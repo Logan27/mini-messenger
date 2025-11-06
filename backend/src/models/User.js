@@ -200,6 +200,44 @@ export const User = sequelize.define(
       allowNull: false,
       comment: 'Privacy setting: whether to send read receipts to other users',
     },
+    termsAcceptedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: 'Timestamp when user accepted Terms of Service',
+    },
+    privacyAcceptedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: 'Timestamp when user accepted Privacy Policy',
+    },
+    termsVersion: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      defaultValue: '1.0',
+      comment: 'Version of Terms of Service accepted by user',
+    },
+    privacyVersion: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      defaultValue: '1.0',
+      comment: 'Version of Privacy Policy accepted by user',
+    },
+    twoFactorSecret: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'Base32-encoded secret for TOTP two-factor authentication',
+    },
+    twoFactorEnabled: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+      comment: 'Whether two-factor authentication is enabled',
+    },
+    twoFactorBackupCodes: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'JSON array of hashed backup codes for 2FA recovery',
+    },
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,

@@ -5,6 +5,7 @@ import AuditLog from './AuditLog.js';
 import Call from './Call.js';
 import Contact from './Contact.js';
 import Device from './Device.js';
+import DeviceToken from './DeviceToken.js';
 import File from './File.js';
 import Group from './Group.js';
 import GroupMember from './GroupMember.js';
@@ -30,6 +31,18 @@ User.hasMany(Session, {
 User.hasMany(Device, {
   foreignKey: 'userId',
   as: 'devices',
+  onDelete: 'CASCADE',
+});
+
+User.hasMany(DeviceToken, {
+  foreignKey: 'userId',
+  as: 'deviceTokens',
+  onDelete: 'CASCADE',
+});
+
+DeviceToken.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user',
   onDelete: 'CASCADE',
 });
 
@@ -277,6 +290,7 @@ export {
   File,
   Call,
   Device,
+  DeviceToken,
   AuditLog,
   Notification,
   NotificationSettings,
@@ -299,6 +313,7 @@ export default {
   File,
   Call,
   Device,
+  DeviceToken,
   AuditLog,
   Notification,
   NotificationSettings,

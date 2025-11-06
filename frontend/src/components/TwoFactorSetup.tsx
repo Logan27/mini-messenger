@@ -40,6 +40,7 @@ export default function TwoFactorSetup() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [showDisableDialog, setShowDisableDialog] = useState(false);
   const [disableCode, setDisableCode] = useState('');
+  const [disablePassword, setDisablePassword] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [copiedSecret, setCopiedSecret] = useState(false);
   const [copiedCode, setCopiedCode] = useState<number | null>(null);
@@ -55,7 +56,7 @@ export default function TwoFactorSetup() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setIsEnabled(response.data.enabled || false);
+      setIsEnabled(response.data.data?.twoFactorEnabled || false);
     } catch (error: any) {
       console.error('Failed to check 2FA status:', error);
     } finally {
@@ -80,15 +81,14 @@ export default function TwoFactorSetup() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const data = response.data;
-      
-      // Generate QR code
-      const qrUrl = await QRCode.toDataURL(data.otpauth_url);
-      setQrCodeUrl(qrUrl);
+      const data = response.data.data;
+
+      // Use QR code from backend response
+      setQrCodeUrl(data.qrCode);
 
       setSetupData({
         secret: data.secret,
-        qrCode: data.otpauth_url,
+        qrCode: data.qrCode,
         backupCodes: data.backupCodes || [],
       });
 
@@ -119,12 +119,6 @@ export default function TwoFactorSetup() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      await axios.post(
-        `${API_URL}/api/auth/2fa/enable`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
       setIsEnabled(true);
       setSetupData(null);
       setVerificationCode('');
@@ -139,6 +133,11 @@ export default function TwoFactorSetup() {
 
   // Disable 2FA
   const handleDisable = async () => {
+    if (!disablePassword) {
+      toast.error('Please enter your password');
+      return;
+    }
+
     if (!disableCode || disableCode.length !== 6) {
       toast.error('Please enter a valid 6-digit code');
       return;
@@ -151,17 +150,19 @@ export default function TwoFactorSetup() {
 
       await axios.post(
         `${API_URL}/api/auth/2fa/disable`,
-        { token: disableCode },
+        { password: disablePassword, token: disableCode },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setIsEnabled(false);
       setShowDisableDialog(false);
       setDisableCode('');
+      setDisablePassword('');
       toast.success('Two-factor authentication disabled');
     } catch (error: any) {
       console.error('Failed to disable 2FA:', error);
-      toast.error('Invalid verification code. Please try again.');
+      const message = error.response?.data?.error?.message || 'Failed to disable 2FA. Please try again.';
+      toast.error(message);
     } finally {
       setIsVerifying(false);
     }
@@ -431,32 +432,51 @@ export default function TwoFactorSetup() {
           <AlertDialogHeader>
             <AlertDialogTitle>Disable Two-Factor Authentication</AlertDialogTitle>
             <AlertDialogDescription>
-              Enter your current 2FA code to disable two-factor authentication. This will make your
+              Enter your password and current 2FA code to disable two-factor authentication. This will make your
               account less secure.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <div className="space-y-2">
-            <Label htmlFor="disable-code">Verification Code</Label>
-            <Input
-              id="disable-code"
-              type="text"
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="Enter 6-digit code"
-              value={disableCode}
-              onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, ''))}
-              className="text-center text-2xl tracking-widest"
-            />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="disable-password">Password</Label>
+              <Input
+                id="disable-password"
+                type="password"
+                placeholder="Enter your password"
+                value={disablePassword}
+                onChange={(e) => setDisablePassword(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="disable-code">Verification Code</Label>
+              <Input
+                id="disable-code"
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="Enter 6-digit code"
+                value={disableCode}
+                onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, ''))}
+                className="text-center text-2xl tracking-widest"
+              />
+            </div>
           </div>
 
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isVerifying} onClick={() => setDisableCode('')}>
+            <AlertDialogCancel
+              disabled={isVerifying}
+              onClick={() => {
+                setDisableCode('');
+                setDisablePassword('');
+              }}
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDisable}
-              disabled={isVerifying || disableCode.length !== 6}
+              disabled={isVerifying || !disablePassword || disableCode.length !== 6}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isVerifying && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}

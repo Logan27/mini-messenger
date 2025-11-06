@@ -16,6 +16,7 @@ import { AvatarUpload } from "@/components/AvatarUpload";
 import { BlockedContacts } from "@/components/BlockedContacts";
 import ActiveSessions from "@/components/ActiveSessions";
 import TwoFactorSetup from "@/components/TwoFactorSetup";
+import PushNotificationSetup from "@/components/PushNotificationSetup";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { Loader2, ArrowLeft, Download, Trash2, AlertTriangle } from "lucide-react";
 import {
@@ -412,6 +413,8 @@ export default function Settings() {
               </Card>
 
               <TwoFactorSetup />
+
+              <PushNotificationSetup />
 
               <ActiveSessions />
             </TabsContent>

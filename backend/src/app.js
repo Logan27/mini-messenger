@@ -24,6 +24,8 @@ import healthRoutes from './routes/health.js';
 import messageRoutes from './routes/messages.js';
 import notificationSettingsRoutes from './routes/notification-settings.js';
 import notificationRoutes from './routes/notifications.js';
+import pushNotificationRoutes from './routes/pushNotifications.js';
+import twoFactorRoutes from './routes/twoFactor.js';
 import userRoutes from './routes/users.js';
 import fileCleanupService from './services/fileCleanupService.js';
 import fileUploadService from './services/fileUploadService.js';
@@ -112,6 +114,7 @@ app.use('/uploads', (req, res, next) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/auth/2fa', twoFactorRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/groups', groupRoutes);
@@ -122,6 +125,7 @@ app.use('/api/encryption', encryptionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/notification-settings', notificationSettingsRoutes);
+app.use('/api/push', pushNotificationRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/health', healthRoutes);
 

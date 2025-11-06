@@ -90,9 +90,10 @@ docker-compose.production.yml
 
 # SQL temp files
 *.sql.tmp
-create_admin.sql
 fix-*.sql
-unlock-*.sql
+# Keep admin SQL scripts - exclude from ignore
+!create_admin.sql
+!unlock-admin.sql
 
 # Logs
 *.log
@@ -102,15 +103,18 @@ yarn-debug.log*
 yarn-error.log*
 
 # Development scripts and utilities
-start.bat
-start.sh
 fix-*.sh
 speckit.*.md
+# Keep start scripts - exclude from ignore
+!start.bat
+!start.sh
 
 # Media test files
 *.mp3
 *.wav
 *.mp4
+# Keep specific media file - exclude from ignore
+!Fly_Me_To_The_Moon-639051-mobiles24.mp3
 
 # OS files
 .DS_Store

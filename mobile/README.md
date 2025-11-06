@@ -7,7 +7,7 @@ A React Native mobile application for the Messenger platform, built with Expo fo
 ### Core Features
 - **Real-time Messaging**: Instant messaging with WebSocket integration
 - **Authentication**: Secure login with biometric support (fingerprint/face ID)
-- **Push Notifications**: Firebase Cloud Messaging integration
+- **Push Notifications**: Expo notifications with optional Firebase Cloud Messaging
 - **File Sharing**: Photo, video, and document sharing
 - **Contact Integration**: Native contact book access and synchronization
 - **Offline Support**: Graceful offline message handling
@@ -114,6 +114,8 @@ mobile/
    # Web (for testing)
    npm run web
    ```
+
+   **Note for Android**: If you encounter Java exceptions or build issues, see [ANDROID_SETUP.md](./ANDROID_SETUP.md) for detailed troubleshooting and Firebase configuration.
 
 ## 🔧 Configuration
 

@@ -1,9 +1,21 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
-import messaging from '@react-native-firebase/messaging';
 import api from './api';
 import { navigate } from './navigationService';
+
+// Try to import Firebase, but make it optional
+let messaging: any = null;
+let isFirebaseAvailable = false;
+
+try {
+  messaging = require('@react-native-firebase/messaging').default;
+  isFirebaseAvailable = true;
+  console.log('Firebase Cloud Messaging is available');
+} catch (error) {
+  console.warn('Firebase Cloud Messaging is not available, using Expo notifications only:', error);
+  isFirebaseAvailable = false;
+}
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -48,11 +60,22 @@ export class PushNotificationService {
       // Get FCM token
       let token: string;
 
-      if (Platform.OS === 'android' || Platform.OS === 'ios') {
-        // Use Firebase Cloud Messaging for native platforms
-        token = await this.getFCMToken();
+      if ((Platform.OS === 'android' || Platform.OS === 'ios') && isFirebaseAvailable) {
+        // Use Firebase Cloud Messaging for native platforms when available
+        try {
+          token = await this.getFCMToken();
+        } catch (fcmError) {
+          console.error('Firebase Cloud Messaging failed, falling back to Expo notifications:', fcmError);
+          // Fall back to Expo notifications
+          if (!Device.isDevice) {
+            console.warn('Must use physical device for Push Notifications');
+            return false;
+          }
+          const expoPushToken = await Notifications.getExpoPushTokenAsync();
+          token = expoPushToken.data;
+        }
       } else {
-        // Use Expo push notifications for web/other platforms
+        // Use Expo push notifications for web/other platforms or when Firebase is not available
         if (!Device.isDevice) {
           console.warn('Must use physical device for Push Notifications');
           return false;
@@ -84,20 +107,48 @@ export class PushNotificationService {
    */
   async requestPermissions(): Promise<boolean> {
     try {
-      if (Platform.OS === 'android' && Platform.Version >= 33) {
-        // Android 13+ requires runtime permission
-        const authStatus = await messaging().requestPermission();
-        return (
-          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-          authStatus === messaging.AuthorizationStatus.PROVISIONAL
-        );
-      } else if (Platform.OS === 'ios') {
-        // iOS requires permission request
-        const authStatus = await messaging().requestPermission();
-        return (
-          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-          authStatus === messaging.AuthorizationStatus.PROVISIONAL
-        );
+      if ((Platform.OS === 'android' && Platform.Version >= 33) && isFirebaseAvailable && messaging) {
+        // Android 13+ requires runtime permission - use Firebase if available
+        try {
+          const authStatus = await messaging().requestPermission();
+          return (
+            authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+            authStatus === messaging.AuthorizationStatus.PROVISIONAL
+          );
+        } catch (firebaseError) {
+          console.warn('Firebase permission request failed, falling back to Expo:', firebaseError);
+          // Fall back to Expo permissions
+          const { status: existingStatus } = await Notifications.getPermissionsAsync();
+          let finalStatus = existingStatus;
+
+          if (existingStatus !== 'granted') {
+            const { status } = await Notifications.requestPermissionsAsync();
+            finalStatus = status;
+          }
+
+          return finalStatus === 'granted';
+        }
+      } else if (Platform.OS === 'ios' && isFirebaseAvailable && messaging) {
+        // iOS requires permission request - use Firebase if available
+        try {
+          const authStatus = await messaging().requestPermission();
+          return (
+            authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+            authStatus === messaging.AuthorizationStatus.PROVISIONAL
+          );
+        } catch (firebaseError) {
+          console.warn('Firebase permission request failed, falling back to Expo:', firebaseError);
+          // Fall back to Expo permissions
+          const { status: existingStatus } = await Notifications.getPermissionsAsync();
+          let finalStatus = existingStatus;
+
+          if (existingStatus !== 'granted') {
+            const { status } = await Notifications.requestPermissionsAsync();
+            finalStatus = status;
+          }
+
+          return finalStatus === 'granted';
+        }
       } else {
         // Use Expo notifications API
         const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -120,6 +171,10 @@ export class PushNotificationService {
    * Get FCM token
    */
   async getFCMToken(): Promise<string> {
+    if (!isFirebaseAvailable || !messaging) {
+      throw new Error('Firebase Cloud Messaging is not available');
+    }
+
     try {
       // Check if we already have a token
       const token = await messaging().getToken();
@@ -159,8 +214,14 @@ export class PushNotificationService {
     try {
       let token: string;
 
-      if (Platform.OS === 'android' || Platform.OS === 'ios') {
-        token = await messaging().getToken();
+      if ((Platform.OS === 'android' || Platform.OS === 'ios') && isFirebaseAvailable && messaging) {
+        try {
+          token = await messaging().getToken();
+        } catch {
+          // Fall back to Expo token
+          const expoPushToken = await Notifications.getExpoPushTokenAsync();
+          token = expoPushToken.data;
+        }
       } else {
         const expoPushToken = await Notifications.getExpoPushTokenAsync();
         token = expoPushToken.data;
@@ -204,48 +265,60 @@ export class PushNotificationService {
       return;
     }
 
-    // Handle foreground messages
-    messaging().onMessage(async (remoteMessage) => {
-      console.log('FCM message received in foreground:', remoteMessage);
+    if (!isFirebaseAvailable || !messaging) {
+      console.log('Firebase not available, skipping FCM listeners setup');
+      return;
+    }
 
-      // Display local notification when app is in foreground
-      if (remoteMessage.notification) {
-        await this.displayLocalNotification(
-          remoteMessage.notification.title || 'New notification',
-          remoteMessage.notification.body || '',
-          remoteMessage.data || {}
-        );
-      }
-    });
+    try {
+      // Handle foreground messages
+      messaging().onMessage(async (remoteMessage) => {
+        console.log('FCM message received in foreground:', remoteMessage);
 
-    // Handle notification opened when app was in background
-    messaging().onNotificationOpenedApp((remoteMessage) => {
-      console.log('Notification opened app from background:', remoteMessage);
-      if (remoteMessage.data) {
-        this.routeToScreen(remoteMessage.data);
-      }
-    });
-
-    // Check if app was opened by a notification (when it was killed)
-    messaging()
-      .getInitialNotification()
-      .then((remoteMessage) => {
-        if (remoteMessage) {
-          console.log('Notification opened app from quit state:', remoteMessage);
-          if (remoteMessage.data) {
-            // Delay routing to ensure navigation is ready
-            setTimeout(() => {
-              this.routeToScreen(remoteMessage.data || {});
-            }, 1000);
-          }
+        // Display local notification when app is in foreground
+        if (remoteMessage.notification) {
+          await this.displayLocalNotification(
+            remoteMessage.notification.title || 'New notification',
+            remoteMessage.notification.body || '',
+            remoteMessage.data || {}
+          );
         }
       });
 
-    // Handle token refresh
-    messaging().onTokenRefresh(async (token) => {
-      console.log('FCM token refreshed:', token);
-      await this.registerToken(token);
-    });
+      // Handle notification opened when app was in background
+      messaging().onNotificationOpenedApp((remoteMessage) => {
+        console.log('Notification opened app from background:', remoteMessage);
+        if (remoteMessage.data) {
+          this.routeToScreen(remoteMessage.data);
+        }
+      });
+
+      // Check if app was opened by a notification (when it was killed)
+      messaging()
+        .getInitialNotification()
+        .then((remoteMessage) => {
+          if (remoteMessage) {
+            console.log('Notification opened app from quit state:', remoteMessage);
+            if (remoteMessage.data) {
+              // Delay routing to ensure navigation is ready
+              setTimeout(() => {
+                this.routeToScreen(remoteMessage.data || {});
+              }, 1000);
+            }
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to get initial notification:', error);
+        });
+
+      // Handle token refresh
+      messaging().onTokenRefresh(async (token) => {
+        console.log('FCM token refreshed:', token);
+        await this.registerToken(token);
+      });
+    } catch (error) {
+      console.error('Failed to setup FCM listeners:', error);
+    }
   }
 
   /**
@@ -364,15 +437,26 @@ export class PushNotificationService {
    * Get notification permissions status
    */
   async getPermissionStatus(): Promise<boolean> {
-    if (Platform.OS === 'android' || Platform.OS === 'ios') {
-      const authStatus = await messaging().hasPermission();
-      return (
-        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL
-      );
-    } else {
-      const { status } = await Notifications.getPermissionsAsync();
-      return status === 'granted';
+    try {
+      if ((Platform.OS === 'android' || Platform.OS === 'ios') && isFirebaseAvailable && messaging) {
+        try {
+          const authStatus = await messaging().hasPermission();
+          return (
+            authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+            authStatus === messaging.AuthorizationStatus.PROVISIONAL
+          );
+        } catch {
+          // Fall back to Expo permissions
+          const { status } = await Notifications.getPermissionsAsync();
+          return status === 'granted';
+        }
+      } else {
+        const { status } = await Notifications.getPermissionsAsync();
+        return status === 'granted';
+      }
+    } catch (error) {
+      console.error('Failed to get permission status:', error);
+      return false;
     }
   }
 

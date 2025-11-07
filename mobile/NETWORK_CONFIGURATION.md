@@ -17,6 +17,31 @@ The mobile app has three `.env` template files:
 
 ## Quick Setup
 
+### For Physical Device with ADB (USB Cable) - **RECOMMENDED**
+
+If your Android device is connected via USB with ADB, this is the simplest method:
+
+```bash
+# 1. Enable port forwarding
+adb reverse tcp:4000 tcp:4000
+
+# 2. Configure the app to use localhost
+# Edit .env and set:
+EXPO_PUBLIC_API_URL=http://localhost:4000
+EXPO_PUBLIC_WS_URL=ws://localhost:4000
+
+# 3. Restart Expo
+npx expo start --clear
+```
+
+**Advantages:**
+- No need to find your computer's IP address
+- Works regardless of network configuration
+- More reliable and faster connection
+- Same config works across different networks
+
+**Note:** You need to run `adb reverse tcp:4000 tcp:4000` each time you reconnect your device.
+
 ### For Android Emulator
 
 ```bash

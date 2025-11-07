@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { log } from '../utils/logger';
 
 // API Configuration from environment variables
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
@@ -48,7 +49,16 @@ export class WebSocketService {
   private reconnectInterval = 1000;
 
   connect(token: string) {
-    if (this.socket?.connected) return;
+    log.websocket('Attempting to connect', {
+      wsUrl: WS_BASE_URL,
+      hasToken: !!token,
+      alreadyConnected: this.socket?.connected
+    });
+    
+    if (this.socket?.connected) {
+      log.websocket('Already connected, skipping connection attempt');
+      return;
+    }
 
     this.socket = require('socket.io-client')(WS_BASE_URL, {
       auth: { token },
@@ -56,17 +66,25 @@ export class WebSocketService {
     });
 
     this.socket.on('connect', () => {
-      console.log('Connected to WebSocket');
+      log.websocket('Connected successfully', {
+        socketId: this.socket.id,
+        reconnectAttempts: this.reconnectAttempts
+      });
       this.reconnectAttempts = 0;
     });
 
     this.socket.on('disconnect', () => {
-      console.log('Disconnected from WebSocket');
+      log.websocket('Disconnected from WebSocket');
       this.attemptReconnect(token);
     });
 
     this.socket.on('connect_error', (error: any) => {
-      console.error('WebSocket connection error:', error);
+      log.websocket('Connection error', {
+        message: error.message,
+        type: error.type,
+        description: error.description,
+        reconnectAttempts: this.reconnectAttempts
+      });
       this.attemptReconnect(token);
     });
   }
@@ -80,10 +98,22 @@ export class WebSocketService {
 
   private attemptReconnect(token: string) {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
+      const delay = this.reconnectInterval * this.reconnectAttempts;
+      log.websocket('Attempting reconnection', {
+        attempt: this.reconnectAttempts + 1,
+        maxAttempts: this.maxReconnectAttempts,
+        delay
+      });
+      
       setTimeout(() => {
         this.reconnectAttempts++;
         this.connect(token);
-      }, this.reconnectInterval * this.reconnectAttempts);
+      }, delay);
+    } else {
+      log.websocket('Max reconnection attempts reached', {
+        attempts: this.reconnectAttempts,
+        maxAttempts: this.maxReconnectAttempts
+      });
     }
   }
 
@@ -110,8 +140,35 @@ export const wsService = new WebSocketService();
 
 // API endpoints
 export const authAPI = {
-  login: (credentials: { identifier: string; password: string }) =>
-    api.post('/api/auth/login', credentials),
+  login: async (credentials: { identifier: string; password: string }) => {
+    log.auth('Attempting login', {
+      identifier: credentials.identifier,
+      endpoint: '/api/auth/login',
+      baseURL: API_BASE_URL,
+      hasNetwork: navigator.onLine
+    }, 'API');
+    
+    try {
+      const response = await api.post('/api/auth/login', credentials);
+      log.auth('Login response received', {
+        status: response.status,
+        data: response.data,
+        hasToken: !!response.data?.data?.tokens?.accessToken
+      }, 'API');
+      return response;
+    } catch (error: any) {
+      log.error('Login failed', {
+        error: error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+        baseURL: API_BASE_URL,
+        endpoint: '/api/auth/login',
+        isNetworkError: !error?.response,
+        isTimeout: error?.code === 'ECONNABORTED'
+      }, 'API');
+      throw error;
+    }
+  },
 
   register: (userData: { username: string; email: string; password: string; firstName?: string; lastName?: string }) =>
     api.post('/api/auth/register', userData),

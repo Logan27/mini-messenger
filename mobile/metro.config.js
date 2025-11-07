@@ -10,6 +10,18 @@ config.resolver.alias = {
 // Handle module resolution for react-native-webrtc and other native modules
 config.resolver.platforms = ['ios', 'android', 'native', 'web'];
 
+// FIX: Add module resolution for event-target-shim used by react-native-webrtc
+config.resolver.alias = {
+  ...config.resolver.alias,
+  'event-target-shim': 'event-target-shim/dist/index.js',
+};
+
+// FIX: Add extra node_modules paths for react-native-webrtc dependencies
+config.resolver.nodeModulesPaths = [
+  ...(config.resolver.nodeModulesPaths || []),
+  'node_modules/react-native-webrtc/node_modules',
+];
+
 // Fix for import.meta issues by ensuring proper module type
 config.transformer = {
   ...config.transformer,

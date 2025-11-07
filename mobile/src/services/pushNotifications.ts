@@ -3,18 +3,37 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import api from './api';
 import { navigate } from './navigationService';
+import { getPlatformInfo } from '../utils/platform';
 
 // Try to import Firebase, but make it optional
 let messaging: any = null;
 let isFirebaseAvailable = false;
 
+// DIAGNOSTIC: Enhanced Firebase availability check
 try {
-  messaging = require('@react-native-firebase/messaging').default;
+  const firebaseModule = require('@react-native-firebase/messaging');
+  messaging = firebaseModule.default;
   isFirebaseAvailable = true;
-  console.log('Firebase Cloud Messaging is available');
+  
+  // DIAGNOSTIC: Log Firebase version and API details
+  console.log('Firebase Cloud Messaging is available', {
+    version: firebaseModule.VERSION || 'unknown',
+    hasDefault: !!firebaseModule.default,
+    hasGetApp: !!firebaseModule.getApp,
+    moduleType: typeof firebaseModule,
+    defaultType: typeof firebaseModule.default
+  });
 } catch (error) {
   console.warn('Firebase Cloud Messaging is not available, using Expo notifications only:', error);
   isFirebaseAvailable = false;
+  
+  // DIAGNOSTIC: Log detailed error information
+  console.error('Firebase import error details', {
+    errorType: error?.constructor?.name,
+    errorMessage: (error as any)?.message,
+    errorCode: (error as any)?.code,
+    errorStack: (error as any)?.stack
+  });
 }
 
 // Configure notification handler
@@ -50,6 +69,9 @@ export class PushNotificationService {
    */
   async initialize(): Promise<string | false> {
     try {
+      // Get platform info once at the start
+      const platformInfo = getPlatformInfo();
+      
       // Request permissions
       const hasPermission = await this.requestPermissions();
       if (!hasPermission) {
@@ -60,14 +82,14 @@ export class PushNotificationService {
       // Get FCM token
       let token: string;
 
-      if ((Platform.OS === 'android' || Platform.OS === 'ios') && isFirebaseAvailable) {
+      if ((platformInfo.platform === 'android' || platformInfo.platform === 'ios') && isFirebaseAvailable) {
         // Use Firebase Cloud Messaging for native platforms when available
         try {
           token = await this.getFCMToken();
         } catch (fcmError) {
           console.error('Firebase Cloud Messaging failed, falling back to Expo notifications:', fcmError);
           // Fall back to Expo notifications
-          if (!Device.isDevice) {
+          if (!platformInfo.isDevice) {
             console.warn('Must use physical device for Push Notifications');
             return false;
           }
@@ -76,7 +98,7 @@ export class PushNotificationService {
         }
       } else {
         // Use Expo push notifications for web/other platforms or when Firebase is not available
-        if (!Device.isDevice) {
+        if (!platformInfo.isDevice) {
           console.warn('Must use physical device for Push Notifications');
           return false;
         }
@@ -107,16 +129,52 @@ export class PushNotificationService {
    */
   async requestPermissions(): Promise<boolean> {
     try {
-      if ((Platform.OS === 'android' && Platform.Version >= 33) && isFirebaseAvailable && messaging) {
+      // DIAGNOSTIC: Enhanced permission request logging with platform utility
+      const platformInfo = getPlatformInfo();
+      console.log('Requesting notification permissions', {
+        platform: platformInfo.platform,
+        platformVersion: platformInfo.version,
+        isDevice: platformInfo.isDevice,
+        isEmulator: platformInfo.isEmulator,
+        isSimulator: platformInfo.isSimulator,
+        isFirebaseAvailable,
+        hasMessaging: !!messaging,
+        messagingType: typeof messaging,
+        androidVersionCheck: platformInfo.platform === 'android' && platformInfo.apiLevel && platformInfo.apiLevel >= 33
+      });
+
+      if ((platformInfo.platform === 'android' && platformInfo.apiLevel && platformInfo.apiLevel >= 33) && isFirebaseAvailable && messaging) {
         // Android 13+ requires runtime permission - use Firebase if available
         try {
+          console.log('Using Firebase for permission request');
           const authStatus = await messaging().requestPermission();
+          
+          // DIAGNOSTIC: Log Firebase permission result
+          console.log('Firebase permission result', {
+            authStatus,
+            statusNames: {
+              AUTHORIZED: messaging.AuthorizationStatus.AUTHORIZED,
+              PROVISIONAL: messaging.AuthorizationStatus.PROVISIONAL,
+              DENIED: messaging.AuthorizationStatus.DENIED,
+              NOT_DETERMINED: messaging.AuthorizationStatus.NOT_DETERMINED
+            }
+          });
+          
           return (
             authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
             authStatus === messaging.AuthorizationStatus.PROVISIONAL
           );
         } catch (firebaseError) {
           console.warn('Firebase permission request failed, falling back to Expo:', firebaseError);
+          
+          // DIAGNOSTIC: Log Firebase permission error details
+          console.error('Firebase permission error details', {
+            errorType: firebaseError?.constructor?.name,
+            errorMessage: (firebaseError as any)?.message,
+            errorCode: (firebaseError as any)?.code,
+            isDeprecatedAPI: (firebaseError as any)?.message?.includes('deprecated')
+          });
+          
           // Fall back to Expo permissions
           const { status: existingStatus } = await Notifications.getPermissionsAsync();
           let finalStatus = existingStatus;
@@ -128,7 +186,7 @@ export class PushNotificationService {
 
           return finalStatus === 'granted';
         }
-      } else if (Platform.OS === 'ios' && isFirebaseAvailable && messaging) {
+      } else if (platformInfo.platform === 'ios' && isFirebaseAvailable && messaging) {
         // iOS requires permission request - use Firebase if available
         try {
           const authStatus = await messaging().requestPermission();
@@ -191,12 +249,13 @@ export class PushNotificationService {
    */
   async registerToken(token: string): Promise<void> {
     try {
+      const platformInfo = getPlatformInfo();
       await api.post('/api/users/me/device-token', {
         token,
-        platform: Platform.OS,
+        platform: platformInfo.platform,
         deviceInfo: {
-          model: Device.modelName,
-          osVersion: Device.osVersion,
+          model: platformInfo.model || Device.modelName,
+          osVersion: platformInfo.osVersion || Device.osVersion,
           manufacturer: Device.manufacturer,
         },
       });
@@ -212,9 +271,10 @@ export class PushNotificationService {
    */
   async unregisterToken(): Promise<void> {
     try {
+      const platformInfo = getPlatformInfo();
       let token: string;
 
-      if ((Platform.OS === 'android' || Platform.OS === 'ios') && isFirebaseAvailable && messaging) {
+      if ((platformInfo.platform === 'android' || platformInfo.platform === 'ios') && isFirebaseAvailable && messaging) {
         try {
           token = await messaging().getToken();
         } catch {
@@ -261,7 +321,9 @@ export class PushNotificationService {
    * Setup FCM listeners
    */
   private setupFCMListeners(): void {
-    if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
+    const platformInfo = getPlatformInfo();
+    
+    if (platformInfo.platform !== 'android' && platformInfo.platform !== 'ios') {
       return;
     }
 
@@ -438,7 +500,9 @@ export class PushNotificationService {
    */
   async getPermissionStatus(): Promise<boolean> {
     try {
-      if ((Platform.OS === 'android' || Platform.OS === 'ios') && isFirebaseAvailable && messaging) {
+      const platformInfo = getPlatformInfo();
+      
+      if ((platformInfo.platform === 'android' || platformInfo.platform === 'ios') && isFirebaseAvailable && messaging) {
         try {
           const authStatus = await messaging().hasPermission();
           return (
@@ -464,7 +528,8 @@ export class PushNotificationService {
    * Set notification badge count (iOS only)
    */
   async setBadgeCount(count: number): Promise<void> {
-    if (Platform.OS === 'ios') {
+    const platformInfo = getPlatformInfo();
+    if (platformInfo.platform === 'ios') {
       await Notifications.setBadgeCountAsync(count);
     }
   }
@@ -473,7 +538,8 @@ export class PushNotificationService {
    * Get notification badge count
    */
   async getBadgeCount(): Promise<number> {
-    if (Platform.OS === 'ios') {
+    const platformInfo = getPlatformInfo();
+    if (platformInfo.platform === 'ios') {
       return await Notifications.getBadgeCountAsync();
     }
     return 0;

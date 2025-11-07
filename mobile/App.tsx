@@ -8,6 +8,7 @@ import { useAuthStore } from './src/stores/authStore';
 import { wsService } from './src/services/api';
 import { initializeCallWebSocketHandlers, cleanupCallWebSocketHandlers } from './src/services/callWebSocketHandler';
 import { pushNotificationService } from './src/services/pushNotifications';
+import { log } from './src/utils/logger';
 
 // Create QueryClient
 const queryClient = new QueryClient({
@@ -23,25 +24,60 @@ export default function App() {
   const { checkAuth, token } = useAuthStore();
 
   useEffect(() => {
+    // App initialization logging
+    log.info('App component mounting', undefined, 'App');
+    log.debug('React Native DevTools connection test', undefined, 'App');
+    
+    // FIX: Use proper platform detection utility
+    const { getPlatformInfo, getApiUrl, getWebSocketUrl } = require('./src/utils/platform');
+    const platformInfo = getPlatformInfo();
+    
+    log.info('Platform detected', platformInfo, 'App');
+    
+    // FIX: Use platform-aware URLs and proper environment checking
+    const envConfig = {
+      API_URL: process.env.EXPO_PUBLIC_API_URL,
+      WS_URL: process.env.EXPO_PUBLIC_WS_URL,
+      NODE_ENV: process.env.NODE_ENV,
+      APP_NAME: process.env.EXPO_PUBLIC_APP_NAME,
+      APP_VERSION: process.env.EXPO_PUBLIC_APP_VERSION,
+      ENABLE_NOTIFICATIONS: process.env.EXPO_PUBLIC_ENABLE_NOTIFICATIONS,
+      ENABLE_CALLS: process.env.EXPO_PUBLIC_ENABLE_CALLS,
+      // Use platform-aware resolved URLs
+      resolvedApiUrl: getApiUrl(),
+      resolvedWebSocketUrl: getWebSocketUrl(),
+    };
+    
+    log.debug('Environment configuration', envConfig, 'App');
+
     // Check authentication on app start
+    log.auth('Checking authentication...');
     checkAuth();
 
     // Initialize services when authenticated
     if (token) {
+      log.auth('User authenticated, initializing services');
+      
       // Connect to WebSocket
+      log.websocket('Connecting to WebSocket service');
       wsService.connect(token);
 
       // Initialize call-specific WebSocket handlers
+      log.websocket('Initializing call WebSocket handlers');
       initializeCallWebSocketHandlers();
 
       // Initialize push notifications
+      log.info('Initializing push notifications');
       pushNotificationService.initialize().catch((error) => {
-        console.error('Failed to initialize push notifications:', error);
+        log.error('Failed to initialize push notifications', error, 'PushNotifications');
       });
+    } else {
+      log.auth('No authentication token found');
     }
 
     // Cleanup on unmount or logout
     return () => {
+      log.info('Cleaning up services on component unmount');
       cleanupCallWebSocketHandlers();
       wsService.disconnect();
       pushNotificationService.cleanup();

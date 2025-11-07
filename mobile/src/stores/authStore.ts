@@ -74,7 +74,25 @@ export const useAuthStore = create<AuthStore>()(
           await AsyncStorage.setItem('user', JSON.stringify(user));
         } catch (error: any) {
           set({ isLoading: false });
-          const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Login failed';
+          
+          // Enhanced error logging
+          const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Login failed';
+          const errorDetails = {
+            message: errorMessage,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            isNetworkError: !error.response,
+            isTimeout: error.code === 'ECONNABORTED',
+            isConnectionError: error.code === 'ECONNREFUSED',
+            credentials: {
+              hasIdentifier: !!credentials.identifier,
+              identifierLength: credentials.identifier?.length
+            }
+          };
+          
+          console.error('Login error details:', errorDetails);
+          set({ error: errorMessage });
           throw new Error(errorMessage);
         }
       },

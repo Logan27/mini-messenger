@@ -6,14 +6,13 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
 // Initialize Firebase in the service worker
-// Note: These values will be replaced at runtime if needed
 const firebaseConfig = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_PROJECT.firebaseapp.com',
-  projectId: 'YOUR_PROJECT_ID',
-  storageBucket: 'YOUR_PROJECT.appspot.com',
-  messagingSenderId: 'YOUR_SENDER_ID',
-  appId: 'YOUR_APP_ID'
+  apiKey: 'AIzaSyDmYnSt0Emb__YLcKnrJ7lD6ADiGoAU6XI',
+  authDomain: 'mini-messenger-7e660.firebaseapp.com',
+  projectId: 'mini-messenger-7e660',
+  storageBucket: 'mini-messenger-7e660.firebasestorage.app',
+  messagingSenderId: '242857581471',
+  appId: '1:242857581471:android:68bfc5e525f92b062c7baa'
 };
 
 // Initialize Firebase

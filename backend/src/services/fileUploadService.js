@@ -75,34 +75,30 @@ class FileUploadService {
    * Initialize ClamAV scanner
    */
   async initializeClamAV() {
-    // Skip ClamAV initialization on Windows (not available)
-    if (process.platform === 'win32') {
-      logger.warn('⚠️  ClamAV not available on Windows - virus scanning disabled for development');
-      this.clamscan = null;
-      return;
-    }
-
     try {
       const ClamScan = await new NodeClam().init({
         removeInfected: config.clamav.removeInfected,
         quarantineInfected: false,
         scanLog: path.join(this.uploadDir, 'scan.log'),
         debugMode: config.isDevelopment,
-        fileList: null,
-        scanRecursively: config.clamav.scanArchives,
-        clamscan: {
-          path: process.env.CLAMSCAN_PATH || '/usr/bin/clamscan',
-          db: process.env.CLAMAV_DB_PATH || '/var/lib/clamav',
-          scanArchives: config.clamav.scanArchives,
+        clamdscan: {
+          socket: false,
+          host: config.clamav.host,
+          port: config.clamav.port,
+          timeout: config.clamav.timeout,
+          localFallback: false,
           active: true,
         },
-        preference: 'clamscan',
+        preference: 'clamdscan',
       });
 
       this.clamscan = ClamScan;
-      logger.info('ClamAV scanner initialized');
+      logger.info('ClamAV scanner initialized via daemon connection', {
+        host: config.clamav.host,
+        port: config.clamav.port,
+      });
     } catch (error) {
-      logger.warn('Failed to initialize ClamAV (virus scanning disabled):', error.message);
+      logger.error('Failed to initialize ClamAV (virus scanning disabled):', error.message);
       this.clamscan = null;
     }
   }

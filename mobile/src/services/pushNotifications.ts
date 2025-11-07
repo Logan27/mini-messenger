@@ -272,7 +272,7 @@ export class PushNotificationService {
 
     try {
       // Handle foreground messages
-      messaging().onMessage(async (remoteMessage) => {
+      messaging().onMessage(async (remoteMessage: any) => {
         console.log('FCM message received in foreground:', remoteMessage);
 
         // Display local notification when app is in foreground
@@ -286,7 +286,7 @@ export class PushNotificationService {
       });
 
       // Handle notification opened when app was in background
-      messaging().onNotificationOpenedApp((remoteMessage) => {
+      messaging().onNotificationOpenedApp((remoteMessage: any) => {
         console.log('Notification opened app from background:', remoteMessage);
         if (remoteMessage.data) {
           this.routeToScreen(remoteMessage.data);
@@ -296,7 +296,7 @@ export class PushNotificationService {
       // Check if app was opened by a notification (when it was killed)
       messaging()
         .getInitialNotification()
-        .then((remoteMessage) => {
+        .then((remoteMessage: any) => {
           if (remoteMessage) {
             console.log('Notification opened app from quit state:', remoteMessage);
             if (remoteMessage.data) {
@@ -307,12 +307,12 @@ export class PushNotificationService {
             }
           }
         })
-        .catch((error) => {
+        .catch((error: any) => {
           console.error('Failed to get initial notification:', error);
         });
 
       // Handle token refresh
-      messaging().onTokenRefresh(async (token) => {
+      messaging().onTokenRefresh(async (token: string) => {
         console.log('FCM token refreshed:', token);
         await this.registerToken(token);
       });

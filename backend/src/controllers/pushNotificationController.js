@@ -55,11 +55,13 @@ class PushNotificationController {
         isActive: true,
       });
 
-      await auditService.log({
+      await auditService.logSecurityEvent({
         action: 'push_notification:token_registered',
         userId: userId,
         ipAddress: req.ip,
         userAgent: req.get('User-Agent'),
+        severity: 'low',
+        status: 'success',
         details: {
           tokenId: deviceToken.id,
           deviceType,
@@ -108,11 +110,13 @@ class PushNotificationController {
 
       await DeviceToken.deactivateToken(userId, token);
 
-      await auditService.log({
+      await auditService.logSecurityEvent({
         action: 'push_notification:token_unregistered',
         userId: userId,
         ipAddress: req.ip,
         userAgent: req.get('User-Agent'),
+        severity: 'low',
+        status: 'success',
         details: {
           token: token.substring(0, 20) + '...',
         },

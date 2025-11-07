@@ -1,37 +1,26 @@
 {
   "project_info": {
-    "project_number": "000000000000",
-    "firebase_url": "https://mini-messenger-default.firebaseio.com",
-    "project_id": "mini-messenger-default",
-    "storage_bucket": "mini-messenger-default.appspot.com"
+    "project_number": "242857581471",
+    "project_id": "mini-messenger-7e660",
+    "storage_bucket": "mini-messenger-7e660.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "mobilesdk_app_id": "1:242857581471:android:68bfc5e525f92b062c7baa",
         "android_client_info": {
-          "package_name": "com.messenger.app"
+          "package_name": "com.logan27.minimessenger"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "000000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDummyKeyForDevelopmentPurposesOnly"
+          "current_key": "AIzaSyA5rmwjroX_w8_8QpCrNhYCA96D9FznkF8"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "000000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

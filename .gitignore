@@ -85,6 +85,10 @@ backend.backup/
 .env.production
 !.env.example
 
+# Firebase credentials
+firebase-service-account.json
+*-firebase-adminsdk-*.json
+
 # Docker and production
 docker-compose.production.yml
 

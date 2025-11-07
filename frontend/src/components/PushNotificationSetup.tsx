@@ -30,8 +30,11 @@ export default function PushNotificationSetup() {
       const status = await pushNotificationService.getPushNotificationStatus();
       setFcmInitialized(status.fcmInitialized);
       setRegisteredTokens(status.registeredTokens);
-      setIsSetup(status.pushNotificationsAvailable);
-      setIsEnabled(status.pushNotificationsAvailable);
+      // Set enabled based on token count, not pushNotificationsAvailable
+      // (which depends on backend Firebase config)
+      const hasTokens = status.registeredTokens > 0;
+      setIsSetup(hasTokens);
+      setIsEnabled(hasTokens);
     } catch (error: any) {
       console.error('Failed to check push notification status:', error);
     } finally {
@@ -262,12 +265,13 @@ export default function PushNotificationSetup() {
           </>
         )}
 
-        {!fcmInitialized && !isPermissionDenied && (
-          <Alert>
+        {!fcmInitialized && !isPermissionDenied && isEnabled && (
+          <Alert variant="default">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              Firebase Cloud Messaging is not initialized on the backend. Push notifications may
-              not work properly.
+              <strong>Configuration Required:</strong> The backend needs Firebase credentials to send notifications.
+              Your device is registered, but you won't receive notifications until your administrator
+              configures Firebase Cloud Messaging. See <code>FIREBASE_SETUP.md</code> for instructions.
             </AlertDescription>
           </Alert>
         )}

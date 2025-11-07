@@ -90,6 +90,9 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
       CORS_CREDENTIALS: "true"
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
     volumes:
       - ./src:/app/src
       - ./uploads:/app/uploads

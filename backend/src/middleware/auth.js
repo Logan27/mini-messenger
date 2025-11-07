@@ -88,7 +88,7 @@ export const authenticate = async (req, res, next) => {
     }
 
     // Update session last accessed time
-    // await session.updateLastAccessed();
+    await session.updateLastAccessed();
 
     // Attach user and session to request object
     req.user = user;

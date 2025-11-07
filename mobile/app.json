@@ -17,7 +17,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.messenger.app",
+      "bundleIdentifier": "com.logan27.minimessenger",
       "buildNumber": "1.0.0",
       "requireFullScreen": false,
       "infoPlist": {
@@ -32,8 +32,9 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2563eb"
       },
-      "package": "com.messenger.app",
+      "package": "com.logan27.minimessenger",
       "versionCode": 1,
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "CAMERA",
         "RECORD_AUDIO",
@@ -64,10 +65,7 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#2563eb",
-          "sounds": [
-            "./assets/notification.wav"
-          ]
+          "color": "#2563eb"
         }
       ],
       [
@@ -75,7 +73,16 @@
         {
           "contactsPermission": "Allow Messenger to access your contacts to help you connect with friends."
         }
-      ]
+      ],
+      [
+        "@react-native-firebase/app",
+        {
+          "android": {
+            "googleServicesFile": "./google-services.json"
+          }
+        }
+      ],
+      "@react-native-firebase/messaging"
     ],
     "extra": {
       "eas": {

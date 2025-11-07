@@ -57,20 +57,25 @@ export const useAuthStore = create<AuthStore>()(
 
         try {
           const response = await authAPI.login(credentials);
-          const { user, token } = response.data;
+          const data = response.data.data || response.data;
+          const { user, tokens } = data;
+          const { accessToken, refreshToken } = tokens;
 
           set({
             user,
-            token,
+            token: accessToken,
             isAuthenticated: true,
             isLoading: false,
           });
 
-          // Store token for API calls
-          await AsyncStorage.setItem('authToken', token);
+          // Store tokens for API calls
+          await AsyncStorage.setItem('authToken', accessToken);
+          await AsyncStorage.setItem('refreshToken', refreshToken);
+          await AsyncStorage.setItem('user', JSON.stringify(user));
         } catch (error: any) {
           set({ isLoading: false });
-          throw new Error(error.response?.data?.message || 'Login failed');
+          const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Login failed';
+          throw new Error(errorMessage);
         }
       },
 
@@ -78,11 +83,14 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true });
 
         try {
-          await authAPI.register(userData);
+          // Remove confirmPassword before sending to API
+          const { confirmPassword, ...registrationData } = userData;
+          await authAPI.register(registrationData);
           set({ isLoading: false });
         } catch (error: any) {
           set({ isLoading: false });
-          throw new Error(error.response?.data?.message || 'Registration failed');
+          const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Registration failed';
+          throw new Error(errorMessage);
         }
       },
 
@@ -181,17 +189,24 @@ export const useAuthStore = create<AuthStore>()(
         set({ refreshTokenInProgress: true });
 
         try {
-          const response = await authAPI.refreshToken();
-          const { token: newToken } = response.data;
+          const refreshToken = await AsyncStorage.getItem('refreshToken');
+          if (!refreshToken) {
+            set({ refreshTokenInProgress: false });
+            return false;
+          }
+
+          const response = await authAPI.refreshToken(refreshToken);
+          const data = response.data.data || response.data;
+          const { accessToken } = data.tokens || data;
 
           set({
-            token: newToken,
+            token: accessToken,
             refreshTokenInProgress: false,
             lastTokenRefresh: new Date(),
             error: null,
           });
 
-          await AsyncStorage.setItem('authToken', newToken);
+          await AsyncStorage.setItem('authToken', accessToken);
           return true;
         } catch (error: any) {
           console.error('Token refresh error:', error);

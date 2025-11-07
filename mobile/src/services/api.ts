@@ -110,60 +110,60 @@ export const wsService = new WebSocketService();
 
 // API endpoints
 export const authAPI = {
-  login: (credentials: { email: string; password: string }) =>
-    api.post('/api/v1/auth/login', credentials),
+  login: (credentials: { identifier: string; password: string }) =>
+    api.post('/api/auth/login', credentials),
 
-  register: (userData: { email: string; password: string; name: string }) =>
-    api.post('/api/v1/auth/register', userData),
+  register: (userData: { username: string; email: string; password: string; firstName?: string; lastName?: string }) =>
+    api.post('/api/auth/register', userData),
 
-  refreshToken: () =>
-    api.post('/api/v1/auth/refresh'),
+  refreshToken: (refreshToken: string) =>
+    api.post('/api/auth/refresh', { refreshToken }),
 
   logout: () =>
-    api.post('/api/v1/auth/logout'),
+    api.post('/api/auth/logout'),
 
   forgotPassword: (email: string) =>
-    api.post('/api/v1/auth/forgot-password', { email }),
+    api.post('/api/auth/forgot-password', { email }),
 
-  resetPassword: (token: string, password: string) =>
-    api.post('/api/v1/auth/reset-password', { token, password }),
+  resetPassword: (token: string, password: string, confirmPassword: string) =>
+    api.post('/api/auth/reset-password', { token, password, confirmPassword }),
 
   verifyEmail: (token: string) =>
-    api.post('/api/v1/auth/verify-email', { token }),
+    api.post('/api/auth/verify-email', { token }),
 };
 
 export const messagingAPI = {
   getConversations: () =>
-    api.get('/api/v1/conversations'),
+    api.get('/api/messages/conversations'),
 
   getConversation: (conversationId: string) =>
-    api.get(`/api/v1/conversations/${conversationId}`),
+    api.get(`/api/messages/conversations/${conversationId}`),
 
-  sendMessage: (conversationId: string, content: string, type: string = 'text', replyTo?: string, file?: any) =>
-    api.post(`/api/v1/conversations/${conversationId}/messages`, { content, type, replyTo, file }),
+  sendMessage: (recipientId: string, content: string, type: string = 'text', replyTo?: string, file?: any) =>
+    api.post('/api/messages', { recipientId, content, type, replyTo, file }),
 
-  editMessage: (conversationId: string, messageId: string, content: string) =>
-    api.put(`/api/v1/conversations/${conversationId}/messages/${messageId}`, { content }),
+  editMessage: (messageId: string, content: string) =>
+    api.put(`/api/messages/${messageId}`, { content }),
 
-  deleteMessage: (conversationId: string, messageId: string, deleteForEveryone: boolean = false) =>
-    api.delete(`/api/v1/conversations/${conversationId}/messages/${messageId}`, {
+  deleteMessage: (messageId: string, deleteForEveryone: boolean = false) =>
+    api.delete(`/api/messages/${messageId}`, {
       params: { deleteForEveryone }
     }),
 
-  markAsRead: (conversationId: string, messageId: string) =>
-    api.post(`/api/v1/conversations/${conversationId}/messages/${messageId}/read`),
+  markAsRead: (messageId: string) =>
+    api.post(`/api/messages/${messageId}/read`),
 };
 
 export const fileAPI = {
-  uploadFile: (file: any, conversationId?: string) => {
+  uploadFile: (file: any, messageId?: string) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    if (conversationId) {
-      formData.append('conversationId', conversationId);
+    if (messageId) {
+      formData.append('messageId', messageId);
     }
 
-    return api.post('/api/v1/files/upload', formData, {
+    return api.post('/api/files/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -171,21 +171,21 @@ export const fileAPI = {
   },
 
   getFile: (fileId: string) =>
-    api.get(`/api/v1/files/${fileId}`),
+    api.get(`/api/files/${fileId}`),
 
   deleteFile: (fileId: string) =>
-    api.delete(`/api/v1/files/${fileId}`),
+    api.delete(`/api/files/${fileId}`),
 };
 
 export const userAPI = {
   getProfile: () =>
-    api.get('/api/v1/users/me'),
+    api.get('/api/auth/me'),
 
   updateProfile: (data: any) =>
-    api.put('/api/v1/users/me', data),
+    api.put('/api/users/profile', data),
 
   searchUsers: (query: string) =>
-    api.get(`/api/v1/users/search?q=${encodeURIComponent(query)}`),
+    api.get(`/api/users/search?query=${encodeURIComponent(query)}`),
 };
 
 export const groupAPI = {

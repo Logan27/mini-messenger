@@ -168,16 +168,18 @@ export interface PaginatedResponse<T> {
 
 // Form types
 export interface LoginForm {
-  email: string;
+  identifier: string; // Can be email or username
   password: string;
   rememberMe?: boolean;
 }
 
 export interface RegisterForm {
-  name: string;
+  username: string;
   email: string;
   password: string;
   confirmPassword: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface ForgotPasswordForm {

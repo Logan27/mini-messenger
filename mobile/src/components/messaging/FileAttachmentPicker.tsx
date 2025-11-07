@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'react-native-document-picker';
+import * as DocumentPicker from 'expo-document-picker';
 
 interface FileAttachmentPickerProps {
   visible: boolean;
@@ -97,22 +97,22 @@ const FileAttachmentPicker: React.FC<FileAttachmentPickerProps> = ({
 
   const handlePickDocument = async () => {
     try {
-      const result = await DocumentPicker.pick({
+      const result = await DocumentPicker.getDocumentAsync({
         type: [
-          DocumentPicker.types.pdf,
-          DocumentPicker.types.doc,
-          DocumentPicker.types.docx,
-          DocumentPicker.types.xls,
-          DocumentPicker.types.xlsx,
-          DocumentPicker.types.plainText,
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'text/plain',
         ],
+        copyToCacheDirectory: true,
       });
 
-      if (result && result[0]) {
-        const file = result[0];
+      if (result.type === 'success') {
         // Check file size (10MB limit)
         const maxSize = 10 * 1024 * 1024; // 10MB
-        if (file.size && file.size > maxSize) {
+        if (result.size && result.size > maxSize) {
           Alert.alert(
             'File Too Large',
             'File size must be less than 10MB. Please choose a smaller file.'
@@ -121,18 +121,16 @@ const FileAttachmentPicker: React.FC<FileAttachmentPickerProps> = ({
         }
 
         onFileSelected({
-          uri: file.uri,
+          uri: result.uri,
           type: 'document',
-          name: file.name || 'document',
-          size: file.size ?? undefined,
+          name: result.name || 'document',
+          size: result.size ?? undefined,
         });
         onClose();
       }
     } catch (error: any) {
-      if (!DocumentPicker.isCancel(error)) {
-        console.error('Document picker error:', error);
-        Alert.alert('Error', 'Failed to pick document. Please try again.');
-      }
+      console.error('Document picker error:', error);
+      Alert.alert('Error', 'Failed to pick document. Please try again.');
     }
   };
 

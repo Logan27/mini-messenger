@@ -20,7 +20,7 @@ import { LoginForm } from '../../types';
 
 // Validation schema
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  identifier: z.string().min(3, 'Please enter your email or username'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
@@ -123,26 +123,25 @@ const LoginScreen = ({ navigation }: any) => {
             </View>
           )}
 
-          {/* Email Input */}
+          {/* Email/Username Input */}
           <View style={styles.inputContainer}>
-            <Ionicons name="mail" size={20} color="#666" style={styles.inputIcon} />
+            <Ionicons name="person" size={20} color="#666" style={styles.inputIcon} />
             <Controller
               control={control}
-              name="email"
+              name="identifier"
               render={({ field: { onChange, value } }) => (
                 <TextInput
                   style={styles.input}
-                  placeholder="Email"
+                  placeholder="Email or Username"
                   value={value}
                   onChangeText={onChange}
-                  keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
               )}
             />
           </View>
-          {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
+          {errors.identifier && <Text style={styles.errorText}>{errors.identifier.message}</Text>}
 
           {/* Password Input */}
           <View style={styles.inputContainer}>

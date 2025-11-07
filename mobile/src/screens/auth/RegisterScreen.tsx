@@ -20,12 +20,17 @@ import { RegisterForm } from '../../types';
 
 // Validation schema
 const registerSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
+  username: z.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(50, 'Username must be at most 50 characters')
+    .regex(/^[a-zA-Z0-9]+$/, 'Username must contain only letters and numbers'),
   email: z.string().email('Please enter a valid email address'),
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain at least one uppercase letter, one lowercase letter, and one number'),
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])/, 'Password must contain uppercase, lowercase, number, and special character'),
   confirmPassword: z.string(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -80,25 +85,25 @@ const RegisterScreen = ({ navigation }: any) => {
         </View>
 
         <View style={styles.form}>
-          {/* Name Input */}
+          {/* Username Input */}
           <View style={styles.inputContainer}>
-            <Ionicons name="person" size={20} color="#666" style={styles.inputIcon} />
+            <Ionicons name="at" size={20} color="#666" style={styles.inputIcon} />
             <Controller
               control={control}
-              name="name"
+              name="username"
               render={({ field: { onChange, value } }) => (
                 <TextInput
                   style={styles.input}
-                  placeholder="Full Name"
+                  placeholder="Username (alphanumeric only)"
                   value={value}
                   onChangeText={onChange}
-                  autoCapitalize="words"
+                  autoCapitalize="none"
                   autoCorrect={false}
                 />
               )}
             />
           </View>
-          {errors.name && <Text style={styles.errorText}>{errors.name.message}</Text>}
+          {errors.username && <Text style={styles.errorText}>{errors.username.message}</Text>}
 
           {/* Email Input */}
           <View style={styles.inputContainer}>

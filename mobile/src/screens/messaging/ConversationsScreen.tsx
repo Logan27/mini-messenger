@@ -155,7 +155,7 @@ const ConversationsScreen = ({ navigation }: any) => {
           </View>
         </View>
 
-        {conversation.unreadCount > 0 && (
+        {(conversation.unreadCount || 0) > 0 && (
           <View style={styles.unreadBadge}>
             <Text style={styles.unreadText}>{conversation.unreadCount}</Text>
           </View>
@@ -165,7 +165,11 @@ const ConversationsScreen = ({ navigation }: any) => {
   };
 
   const formatTimestamp = (timestamp: string) => {
+    if (!timestamp) return '';
+
     const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return '';
+
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 
@@ -215,7 +219,7 @@ const ConversationsScreen = ({ navigation }: any) => {
       <FlatList
         data={filteredConversations}
         renderItem={renderConversation}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }

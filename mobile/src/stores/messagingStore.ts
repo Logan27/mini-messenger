@@ -47,11 +47,16 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
 
     try {
       const response = await messagingAPI.getConversations();
-      set({ conversations: response.data, isLoading: false });
+      const conversationsData = response.data?.data || response.data || [];
+      set({
+        conversations: Array.isArray(conversationsData) ? conversationsData : [],
+        isLoading: false
+      });
     } catch (error: any) {
       set({
         error: error.response?.data?.message || 'Failed to load conversations',
-        isLoading: false
+        isLoading: false,
+        conversations: [], // Ensure conversations is always an array even on error
       });
     }
   },

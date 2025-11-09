@@ -76,7 +76,7 @@ const ConversationsScreen = ({ navigation }: any) => {
     const searchLower = searchQuery.toLowerCase();
     return (
       conversation.name?.toLowerCase().includes(searchLower) ||
-      conversation.participants.some(p =>
+      (conversation.participants || []).some(p =>
         p.name.toLowerCase().includes(searchLower) ||
         p.email.toLowerCase().includes(searchLower)
       )
@@ -84,9 +84,9 @@ const ConversationsScreen = ({ navigation }: any) => {
   });
 
   const renderConversation = ({ item: conversation }: { item: Conversation }) => {
-    const otherParticipants = conversation.participants.filter(p => p.id !== user?.id);
+    const otherParticipants = (conversation.participants || []).filter(p => p.id !== user?.id);
     const displayName = conversation.type === 'group'
-      ? conversation.name || `Group (${conversation.participants.length})`
+      ? conversation.name || `Group (${(conversation.participants || []).length})`
       : otherParticipants[0]?.name || otherParticipants[0]?.email || 'Unknown';
 
     const lastMessage = conversation.lastMessage;

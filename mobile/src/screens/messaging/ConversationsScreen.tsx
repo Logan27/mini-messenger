@@ -70,7 +70,7 @@ const ConversationsScreen = ({ navigation }: any) => {
     setSearchQuery(query);
   };
 
-  const filteredConversations = conversations.filter((conversation) => {
+  const filteredConversations = (conversations || []).filter((conversation) => {
     if (!searchQuery) return true;
 
     const searchLower = searchQuery.toLowerCase();

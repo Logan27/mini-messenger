@@ -1,5 +1,5 @@
 import { registerRootComponent } from 'expo';
-import messaging from '@react-native-firebase/messaging';
+import { getApp, setBackgroundMessageHandler } from '@react-native-firebase/messaging';
 import { Platform } from 'react-native';
 
 import App from './App';
@@ -43,36 +43,30 @@ const envVars = {
 
 log.info('Environment variables check', envVars, 'Environment');
 
-// Register background message handler for FCM
+// Register background message handler for FCM using modular API
 // This must be called outside of any component lifecycle
 if (Platform.OS === 'android' || Platform.OS === 'ios') {
   log.info('Setting up FCM background message handler', undefined, 'FCM');
-  
-  // DIAGNOSTIC: Check if messaging is available before using it
-  if (messaging && typeof messaging === 'function') {
-    try {
-      messaging().setBackgroundMessageHandler(async (remoteMessage) => {
-        log.info('Background message received', {
-          messageId: remoteMessage.messageId,
-          from: remoteMessage.from,
-          hasData: !!remoteMessage.data
-        }, 'FCM');
 
-        // You can perform background tasks here
-        // For example, update local storage, show notification, etc.
+  try {
+    // Use modular API to set background message handler
+    setBackgroundMessageHandler(async (remoteMessage) => {
+      log.info('Background message received', {
+        messageId: remoteMessage.messageId,
+        from: remoteMessage.from,
+        hasData: !!remoteMessage.data,
+        notification: remoteMessage.notification
+      }, 'FCM');
 
-        // The notification will be automatically displayed by the system
-        // You can customize it here if needed
-      });
-      log.info('FCM background handler registered successfully', undefined, 'FCM');
-    } catch (error) {
-      log.error('Failed to register FCM background handler', error, 'FCM');
-    }
-  } else {
-    log.warn('Firebase messaging not available for background handler', {
-      messagingType: typeof messaging,
-      isFunction: typeof messaging === 'function'
-    }, 'FCM');
+      // You can perform background tasks here
+      // For example, update local storage, show notification, etc.
+
+      // The notification will be automatically displayed by the system
+      // You can customize it here if needed
+    });
+    log.info('FCM background handler registered successfully', undefined, 'FCM');
+  } catch (error) {
+    log.error('Failed to register FCM background handler', error, 'FCM');
   }
 }
 

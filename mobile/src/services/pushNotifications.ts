@@ -245,9 +245,12 @@ export class PushNotificationService {
   }
 
   /**
-   * Register device token with backend
+   * Register device token with backend with retry logic
    */
-  async registerToken(token: string): Promise<void> {
+  async registerToken(token: string, retryCount: number = 0): Promise<void> {
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY_MS = 2000; // 2 seconds
+
     try {
       const platformInfo = getPlatformInfo();
       await api.post('/api/users/me/device-token', {
@@ -260,9 +263,38 @@ export class PushNotificationService {
         },
       });
       console.log('Device token registered with backend');
-    } catch (error) {
-      console.error('Failed to register device token:', error);
-      throw error;
+    } catch (error: any) {
+      const isNetworkError = !error.response;
+      const is401Error = error.response?.status === 401;
+      const is5xxError = error.response?.status >= 500 && error.response?.status < 600;
+
+      // Retry on network errors, 401 (might be resolved by token refresh), or server errors
+      if ((isNetworkError || is401Error || is5xxError) && retryCount < MAX_RETRIES) {
+        console.warn(`Failed to register device token (attempt ${retryCount + 1}/${MAX_RETRIES}). Retrying...`, {
+          errorStatus: error.response?.status,
+          errorMessage: error.message,
+          isNetworkError,
+          is401Error,
+          is5xxError
+        });
+
+        // Wait before retrying with exponential backoff
+        const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
+        await new Promise(resolve => setTimeout(resolve, delay));
+
+        // Retry the registration
+        return this.registerToken(token, retryCount + 1);
+      }
+
+      console.error('Failed to register device token after retries:', {
+        error: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        retryCount
+      });
+
+      // Don't throw the error to prevent app initialization from failing
+      // The token will be registered on next app restart or token refresh
     }
   }
 

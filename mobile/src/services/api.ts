@@ -274,8 +274,8 @@ export const messagingAPI = {
   getConversations: () =>
     api.get('/api/messages/conversations'),
 
-  getConversation: (conversationId: string) =>
-    api.get(`/api/messages/conversations/${conversationId}`),
+  getMessages: (params: { conversationWith?: string; groupId?: string; page?: number; limit?: number }) =>
+    api.get('/api/messages', { params }),
 
   sendMessage: (recipientId: string, content: string, type: string = 'text', replyTo?: string, file?: any) =>
     api.post('/api/messages', { recipientId, content, type, replyTo, file }),
@@ -317,10 +317,10 @@ export const fileAPI = {
 
 export const userAPI = {
   getProfile: () =>
-    api.get('/api/auth/me'),
+    api.get('/api/users/me'),
 
   updateProfile: (data: any) =>
-    api.put('/api/users/profile', data),
+    api.put('/api/users/me', data),
 
   searchUsers: (query: string) =>
     api.get(`/api/users/search?query=${encodeURIComponent(query)}`),

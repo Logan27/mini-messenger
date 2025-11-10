@@ -48,8 +48,55 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
     try {
       const response = await messagingAPI.getConversations();
       const conversationsData = response.data?.data || response.data || [];
+
+      // Transform backend conversation format to match frontend expectations
+      const transformedConversations = Array.isArray(conversationsData)
+        ? conversationsData.map((conv: any) => {
+            if (conv.type === 'direct' && conv.user) {
+              // Transform direct conversation format
+              const user = {
+                ...conv.user,
+                // Map profilePicture to avatar for consistency
+                avatar: conv.user.profilePicture || conv.user.avatar,
+                // Ensure isOnline is set
+                isOnline: conv.user.onlineStatus === 'online',
+                // Compute name if not present
+                name: conv.user.name ||
+                      (conv.user.firstName && conv.user.lastName
+                        ? `${conv.user.firstName} ${conv.user.lastName}`
+                        : conv.user.firstName || conv.user.username || 'Unknown'),
+              };
+
+              return {
+                id: conv.user.id, // Use user ID as conversation ID for direct messages
+                type: 'direct',
+                participants: [user],
+                lastMessage: conv.lastMessage,
+                unreadCount: conv.unreadCount || 0,
+                createdAt: conv.lastMessageAt || new Date().toISOString(),
+                updatedAt: conv.lastMessageAt || new Date().toISOString(),
+              };
+            } else if (conv.type === 'group' && conv.group) {
+              // Transform group conversation format
+              return {
+                id: conv.group.id,
+                type: 'group',
+                name: conv.group.name,
+                description: conv.group.description,
+                avatar: conv.group.avatar,
+                participants: [], // Will be loaded separately if needed
+                lastMessage: conv.lastMessage,
+                unreadCount: conv.unreadCount || 0,
+                createdAt: conv.lastMessageAt || new Date().toISOString(),
+                updatedAt: conv.lastMessageAt || new Date().toISOString(),
+              };
+            }
+            return conv;
+          })
+        : [];
+
       set({
-        conversations: Array.isArray(conversationsData) ? conversationsData : [],
+        conversations: transformedConversations,
         isLoading: false
       });
     } catch (error: any) {
@@ -63,11 +110,24 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
 
   loadMessages: async (conversationId: string) => {
     try {
-      const response = await messagingAPI.getConversation(conversationId);
+      // Find the conversation to determine if it's a direct message or group
+      const { conversations } = get();
+      const conversation = conversations.find(c => c.id === conversationId);
+
+      let response;
+      if (conversation?.type === 'group') {
+        // Load group messages
+        response = await messagingAPI.getMessages({ groupId: conversationId });
+      } else {
+        // Load direct messages
+        response = await messagingAPI.getMessages({ conversationWith: conversationId });
+      }
+
+      const messages = response.data?.data || response.data || [];
       set((state) => ({
         messages: {
           ...state.messages,
-          [conversationId]: response.data.messages || [],
+          [conversationId]: Array.isArray(messages) ? messages : [],
         },
       }));
     } catch (error: any) {

@@ -25,7 +25,7 @@ export class TestHelpers {
     const defaultData = {
       username: `testuser${Date.now()}${Math.random().toString(36).substring(7)}`,
       email: `test${Date.now()}${Math.random().toString(36).substring(7)}@example.com`,
-      password: 'TestPassword123!',
+      passwordHash: 'TestPassword123!', // Will be hashed by User.beforeCreate hook
       firstName: 'Test',
       lastName: 'User',
       approvalStatus: 'approved',

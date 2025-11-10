@@ -148,6 +148,10 @@
       "**/tests/**/*.test.js",
       "**/tests/**/*.spec.js"
     ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "integration\\.skip"
+    ],
     "setupFilesAfterEnv": [
       "<rootDir>/tests/setup.js"
     ]

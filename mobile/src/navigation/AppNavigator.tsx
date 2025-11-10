@@ -118,7 +118,7 @@ const MainTabNavigator = () => {
 const MainNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Main" component={MainTabNavigator} />
+      <Stack.Screen name="MainTabs" component={MainTabNavigator} />
       <Stack.Screen
         name="Chat"
         component={ChatScreen}

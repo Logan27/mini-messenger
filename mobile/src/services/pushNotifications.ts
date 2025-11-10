@@ -86,8 +86,15 @@ export class PushNotificationService {
         // Use Firebase Cloud Messaging for native platforms when available
         try {
           token = await this.getFCMToken();
-        } catch (fcmError) {
-          console.error('Firebase Cloud Messaging failed, falling back to Expo notifications:', fcmError);
+          console.log('Successfully obtained FCM token');
+        } catch (fcmError: any) {
+          const errorMsg = fcmError?.message || 'Unknown error';
+          if (errorMsg.includes('API key') || errorMsg.includes('IllegalArgumentException')) {
+            console.warn('⚠️ Firebase FCM is not properly configured. Using Expo notifications as fallback.');
+          } else {
+            console.warn('Firebase Cloud Messaging failed, falling back to Expo notifications:', fcmError);
+          }
+
           // Fall back to Expo notifications
           if (!platformInfo.isDevice) {
             console.warn('Must use physical device for Push Notifications');
@@ -95,6 +102,7 @@ export class PushNotificationService {
           }
           const expoPushToken = await Notifications.getExpoPushTokenAsync();
           token = expoPushToken.data;
+          console.log('Successfully obtained Expo push token');
         }
       } else {
         // Use Expo push notifications for web/other platforms or when Firebase is not available
@@ -104,6 +112,7 @@ export class PushNotificationService {
         }
         const expoPushToken = await Notifications.getExpoPushTokenAsync();
         token = expoPushToken.data;
+        console.log('Successfully obtained Expo push token');
       }
 
       console.log('Push notification token:', token);
@@ -242,14 +251,17 @@ export class PushNotificationService {
       // Provide more helpful error messages
       const errorMessage = error?.message || 'Unknown error';
 
-      if (errorMessage.includes('API key')) {
-        console.error('Firebase API key error. Please ensure:');
-        console.error('1. Firebase Messaging is enabled in Firebase Console');
-        console.error('2. The API key has no restrictions or allows FCM');
-        console.error('3. The google-services.json is properly configured');
+      if (errorMessage.includes('API key') || errorMessage.includes('IllegalArgumentException')) {
+        console.warn('Firebase API key error detected. FCM will not be available.');
+        console.warn('To fix this issue:');
+        console.warn('1. Ensure Firebase Messaging is enabled in Firebase Console');
+        console.warn('2. Check that the API key has no restrictions or allows FCM');
+        console.warn('3. Verify google-services.json is properly configured');
+        console.warn('4. Falling back to Expo push notifications');
+      } else {
+        console.warn('Failed to get FCM token:', error);
       }
 
-      console.error('Failed to get FCM token:', error);
       throw error;
     }
   }

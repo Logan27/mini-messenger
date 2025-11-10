@@ -1,6 +1,6 @@
 import { TestHelpers } from './testHelpers.js';
 import { Group, GroupMember, Message, File, User } from '../src/models/index.js';
-import { fileUploadService } from '../src/services/fileUploadService.js';
+import fileUploadService from '../src/services/fileUploadService.js';
 import fs from 'fs/promises';
 import path from 'path';
 

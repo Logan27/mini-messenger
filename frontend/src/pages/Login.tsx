@@ -27,7 +27,7 @@ const Login = () => {
 
     try {
       await login(identifier, password);
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setIsLoading(false);

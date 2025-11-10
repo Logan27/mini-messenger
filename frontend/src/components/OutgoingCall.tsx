@@ -55,7 +55,7 @@ export function OutgoingCall({
   useEffect(() => {
     if (!open || !callId) return;
 
-    const unsubscribeResponse = socketService.on('call.response', (data: any) => {
+    const unsubscribeResponse = socketService.on('call.response', (data: unknown) => {
       console.log('📞 Outgoing call - response received:', data);
       
       if (data.callId === callId) {
@@ -115,7 +115,7 @@ export function OutgoingCall({
       // This would be handled by a useSocket hook
       // For now, we'll just wait for the call to be accepted
       
-    } catch (err: any) {
+    } catch (err) {
       const errorMsg = err.response?.data?.message || 'Failed to initiate call';
       toast.error(errorMsg);
       onOpenChange(false);
@@ -129,7 +129,7 @@ export function OutgoingCall({
 
     try {
       await apiClient.post(`/calls/${callId}/end`, {});
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to cancel call:', err);
     }
   };

@@ -16,7 +16,7 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
 
   // Listen for new messages via WebSocket
   useEffect(() => {
-    const unsubscribe = socketService.on('message.new', (newMessage: any) => {
+    const unsubscribe = socketService.on('message.new', (newMessage: unknown) => {
       console.log('📨 New message received via WebSocket:', {
         messageId: newMessage.id,
         senderId: newMessage.senderId,
@@ -68,7 +68,7 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
         console.log('📨 Adding/updating message in cache:', transformedMessage.id);
         
         const queryKey = ['messages', recipientId, groupId];
-        queryClient.setQueryData(queryKey, (old: any) => {
+        queryClient.setQueryData(queryKey, (old) => {
           if (!old) {
             console.log('📨 No existing cache, creating new');
             return { pages: [[transformedMessage]], pageParams: [undefined] };
@@ -79,7 +79,7 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
           const lastPage = newPages[lastPageIndex];
           
           // Check if message already exists (replace temp or duplicate)
-          const existingIndex = lastPage.findIndex((msg: any) => 
+          const existingIndex = lastPage.findIndex((msg: unknown) => 
             msg.id === transformedMessage.id || 
             (msg.id.startsWith('temp-') && msg.text === transformedMessage.text)
           );
@@ -111,15 +111,15 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
     });
 
     // Listen for message delivered receipts (backend sends message_delivered with underscore)
-    const unsubscribeDelivered = socketService.on('message_delivered', (data: any) => {
+    const unsubscribeDelivered = socketService.on('message_delivered', (data: unknown) => {
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
 
-      queryClient.setQueryData(queryKey, (old: any) => {
+      queryClient.setQueryData(queryKey, (old) => {
         if (!old) return old;
 
-        const newPages = old.pages.map((page: any[]) =>
-          page.map((msg: any) =>
+        const newPages = old.pages.map((page: unknown[]) =>
+          page.map((msg: unknown) =>
             msg.id === messageId
               ? { ...msg, status: 'delivered' }
               : msg
@@ -131,14 +131,14 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
     });
 
     // Listen for message read receipts (backend sends message_read with underscore)
-    const unsubscribeRead = socketService.on('message_read', (data: any) => {
+    const unsubscribeRead = socketService.on('message_read', (data: unknown) => {
       console.log('📖 Read receipt received:', data);
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
 
       console.log('📖 Updating query cache for key:', queryKey, 'messageId:', messageId);
 
-      queryClient.setQueryData(queryKey, (old: any) => {
+      queryClient.setQueryData(queryKey, (old) => {
         if (!old) {
           console.log('⚠️ No existing messages data in cache');
           return old;
@@ -146,9 +146,9 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
 
         console.log('📖 Current cache pages:', old.pages.length);
 
-        const newPages = old.pages.map((page: any[], pageIndex: number) => {
+        const newPages = old.pages.map((page: unknown[], pageIndex: number) => {
           console.log(`📖 Processing page ${pageIndex} with ${page.length} messages`);
-          return page.map((msg: any) => {
+          return page.map((msg: unknown) => {
             if (msg.id === messageId) {
               console.log('✅ Found message to mark as read:', msg.id);
               return { ...msg, status: 'read' };
@@ -163,15 +163,15 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
     });
 
     // Listen for message deletions (soft delete - only for sender)
-    const unsubscribeSoftDeleted = socketService.on('message_soft_deleted', (data: any) => {
+    const unsubscribeSoftDeleted = socketService.on('message_soft_deleted', (data: unknown) => {
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
 
-      queryClient.setQueryData(queryKey, (old: any) => {
+      queryClient.setQueryData(queryKey, (old) => {
         if (!old) return old;
 
-        const newPages = old.pages.map((page: any[]) =>
-          page.filter((msg: any) => msg.id !== messageId)
+        const newPages = old.pages.map((page: unknown[]) =>
+          page.filter((msg: unknown) => msg.id !== messageId)
         );
 
         return { ...old, pages: newPages };
@@ -179,15 +179,15 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
     });
 
     // Listen for hard deletions (deleted for everyone)
-    const unsubscribeHardDeleted = socketService.on('message_hard_deleted', (data: any) => {
+    const unsubscribeHardDeleted = socketService.on('message_hard_deleted', (data: unknown) => {
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
 
-      queryClient.setQueryData(queryKey, (old: any) => {
+      queryClient.setQueryData(queryKey, (old) => {
         if (!old) return old;
 
-        const newPages = old.pages.map((page: any[]) =>
-          page.filter((msg: any) => msg.id !== messageId)
+        const newPages = old.pages.map((page: unknown[]) =>
+          page.filter((msg: unknown) => msg.id !== messageId)
         );
 
         return { ...old, pages: newPages };
@@ -195,15 +195,15 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
     });
 
     // Listen for reaction updates
-    const unsubscribeReaction = socketService.on('message.reaction', (data: any) => {
+    const unsubscribeReaction = socketService.on('message.reaction', (data: unknown) => {
       const { messageId, reactions } = data;
       const queryKey = ['messages', recipientId, groupId];
 
-      queryClient.setQueryData(queryKey, (old: any) => {
+      queryClient.setQueryData(queryKey, (old) => {
         if (!old) return old;
 
-        const newPages = old.pages.map((page: any[]) =>
-          page.map((msg: any) => {
+        const newPages = old.pages.map((page: unknown[]) =>
+          page.map((msg: unknown) => {
             if (msg.id === messageId) {
               return { ...msg, reactions: reactions || {} };
             }
@@ -268,7 +268,7 @@ export function useSendMessage() {
         status: 'sending' as const,
       };
 
-      queryClient.setQueryData(queryKey, (old: any) => {
+      queryClient.setQueryData(queryKey, (old) => {
         if (!old) return { pages: [[tempMessage]], pageParams: [undefined] };
 
         const newPages = [...old.pages];
@@ -310,12 +310,12 @@ export function useSendMessage() {
         } : undefined,
       };
       
-      queryClient.setQueryData(queryKey, (old: any) => {
+      queryClient.setQueryData(queryKey, (old) => {
         if (!old) return { pages: [[transformedMessage]], pageParams: [undefined] };
 
         // Replace the temp message with the real one
-        const newPages = old.pages.map((page: any[]) =>
-          page.map((msg: any) =>
+        const newPages = old.pages.map((page: unknown[]) =>
+          page.map((msg: unknown) =>
             msg.id === context?.tempMessage.id
               ? transformedMessage
               : msg

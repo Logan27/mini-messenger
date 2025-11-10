@@ -4,12 +4,12 @@
  */
 
 // Preload functions for lazy-loaded routes
-const preloadFunctions: Record<string, () => Promise<any>> = {};
+const preloadFunctions: Record<string, () => Promise<unknown>> = {};
 
 /**
  * Register a route for preloading
  */
-export function registerRoutePreload(name: string, preloadFn: () => Promise<any>) {
+export function registerRoutePreload(name: string, preloadFn: () => Promise<unknown>) {
   preloadFunctions[name] = preloadFn;
 }
 

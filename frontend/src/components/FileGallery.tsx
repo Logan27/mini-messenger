@@ -91,7 +91,7 @@ export const FileGallery = ({
       // Fetch files for this conversation
       const fetchFiles = async () => {
         try {
-          const params: any = { limit: 100 };
+          const params: Record<string, unknown> = { limit: 100 };
           if (conversationId) {
             params.conversationWith = conversationId;
           }
@@ -104,22 +104,15 @@ export const FileGallery = ({
           );
 
           // Transform API response to FilePreviewData format
-          const fetchedFiles: FilePreviewData[] = response.files.map((file: any) => {
-            // Convert relative file URLs to absolute URLs
-            const absoluteFileUrl = file.fileUrl?.startsWith('http')
-              ? file.fileUrl
-              : `${window.location.origin}${file.fileUrl}`;
-
-            return {
-              id: file.id,
-              fileName: file.originalName,
-              fileUrl: absoluteFileUrl,
-              mimeType: file.mimeType,
-              fileSize: file.fileSize,
-              uploadedAt: new Date(file.uploadedAt || file.createdAt),
-              sender: file.sender,
-            };
-          });
+          const fetchedFiles: FilePreviewData[] = response.files.map((file: File) => ({
+            id: file.id,
+            fileName: file.originalName,
+            fileUrl: file.fileUrl,
+            mimeType: file.mimeType,
+            fileSize: file.fileSize,
+            uploadedAt: new Date(file.uploadedAt || file.createdAt),
+            sender: file.sender,
+          }));
 
           setFiles(fetchedFiles);
           setFilteredFiles(fetchedFiles);

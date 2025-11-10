@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       navigate('/');
-    } catch (error: any) {
+    } catch (error) {
       throw new Error(error.response?.data?.error?.message || error.response?.data?.message || 'Login failed');
     }
   };
@@ -135,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authService.register(data);
       // After registration, user needs admin approval
       navigate('/login?registered=true');
-    } catch (error: any) {
+    } catch (error) {
       throw new Error(error.response?.data?.error?.message || error.response?.data?.message || 'Registration failed');
     }
   };

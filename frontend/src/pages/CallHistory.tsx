@@ -75,7 +75,7 @@ export default function CallHistory() {
 
       setCalls(response.data.calls || []);
       setFilteredCalls(response.data.calls || []);
-    } catch (err: any) {
+    } catch (err) {
       toast.error('Failed to load call history');
     } finally {
       setIsLoading(false);
@@ -123,7 +123,7 @@ export default function CallHistory() {
       );
 
       toast.success('Call initiated');
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to initiate call');
     }
   };

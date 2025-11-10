@@ -55,7 +55,7 @@ export const messageService = {
     content: string;
     messageType?: string;
     replyToId?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }) {
     console.log('🌐 messageService.sendMessage called with:', data);
 

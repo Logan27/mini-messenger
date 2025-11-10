@@ -84,7 +84,7 @@ export function AvatarUpload({ currentAvatar, username, onAvatarChange }: Avatar
           ? `Profile picture updated (${ratio}% smaller)`
           : "Your profile picture has been updated",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Avatar optimization/upload failed:', error);
       toast({
         variant: "destructive",

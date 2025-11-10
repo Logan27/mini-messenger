@@ -126,8 +126,9 @@ export default function AdminUsers() {
 
       setUsers(response.data.data.users || []);
       setFilteredUsers(response.data.data.users || []);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load users');
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setError(((error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to load users');
     } finally {
       setIsLoading(false);
     }
@@ -144,8 +145,9 @@ export default function AdminUsers() {
       });
 
       setUserDetails(response.data.data || response.data);
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || err.response?.data?.message || 'Failed to load user details');
+    } catch (err) {
+      const error = err as { response?: { data?: { error?: string; message?: string } } };
+      toast.error(error.response?.data?.error || ((error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to load user details');
     } finally {
       setIsLoadingDetails(false);
     }
@@ -206,8 +208,9 @@ export default function AdminUsers() {
       ));
       
       setActionDialogOpen(false);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || `Failed to ${actionType} user`);
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
+      toast.error(((error as { response?: { data?: { message?: string } } }).response?.data?.message || `Failed to ${actionType} user`);
     } finally {
       setIsProcessing(false);
     }
@@ -232,7 +235,7 @@ export default function AdminUsers() {
       link.remove();
 
       toast.success('Users exported successfully');
-    } catch (err: any) {
+    } catch (err) {
       toast.error('Failed to export users');
     }
   };

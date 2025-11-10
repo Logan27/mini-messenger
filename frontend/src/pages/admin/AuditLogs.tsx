@@ -55,7 +55,7 @@ interface AuditLog {
   ipAddress: string;
   userAgent: string;
   status: 'success' | 'failure';
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   timestamp: string;
 }
 
@@ -103,9 +103,9 @@ export default function AdminAuditLogs() {
 
       // Backend returns data.data.logs with nested structure
       const logsData = response.data?.data?.logs || [];
-      
+
       // Map backend fields to frontend expected format
-      const mappedLogs = logsData.map((log: any) => ({
+      const mappedLogs = logsData.map((log: Record<string, unknown>) => ({
         id: log.id.toString(),
         userId: log.userId || log.user?.id || 'system',
         username: log.user?.username || 'System',
@@ -122,7 +122,7 @@ export default function AdminAuditLogs() {
 
       setLogs(mappedLogs);
       setFilteredLogs(mappedLogs);
-    } catch (err: any) {
+    } catch (err) {
       setError(err.response?.data?.message || 'Failed to load audit logs');
     } finally {
       setIsLoading(false);
@@ -203,7 +203,7 @@ export default function AdminAuditLogs() {
       link.remove();
 
       toast.success('Audit logs exported successfully');
-    } catch (err: any) {
+    } catch (err) {
       toast.error('Failed to export audit logs');
     } finally {
       setIsExporting(false);

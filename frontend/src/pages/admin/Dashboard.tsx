@@ -57,7 +57,7 @@ export default function AdminDashboard() {
         });
 
         setStats(response.data.data);
-      } catch (err: any) {
+      } catch (err) {
         setError(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to load dashboard statistics');
       } finally {
         setIsLoading(false);
@@ -114,7 +114,7 @@ export default function AdminDashboard() {
       } else {
         alert(message || 'No pending users to approve');
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err.response?.data?.error?.message || err.response?.data?.error || err.response?.data?.message || 'Failed to approve all users');
     } finally {
       setIsApprovingAll(false);

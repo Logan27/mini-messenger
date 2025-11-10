@@ -11,7 +11,7 @@ import { optimizeImage, calculateCompressionRatio, formatFileSize } from "@/util
 interface FileUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onFileUploaded: (fileData: any) => void;
+  onFileUploaded: (fileData: unknown) => void;
 }
 
 export function FileUploadDialog({ open, onOpenChange, onFileUploaded }: FileUploadDialogProps) {
@@ -120,7 +120,7 @@ export function FileUploadDialog({ open, onOpenChange, onFileUploaded }: FileUpl
 
       onFileUploaded(fileData);
       handleClose();
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Upload failed",

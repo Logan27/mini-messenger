@@ -53,7 +53,7 @@ export default function ActiveSessions() {
       });
 
       setSessions(response.data.data?.sessions || []);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to fetch sessions:', error);
       toast.error('Failed to load active sessions');
     } finally {
@@ -91,7 +91,7 @@ export default function ActiveSessions() {
       toast.success('Session revoked successfully');
       setRevokeDialogOpen(false);
       setSessionToRevoke(null);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to revoke session:', error);
       toast.error('Failed to revoke session');
     } finally {
@@ -113,7 +113,7 @@ export default function ActiveSessions() {
       setSessions((prev) => prev.filter((s) => s.isCurrent));
       toast.success('All other sessions revoked successfully');
       setRevokeAllDialogOpen(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to revoke sessions:', error);
       toast.error('Failed to revoke sessions');
     } finally {

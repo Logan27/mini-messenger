@@ -126,6 +126,29 @@ export class FileValidator {
       return 'application/pdf';
     }
 
+    // Office Open XML formats (DOCX, XLSX, PPTX) - ZIP-based
+    // Magic number: 50 4B 03 04 (PK..)
+    if (buffer[0] === 0x50 && buffer[1] === 0x4B && buffer[2] === 0x03 && buffer[3] === 0x04) {
+      // Check for specific Office Open XML content types by looking for word/ or xl/ directory
+      if (buffer.length >= 100) {
+        const bufferStr = buffer.toString('utf-8', 0, 100);
+
+        // Look for word/ directory (DOCX)
+        if (bufferStr.includes('word/')) {
+          return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        }
+
+        // Look for xl/ directory (XLSX)
+        if (bufferStr.includes('xl/')) {
+          return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        }
+      }
+
+      // If we can't determine the specific Office type but it's a valid ZIP,
+      // return null to allow fallback validation
+      return null;
+    }
+
     // MP4/MOV
     if (buffer.length >= 8) {
       // MP4 signature (ftyp box)

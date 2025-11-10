@@ -237,24 +237,12 @@ export const ChatView = ({
     const currentMessageCount = messages.length;
     const previousMessageCount = previousMessageCountRef.current;
 
-    // First load: restore scroll position or scroll to bottom
+    // First load: always scroll to bottom
     if (isInitialLoadRef.current && currentMessageCount > 0) {
-      const savedScrollKey = `chat_scroll_${recipientId || groupId}`;
-      const savedMessageId = localStorage.getItem(savedScrollKey);
-
       // Use requestAnimationFrame to ensure DOM is painted
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          if (savedMessageId && messageRefs.current.has(savedMessageId)) {
-            const messageElement = messageRefs.current.get(savedMessageId);
-            if (messageElement) {
-              messageElement.scrollIntoView({ block: 'center', behavior: 'auto' });
-            } else {
-              scrollToBottom();
-            }
-          } else {
-            scrollToBottom();
-          }
+          scrollToBottom();
           isInitialLoadRef.current = false;
         });
       });
@@ -473,10 +461,11 @@ export const ChatView = ({
 
         setReplyingTo(null);
 
-        // Scroll to bottom after sending message
-        setTimeout(() => {
-          scrollToBottom();
-        }, 100);
+        // Force scroll to bottom after sending message
+        // Use multiple attempts to ensure it works even with DOM updates
+        setTimeout(() => scrollToBottom(), 50);
+        setTimeout(() => scrollToBottom(), 150);
+        setTimeout(() => scrollToBottom(), 300);
       }
 
       setInputValue("");

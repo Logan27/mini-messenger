@@ -103,11 +103,15 @@ export const FileGallery = ({
             (module) => module.fileService.getConversationFiles(params)
           );
 
+          // Get base URL for absolute file paths
+          const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || window.location.origin;
+
           // Transform API response to FilePreviewData format
           const fetchedFiles: FilePreviewData[] = response.files.map((file: any) => ({
             id: file.id,
             fileName: file.originalName,
-            fileUrl: file.fileUrl,
+            // Convert relative paths to absolute URLs
+            fileUrl: file.fileUrl.startsWith('http') ? file.fileUrl : `${baseUrl}${file.fileUrl}`,
             mimeType: file.mimeType,
             fileSize: file.fileSize,
             uploadedAt: new Date(file.uploadedAt || file.createdAt),

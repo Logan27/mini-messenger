@@ -24,7 +24,18 @@ const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation<EditProfileScreenNavigationProp>();
   const { user, setUser } = useAuthStore();
 
-  const [name, setName] = useState(user?.name || '');
+  // Construct full name from user data
+  const getInitialName = () => {
+    if (!user) return '';
+    if (user.name) return user.name;
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user.firstName) return user.firstName;
+    return '';
+  };
+
+  const [name, setName] = useState(getInitialName());
   const [email, setEmail] = useState(user?.email || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '');
@@ -37,7 +48,8 @@ const EditProfileScreen: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      setName(user.name || '');
+      const fullName = user.name || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName || '');
+      setName(fullName);
       setEmail(user.email || '');
       setBio(user.bio || '');
       setPhoneNumber(user.phoneNumber || '');

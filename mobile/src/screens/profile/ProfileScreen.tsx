@@ -13,6 +13,18 @@ import { useAuthStore } from '../../stores/authStore';
 const ProfileScreen = ({ navigation }: any) => {
   const { user, logout, biometricEnabled, enableBiometric, disableBiometric } = useAuthStore();
 
+  // Construct full name from user data
+  const getDisplayName = () => {
+    if (!user) return 'User';
+    if (user.name) return user.name;
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user.firstName) return user.firstName;
+    if (user.username) return user.username;
+    return user.email || 'User';
+  };
+
   const handleLogout = async () => {
     Alert.alert(
       'Logout',
@@ -86,7 +98,7 @@ const ProfileScreen = ({ navigation }: any) => {
         </View>
 
         <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>{user?.name || 'User'}</Text>
+          <Text style={styles.profileName}>{getDisplayName()}</Text>
           <Text style={styles.profileEmail}>{user?.email || ''}</Text>
           <View style={styles.statusContainer}>
             <View style={[styles.statusDot, user?.isOnline ? styles.online : styles.offline]} />

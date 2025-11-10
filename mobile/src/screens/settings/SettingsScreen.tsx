@@ -21,6 +21,18 @@ const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
   const { user, biometricEnabled, enableBiometric, disableBiometric } = useAuthStore();
 
+  // Construct full name from user data
+  const getDisplayName = () => {
+    if (!user) return 'User';
+    if (user.name) return user.name;
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user.firstName) return user.firstName;
+    if (user.username) return user.username;
+    return user.email || 'User';
+  };
+
   const handleBiometricToggle = async () => {
     if (biometricEnabled) {
       disableBiometric();
@@ -287,7 +299,7 @@ const SettingsScreen: React.FC = () => {
             )}
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.name || 'User'}</Text>
+            <Text style={styles.userName}>{getDisplayName()}</Text>
             <Text style={styles.userEmail}>{user?.email || ''}</Text>
           </View>
         </View>

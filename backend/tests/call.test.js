@@ -1,4 +1,4 @@
-
+import { jest } from '@jest/globals';
 import request from 'supertest';
 import app from '../src/app.js';
 import { User, Call } from '../src/models/index.js';

@@ -80,10 +80,8 @@ export default {
   // Module file extensions
   moduleFileExtensions: ['js', 'json'],
 
-  // Transform files
-  transform: {
-    '^.+\\.js$': 'babel-jest',
-  },
+  // No transform needed with experimental-vm-modules
+  transform: {},
 
   // Module directories
   moduleDirectories: ['node_modules', 'src'],

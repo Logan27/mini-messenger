@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { config } from '../src/config/index.js';
 import { testDatabaseSeeder } from './testDatabaseSeeder.js';
 import { messagingTestHelpers } from './messagingTestHelpers.js';
@@ -92,9 +93,6 @@ global.testUtils = {
     }
   },
 };
-
-// Enhanced Jest configuration for integration tests
-jest.setTimeout(30000); // Increased timeout for integration tests
 
 // Global test hooks for integration tests
 global.beforeAll(async () => {

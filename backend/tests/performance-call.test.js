@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { performance } from 'perf_hooks';
 import request from 'supertest';
 import app from '../src/app.js';

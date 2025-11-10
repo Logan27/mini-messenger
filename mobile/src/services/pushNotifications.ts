@@ -238,7 +238,17 @@ export class PushNotificationService {
       const token = await messaging().getToken();
       console.log('FCM Token:', token);
       return token;
-    } catch (error) {
+    } catch (error: any) {
+      // Provide more helpful error messages
+      const errorMessage = error?.message || 'Unknown error';
+
+      if (errorMessage.includes('API key')) {
+        console.error('Firebase API key error. Please ensure:');
+        console.error('1. Firebase Messaging is enabled in Firebase Console');
+        console.error('2. The API key has no restrictions or allows FCM');
+        console.error('3. The google-services.json is properly configured');
+      }
+
       console.error('Failed to get FCM token:', error);
       throw error;
     }

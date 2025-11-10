@@ -89,8 +89,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  const conversation = conversations.find(c => c.id === conversationId);
-  const conversationMessages = messages[conversationId] || [];
+  const conversation = conversations?.find(c => c.id === conversationId);
+  const conversationMessages = messages?.[conversationId] || [];
 
   useEffect(() => {
     if (conversationId) {
@@ -448,7 +448,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
       return;
     }
 
-    const otherUser = conversation.participants.find(p => p.id !== user?.id);
+    const otherUser = conversation.participants?.find(p => p.id !== user?.id);
     if (!otherUser) {
       Alert.alert('Error', 'Unable to find recipient');
       return;
@@ -469,7 +469,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
       return;
     }
 
-    const otherUser = conversation.participants.find(p => p.id !== user?.id);
+    const otherUser = conversation.participants?.find(p => p.id !== user?.id);
     if (!otherUser) {
       Alert.alert('Error', 'Unable to find recipient');
       return;
@@ -507,7 +507,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
 
     // Find sender info for group chats
     const sender = !isMyMessage && isGroupChat
-      ? conversation?.participants.find(p => p.id === message.senderId)
+      ? conversation?.participants?.find(p => p.id === message.senderId)
       : null;
 
     return (
@@ -685,7 +685,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
 
     // Get names of typing users
     const typingUserNames = otherTypingUsers
-      .map(id => conversation?.participants.find(p => p.id === id)?.name)
+      .map(id => conversation?.participants?.find(p => p.id === id)?.name)
       .filter(Boolean);
 
     const typingText = typingUserNames.length === 1
@@ -760,7 +760,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
               <Ionicons name="people" size={16} color="#666" style={styles.groupIcon} />
             )}
             {conversation.type === 'direct' && (() => {
-              const otherUser = conversation.participants.find(p => p.id !== user?.id);
+              const otherUser = conversation.participants?.find(p => p.id !== user?.id);
               return otherUser?.isOnline && (
                 <OnlineStatusBadge isOnline={true} size={10} style={styles.onlineBadge} />
               );
@@ -776,11 +776,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
               }
 
               if (conversation.type === 'direct') {
-                const otherUser = conversation.participants.find(p => p.id !== user?.id);
+                const otherUser = conversation.participants?.find(p => p.id !== user?.id);
                 return otherUser?.isOnline ? 'online' : 'offline';
               }
 
-              return `${conversation.participants.length} participants`;
+              return `${conversation.participants?.length || 0} participants`;
             })()}
           </Text>
         </TouchableOpacity>

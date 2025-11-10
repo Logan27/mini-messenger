@@ -63,7 +63,7 @@ export function useGlobalNotifications() {
     loadMutedConversations();
 
     // Listen for notification settings updates
-    const unsubscribeSettings = socketService.on('notification-settings:updated', (data: any) => {
+    const unsubscribeSettings = socketService.on('notification-settings:updated', (data: unknown) => {
       console.log('🔔 WebSocket event received: notification-settings:updated', data);
       console.log('🔔 Reloading notification settings from API...');
       loadSettings();
@@ -93,7 +93,7 @@ export function useGlobalNotifications() {
     });
 
     // Listen for contact requests
-    const unsubscribeContactRequest = socketService.on('contact.request', (data: any) => {
+    const unsubscribeContactRequest = socketService.on('contact.request', (data: unknown) => {
       console.log('📇 Received contact request via socket:', data);
 
       // Check notification settings
@@ -155,7 +155,7 @@ export function useGlobalNotifications() {
     });
 
     // Listen for contact accepted
-    const unsubscribeContactAccepted = socketService.on('contact.accepted', (data: any) => {
+    const unsubscribeContactAccepted = socketService.on('contact.accepted', (data: unknown) => {
       console.log('✅ Contact request accepted via socket:', data);
 
       // Check notification settings
@@ -194,7 +194,7 @@ export function useGlobalNotifications() {
     });
 
     // Listen for incoming calls
-    const unsubscribeCall = socketService.on('call.incoming', (data: any) => {
+    const unsubscribeCall = socketService.on('call.incoming', (data: unknown) => {
       console.log('📞 Received incoming call via socket:', data);
 
       // Check notification settings

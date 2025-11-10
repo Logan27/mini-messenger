@@ -168,7 +168,7 @@ export const NotificationSettings = () => {
 
         setPreferences(finalPrefs);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to load notification preferences:', error);
       // Use defaults if API fails
       if (error.response?.status !== 404) {
@@ -211,7 +211,7 @@ export const NotificationSettings = () => {
         settings: backendData,
         updatedBy: 'self'
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('❌ NotificationSettings: Failed to save:', error);
       toast.error('Failed to save setting');
       // Revert on error

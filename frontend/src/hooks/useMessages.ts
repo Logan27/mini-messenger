@@ -111,7 +111,7 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
     });
 
     // Listen for message delivered receipts (backend sends message_delivered with underscore)
-    const unsubscribeDelivered = socketService.on('message_delivered', (data: any) => {
+    const unsubscribeDelivered = socketService.on('message_delivered', (data: unknown) => {
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
 
@@ -131,7 +131,7 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
     });
 
     // Listen for message read receipts (backend sends message_read with underscore)
-    const unsubscribeRead = socketService.on('message_read', (data: any) => {
+    const unsubscribeRead = socketService.on('message_read', (data: unknown) => {
       console.log('📖 Read receipt received:', data);
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
@@ -163,7 +163,7 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
     });
 
     // Listen for message deletions (soft delete - only for sender)
-    const unsubscribeSoftDeleted = socketService.on('message_soft_deleted', (data: any) => {
+    const unsubscribeSoftDeleted = socketService.on('message_soft_deleted', (data: unknown) => {
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
 
@@ -179,7 +179,7 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
     });
 
     // Listen for hard deletions (deleted for everyone)
-    const unsubscribeHardDeleted = socketService.on('message_hard_deleted', (data: any) => {
+    const unsubscribeHardDeleted = socketService.on('message_hard_deleted', (data: unknown) => {
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
 
@@ -195,7 +195,7 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
     });
 
     // Listen for reaction updates
-    const unsubscribeReaction = socketService.on('message.reaction', (data: any) => {
+    const unsubscribeReaction = socketService.on('message.reaction', (data: unknown) => {
       const { messageId, reactions } = data;
       const queryKey = ['messages', recipientId, groupId];
 

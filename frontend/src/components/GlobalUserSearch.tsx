@@ -88,7 +88,7 @@ export const GlobalUserSearch: React.FC = () => {
       const more = payload?.pagination?.hasNextPage ?? response.data?.hasMore ?? false;
       setHasMore(Boolean(more));
       setCurrentPage(page);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Search error:', error);
       if (error.response?.status !== 401) {
         toast({
@@ -143,7 +143,7 @@ export const GlobalUserSearch: React.FC = () => {
         title: 'Contact added',
         description: `${username} has been added to your contacts`,
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Failed to add contact',

@@ -56,7 +56,7 @@ describe('fileService', () => {
       const onProgress = vi.fn();
 
       vi.mocked(apiClient.post).mockImplementation(
-        (url, data, config: any) => {
+        (url, data, config?: { onUploadProgress?: (progressEvent: { loaded: number; total: number }) => void }) => {
           // Simulate progress event
           if (config?.onUploadProgress) {
             config.onUploadProgress({
@@ -81,7 +81,7 @@ describe('fileService', () => {
       const onProgress = vi.fn();
 
       vi.mocked(apiClient.post).mockImplementation(
-        (url, data, config: any) => {
+        (url, data, config?: { onUploadProgress?: (progressEvent: { loaded: number; total: number }) => void }) => {
           if (config?.onUploadProgress) {
             config.onUploadProgress({
               loaded: 100,
@@ -136,7 +136,7 @@ describe('fileService', () => {
       const mockFile = new File(['test'], 'test.txt', { type: 'text/plain' });
 
       vi.mocked(apiClient.post).mockImplementation(
-        (url, data, config: any) => {
+        (url, data, config?: { onUploadProgress?: (progressEvent: { loaded: number; total: number }) => void }) => {
           if (config?.onUploadProgress) {
             config.onUploadProgress({ loaded: 50, total: 100 });
           }

@@ -61,7 +61,7 @@ export function BlockedContacts() {
       })) || [];
 
       setBlockedUsers(blocked);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load blocked contacts:', err);
       toast.error('Failed to load blocked contacts');
     } finally {
@@ -90,7 +90,7 @@ export function BlockedContacts() {
       // Remove from list
       setBlockedUsers(prev => prev.filter(user => user.id !== unblockingUser.id));
       setUnblockingUser(null);
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to unblock user');
     } finally {
       setIsProcessing(false);

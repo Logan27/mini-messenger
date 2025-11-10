@@ -85,7 +85,7 @@ describe('Group Creation Integration', () => {
       initialMembers: ['user-456'],
     });
 
-    const creator = result.members.find((m: any) => m.userId === 'user-123');
+    const creator = result.members.find((m: { userId: string; role: string }) => m.userId === 'user-123');
     expect(creator?.role).toBe('admin');
   });
 });

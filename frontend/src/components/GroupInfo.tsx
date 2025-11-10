@@ -122,7 +122,7 @@ export function GroupInfo({
         joinedAt: m.joinedAt,
       }));
       setMembers(transformedMembers);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load group information:', err);
 
       // If user is not a member (403) or group not found (404), close the dialog
@@ -151,7 +151,7 @@ export function GroupInfo({
       const memberIds = new Set(members.map(m => m.id));
       const available = (response.data.data || []).filter((contact: any) => !memberIds.has(contact.user.id));
       setAvailableContacts(available);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error fetching contacts:', err);
       toast.error('Failed to load contacts');
     }
@@ -172,7 +172,7 @@ export function GroupInfo({
       toast.success(`${removeMember.username} removed from group`);
       setMembers(prev => prev.filter(m => m.id !== removeMember.id));
       setRemoveMember(null);
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to remove member');
     } finally {
       setActionLoading(false);
@@ -198,7 +198,7 @@ export function GroupInfo({
         prev.map(m => (m.id === promoteMember.id ? { ...m, role: 'admin' } : m))
       );
       setPromoteMember(null);
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to promote member');
     } finally {
       setActionLoading(false);
@@ -224,7 +224,7 @@ export function GroupInfo({
         prev.map(m => (m.id === demoteMember.id ? { ...m, role: 'member' } : m))
       );
       setDemoteMember(null);
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to demote member');
     } finally {
       setActionLoading(false);
@@ -252,7 +252,7 @@ export function GroupInfo({
       setGroupData(prev => ({ ...prev, name: newGroupName.trim() }));
       setIsRenaming(false);
       setNewGroupName('');
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to rename group');
     } finally {
       setActionLoading(false);
@@ -282,7 +282,7 @@ export function GroupInfo({
       setShowAddMembers(false);
       setSelectedContacts(new Set());
       fetchGroupInfo(); // Refresh member list
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to add members');
     } finally {
       setActionLoading(false);
@@ -305,7 +305,7 @@ export function GroupInfo({
       setConfirmLeave(false);
       onOpenChange(false);
       onLeaveGroup?.();
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to leave group');
     } finally {
       setActionLoading(false);
@@ -326,7 +326,7 @@ export function GroupInfo({
       setConfirmDelete(false);
       onOpenChange(false);
       onLeaveGroup?.();
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to delete group');
     } finally {
       setActionLoading(false);

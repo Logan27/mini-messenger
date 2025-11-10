@@ -107,7 +107,7 @@ const ResetPassword = () => {
       setTimeout(() => {
         navigate('/login');
       }, 3000);
-    } catch (err: any) {
+    } catch (err) {
       const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Failed to reset password. The link may have expired.';
       setError(errorMessage);
     } finally {

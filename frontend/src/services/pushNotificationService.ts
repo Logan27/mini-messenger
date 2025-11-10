@@ -14,8 +14,8 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-let firebaseApp: any = null;
-let messaging: any = null;
+let firebaseApp: ReturnType<typeof initializeApp> | null = null;
+let messaging: ReturnType<typeof getMessaging> | null = null;
 
 // Initialize Firebase
 export const initializeFirebase = () => {
@@ -108,7 +108,7 @@ export const registerDeviceToken = async (token: string, deviceName?: string) =>
     );
 
     return response.data;
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error registering device token:', error);
     throw error;
   }
@@ -133,7 +133,7 @@ export const unregisterDeviceToken = async (token: string) => {
     );
 
     return response.data;
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error unregistering device token:', error);
     throw error;
   }
@@ -154,7 +154,7 @@ export const getPushNotificationStatus = async () => {
     });
 
     return response.data.data;
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error getting push status:', error);
     throw error;
   }
@@ -179,14 +179,14 @@ export const sendTestNotification = async () => {
     );
 
     return response.data;
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error sending test notification:', error);
     throw error;
   }
 };
 
 // Listen for foreground messages
-export const onForegroundMessage = (callback: (payload: any) => void) => {
+export const onForegroundMessage = (callback: (payload: unknown) => void) => {
   if (!messaging) {
     console.warn('Firebase messaging not initialized');
     return () => {};
@@ -239,7 +239,7 @@ export const setupPushNotifications = async (): Promise<{
       success: true,
       token,
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error('Push notification setup error:', error);
     return {
       success: false,

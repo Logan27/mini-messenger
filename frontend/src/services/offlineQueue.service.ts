@@ -12,7 +12,7 @@ interface QueuedMessage {
   type: 'message' | 'file' | 'reaction' | 'status';
   endpoint: string;
   method: 'POST' | 'PUT' | 'DELETE';
-  data: any;
+  data: unknown;
   timestamp: number;
   retries: number;
   maxRetries: number;

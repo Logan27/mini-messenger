@@ -132,7 +132,7 @@ export default function AdminSettings() {
       if (response.data) {
         setSettings({ ...DEFAULT_SETTINGS, ...response.data });
       }
-    } catch (err: any) {
+    } catch (err) {
       const errorMsg = err.response?.data?.message || 'Failed to load system settings';
       setError(errorMsg);
       console.error('Failed to load system settings:', err);
@@ -160,7 +160,7 @@ export default function AdminSettings() {
 
       setHasChanges(false);
       toast.success('System settings saved successfully');
-    } catch (err: any) {
+    } catch (err) {
       const errorMsg = err.response?.data?.message || 'Failed to save system settings';
       toast.error(errorMsg);
     } finally {

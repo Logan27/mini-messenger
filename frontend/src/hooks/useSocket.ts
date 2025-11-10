@@ -28,18 +28,18 @@ export function useSocket() {
     return socketService.on('message.new', callback);
   }, []);
 
-  const onMessageRead = useCallback((callback: (data: any) => void) => {
+  const onMessageRead = useCallback((callback: (data: unknown) => void) => {
     return socketService.on('message_read', callback);  // Backend sends message_read with underscore
   }, []);
 
-  const onTyping = useCallback((callback: (data: any) => void) => {
-    return socketService.on('message.typing', (data: any) => {
+  const onTyping = useCallback((callback: (data: unknown) => void) => {
+    return socketService.on('message.typing', (data: unknown) => {
       console.log('📬 Received typing indicator:', data);
       callback(data);
     });
   }, []);
 
-  const onUserStatus = useCallback((callback: (data: any) => void) => {
+  const onUserStatus = useCallback((callback: (data: unknown) => void) => {
     return socketService.on('user.status', callback);
   }, []);
 
@@ -105,7 +105,7 @@ export function useMessageListener(activeChat?: string) {
     });
 
     // Listen for soft deleted messages
-    const unsubscribeSoftDeleted = socketService.on('message_soft_deleted', (data: any) => {
+    const unsubscribeSoftDeleted = socketService.on('message_soft_deleted', (data: unknown) => {
       console.log('🗑️ Message soft deleted, updating UI:', data);
 
       // Invalidate messages query to refetch and remove deleted message
@@ -114,7 +114,7 @@ export function useMessageListener(activeChat?: string) {
     });
 
     // Listen for hard deleted messages
-    const unsubscribeHardDeleted = socketService.on('message_hard_deleted', (data: any) => {
+    const unsubscribeHardDeleted = socketService.on('message_hard_deleted', (data: unknown) => {
       console.log('🗑️ Message hard deleted, updating UI:', data);
 
       // Invalidate messages query to refetch and remove deleted message

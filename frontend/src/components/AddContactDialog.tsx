@@ -48,7 +48,7 @@ export function AddContactDialog({ open, onOpenChange }: AddContactDialogProps) 
       onOpenChange(false);
       setSearchQuery("");
       setDebouncedQuery("");
-    } catch (error: any) {
+    } catch (error) {
       console.error('❌ Failed to add contact:', error);
       const errorMessage = error.response?.data?.message
         || error.response?.data?.error

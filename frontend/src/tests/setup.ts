@@ -71,7 +71,7 @@ const localStorageMock = {
     }
   }),
 };
-global.localStorage = localStorageMock as any;
+global.localStorage = localStorageMock as Storage;
 
 // Mock sessionStorage with actual storage functionality
 const sessionStorageData: Record<string, string> = {};
@@ -89,7 +89,7 @@ const sessionStorageMock = {
     }
   }),
 };
-global.sessionStorage = sessionStorageMock as any;
+global.sessionStorage = sessionStorageMock as Storage;
 
 // Mock WebRTC APIs
 global.RTCPeerConnection = class RTCPeerConnection {
@@ -139,4 +139,4 @@ const indexedDBMock = {
   deleteDatabase: vi.fn(),
   databases: vi.fn().mockResolvedValue([]),
 };
-global.indexedDB = indexedDBMock as any;
+global.indexedDB = indexedDBMock as IDBFactory;

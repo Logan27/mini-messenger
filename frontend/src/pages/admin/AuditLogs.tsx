@@ -122,7 +122,7 @@ export default function AdminAuditLogs() {
 
       setLogs(mappedLogs);
       setFilteredLogs(mappedLogs);
-    } catch (err: any) {
+    } catch (err) {
       setError(err.response?.data?.message || 'Failed to load audit logs');
     } finally {
       setIsLoading(false);
@@ -203,7 +203,7 @@ export default function AdminAuditLogs() {
       link.remove();
 
       toast.success('Audit logs exported successfully');
-    } catch (err: any) {
+    } catch (err) {
       toast.error('Failed to export audit logs');
     } finally {
       setIsExporting(false);

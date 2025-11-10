@@ -218,7 +218,7 @@ export const mockDataFactories = {
   },
 
   // WebSocket event factories
-  createMockSocketEvent: (type: string, data: any = {}) => ({
+  createMockSocketEvent: (type: string, data: Record<string, unknown> = {}) => ({
     type,
     timestamp: new Date(),
     data,

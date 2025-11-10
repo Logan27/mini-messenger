@@ -22,7 +22,7 @@ class MockImage {
 }
 
 // Replace global Image with mock
-global.Image = MockImage as any;
+global.Image = MockImage as typeof Image;
 
 describe('imageOptimization', () => {
   describe('supportsWebP', () => {

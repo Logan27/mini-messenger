@@ -104,7 +104,7 @@ describe('Login Flow Integration Tests', () => {
     const { authService } = await import('@/services/auth.service');
 
     // Mock error with response structure that AuthContext expects
-    const mockError: any = new Error('Invalid credentials');
+    const mockError = new Error('Invalid credentials');
     mockError.response = {
       data: {
         message: 'Invalid credentials',

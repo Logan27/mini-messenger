@@ -190,7 +190,7 @@ export function CreateGroupDialog({
       if (onGroupCreated && group?.id) {
         onGroupCreated(group.id);
       }
-    } catch (err: any) {
+    } catch (err) {
       // Handle both string and object error formats from backend
       let errorMsg = 'Failed to create group';
       

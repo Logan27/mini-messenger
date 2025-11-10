@@ -1,5 +1,12 @@
 import apiClient from '@/lib/api-client';
 
+export interface GroupMember {
+  id: string;
+  userId: string;
+  role: string;
+  joinedAt: Date;
+}
+
 export interface Group {
   id: string;
   name: string;
@@ -9,7 +16,7 @@ export interface Group {
   creatorId: string;
   createdAt: Date;
   updatedAt: Date;
-  members?: any[];
+  members?: GroupMember[];
 }
 
 export const groupService = {

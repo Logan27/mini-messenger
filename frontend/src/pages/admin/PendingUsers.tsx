@@ -80,7 +80,7 @@ export default function PendingUsers() {
 
       setUsers(response.data.data.users || []);
       setFilteredUsers(response.data.data.users || []);
-    } catch (err: any) {
+    } catch (err) {
       setError(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to load pending users');
     } finally {
       setIsLoading(false);
@@ -103,7 +103,7 @@ export default function PendingUsers() {
 
       // Remove user from list
       setUsers(prev => prev.filter(u => u.id !== userId));
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to approve user');
     } finally {
       setIsProcessing(false);
@@ -138,7 +138,7 @@ export default function PendingUsers() {
       // Remove user from list
       setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
       setRejectDialogOpen(false);
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to reject user');
     } finally {
       setIsProcessing(false);
@@ -176,7 +176,7 @@ export default function PendingUsers() {
 
       // Refresh the list
       fetchPendingUsers();
-    } catch (err: any) {
+    } catch (err) {
       const errorMessage = err.response?.data?.error?.message || err.response?.data?.error || err.response?.data?.message || 'Failed to approve all users';
       toast.error(errorMessage);
       setError(errorMessage);

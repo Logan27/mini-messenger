@@ -120,7 +120,7 @@ export function FileUploadDialog({ open, onOpenChange, onFileUploaded }: FileUpl
 
       onFileUploaded(fileData);
       handleClose();
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Upload failed",

@@ -350,7 +350,7 @@ export const ChatView = ({
 
   // Listen for incoming calls
   useEffect(() => {
-    const handleIncomingCall = (data: any) => {
+    const handleIncomingCall = (data: unknown) => {
       console.log('📞 Incoming call received:', data);
       
       const call = data.call;
@@ -498,7 +498,7 @@ export const ChatView = ({
       setTimeout(() => {
         inputRef.current?.focus();
       }, 0);
-    } catch (error: any) {
+    } catch (error) {
       console.error('❌ Failed to send/edit message:', error);
       console.error('Error details:', {
         message: error.message,
@@ -560,7 +560,7 @@ export const ChatView = ({
         title: "Message deleted",
         description: "Your message has been removed",
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Failed to delete message",
@@ -584,7 +584,7 @@ export const ChatView = ({
   const handleReaction = async (messageId: string, emoji: string) => {
     try {
       await addReaction.mutateAsync({ messageId, emoji });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Failed to add reaction",
@@ -609,7 +609,7 @@ export const ChatView = ({
         title: "File sent",
         description: "File has been sent successfully",
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Failed to send file",

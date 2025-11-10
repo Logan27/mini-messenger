@@ -302,7 +302,7 @@ export const EnhancedContactList = ({
       toast.success(`${getFullName(removingContact)} removed from contacts`);
       setRemovingContact(null);
       onRefresh?.();
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to remove contact');
     } finally {
       setIsActionLoading(false);
@@ -328,7 +328,7 @@ export const EnhancedContactList = ({
       toast.success(`${getFullName(blockingContact)} ${action}`);
       setBlockingContact(null);
       onRefresh?.();
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update contact');
     } finally {
       setIsActionLoading(false);

@@ -22,7 +22,7 @@ export function PendingContactRequests() {
         title: "Contact request accepted",
         description: `${username} is now your contact`,
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Failed to accept request",
@@ -38,7 +38,7 @@ export function PendingContactRequests() {
         title: "Contact request rejected",
         description: `You rejected the request from ${username}`,
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Failed to reject request",
@@ -54,7 +54,7 @@ export function PendingContactRequests() {
         title: "Contact request cancelled",
         description: `Your request to ${username} has been cancelled`,
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Failed to cancel request",

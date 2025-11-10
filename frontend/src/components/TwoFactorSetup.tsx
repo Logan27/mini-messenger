@@ -57,7 +57,7 @@ export default function TwoFactorSetup() {
       });
 
       setIsEnabled(response.data.data?.twoFactorEnabled || false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to check 2FA status:', error);
     } finally {
       setIsLoading(false);
@@ -93,7 +93,7 @@ export default function TwoFactorSetup() {
       });
 
       toast.success('2FA setup started');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to start 2FA setup:', error);
       toast.error('Failed to start 2FA setup');
     } finally {
@@ -123,7 +123,7 @@ export default function TwoFactorSetup() {
       setSetupData(null);
       setVerificationCode('');
       toast.success('Two-factor authentication enabled successfully!');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to verify code:', error);
       toast.error('Invalid verification code. Please try again.');
     } finally {
@@ -159,7 +159,7 @@ export default function TwoFactorSetup() {
       setDisableCode('');
       setDisablePassword('');
       toast.success('Two-factor authentication disabled');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to disable 2FA:', error);
       const message = error.response?.data?.error?.message || 'Failed to disable 2FA. Please try again.';
       toast.error(message);

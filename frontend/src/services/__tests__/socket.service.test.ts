@@ -7,8 +7,8 @@ vi.mock('socket.io-client', () => ({
 }));
 
 describe('socketService', () => {
-  let mockSocket: any;
-  let socketService: any;
+  let mockSocket: unknown;
+  let socketService: typeof import("../socket.service").socketService;
 
   beforeEach(async () => {
     // Create mock socket with event emitter behavior
@@ -22,7 +22,7 @@ describe('socketService', () => {
       removeAllListeners: vi.fn(),
     };
 
-    vi.mocked(io).mockReturnValue(mockSocket as any);
+    vi.mocked(io).mockReturnValue(mockSocket as ReturnType<typeof io>);
 
     // Dynamically import to get fresh instance
     const module = await import('../socket.service');

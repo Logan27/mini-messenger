@@ -93,7 +93,7 @@ export function GroupSettings({
       setGroupName(data.name || '');
       setGroupDescription(data.description || '');
       setGroupAvatar(data.avatar || '');
-    } catch (err: any) {
+    } catch (err) {
       toast.error('Failed to load group settings');
       console.error('Error fetching group:', err);
     } finally {
@@ -146,7 +146,7 @@ export function GroupSettings({
       });
 
       return response.data.url || response.data.fileName;
-    } catch (err: any) {
+    } catch (err) {
       toast.error('Failed to upload avatar');
       console.error('Avatar upload error:', err);
       return null;
@@ -212,7 +212,7 @@ export function GroupSettings({
       // Reset form
       setNewAvatarFile(null);
       setNewAvatarPreview(null);
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update group settings');
       console.error('Error updating group:', err);
     } finally {
@@ -234,7 +234,7 @@ export function GroupSettings({
       setConfirmDelete(false);
       onOpenChange(false);
       onGroupDeleted?.();
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to delete group');
       console.error('Error deleting group:', err);
     } finally {

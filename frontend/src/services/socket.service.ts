@@ -2,9 +2,11 @@ import { io, Socket } from 'socket.io-client';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:4000';
 
+type EventHandler = (...args: unknown[]) => void;
+
 class SocketService {
   private socket: Socket | null = null;
-  private listeners: Map<string, Set<Function>> = new Map();
+  private listeners: Map<string, Set<EventHandler>> = new Map();
   private reconnecting: boolean = false;
   private isConnecting: boolean = false;
   private connectionPromise: Promise<void> | null = null;
@@ -252,7 +254,7 @@ class SocketService {
   }
 
   // Emit events to server
-  send(event: string, data: any) {
+  send(event: string, data: unknown) {
     if (this.socket?.connected) {
       console.log(`📤 Socket.emit: ${event}`, { targetUserId: data.targetUserId, socketId: this.socket.id });
       this.socket.emit(event, data);
@@ -294,7 +296,7 @@ class SocketService {
   }
 
   // Subscribe to events from server
-  on(event: string, callback: Function) {
+  on(event: string, callback: EventHandler) {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
@@ -313,7 +315,7 @@ class SocketService {
   }
 
   // Emit to local listeners
-  private emit(event: string, data: any) {
+  private emit(event: string, data: unknown) {
     const callbacks = this.listeners.get(event);
     if (callbacks) {
       callbacks.forEach((callback) => callback(data));
@@ -321,7 +323,7 @@ class SocketService {
   }
 
   // Public method to manually trigger local listeners (e.g., after updating settings)
-  triggerLocalEvent(event: string, data: any) {
+  triggerLocalEvent(event: string, data: unknown) {
     console.log(`🔄 Manually triggering local event: ${event}`);
     this.emit(event, data);
   }
@@ -387,7 +389,7 @@ class SocketService {
     setTimeout(() => {
       this.socket?.offAny();
       if (originalOneAny) {
-        this.socket?.onAny(originalOneAny as any);
+        this.socket?.onAny(originalOneAny as (...args: unknown[]) => void);
       }
       console.log('🧪 Test complete. Received events:', receivedEvents.length > 0 ? receivedEvents : 'NONE');
       if (receivedEvents.length === 0) {
@@ -405,5 +407,5 @@ export default socketService;
 
 // Make available in browser console for debugging
 if (typeof window !== 'undefined') {
-  (window as any).socketService = socketService;
+  (window as unknown as { socketService: SocketService }).socketService = socketService;
 }

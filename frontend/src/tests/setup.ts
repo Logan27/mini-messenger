@@ -5,6 +5,9 @@ import { afterEach, vi } from 'vitest';
 // Cleanup after each test case
 afterEach(() => {
   cleanup();
+  // Clear storage between tests
+  localStorage.clear();
+  sessionStorage.clear();
 });
 
 // Mock window.matchMedia
@@ -52,21 +55,39 @@ Object.defineProperty(HTMLMediaElement.prototype, 'pause', {
   value: vi.fn(),
 });
 
-// Mock localStorage
+// Mock localStorage with actual storage functionality
+const localStorageData: Record<string, string> = {};
 const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
+  getItem: vi.fn((key: string) => localStorageData[key] || null),
+  setItem: vi.fn((key: string, value: string) => {
+    localStorageData[key] = value;
+  }),
+  removeItem: vi.fn((key: string) => {
+    delete localStorageData[key];
+  }),
+  clear: vi.fn(() => {
+    for (const key in localStorageData) {
+      delete localStorageData[key];
+    }
+  }),
 };
 global.localStorage = localStorageMock as any;
 
-// Mock sessionStorage
+// Mock sessionStorage with actual storage functionality
+const sessionStorageData: Record<string, string> = {};
 const sessionStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
+  getItem: vi.fn((key: string) => sessionStorageData[key] || null),
+  setItem: vi.fn((key: string, value: string) => {
+    sessionStorageData[key] = value;
+  }),
+  removeItem: vi.fn((key: string) => {
+    delete sessionStorageData[key];
+  }),
+  clear: vi.fn(() => {
+    for (const key in sessionStorageData) {
+      delete sessionStorageData[key];
+    }
+  }),
 };
 global.sessionStorage = sessionStorageMock as any;
 

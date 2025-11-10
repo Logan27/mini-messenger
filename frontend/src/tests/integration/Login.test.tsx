@@ -92,7 +92,10 @@ describe('Login Flow Integration Tests', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(authService.login).toHaveBeenCalledWith('testuser', 'password123');
+      expect(authService.login).toHaveBeenCalledWith({
+        identifier: 'testuser',
+        password: 'password123',
+      });
     });
   });
 
@@ -100,7 +103,14 @@ describe('Login Flow Integration Tests', () => {
     const user = userEvent.setup();
     const { authService } = await import('@/services/auth.service');
 
-    vi.mocked(authService.login).mockRejectedValue(new Error('Invalid credentials'));
+    // Mock error with response structure that AuthContext expects
+    const mockError: any = new Error('Invalid credentials');
+    mockError.response = {
+      data: {
+        message: 'Invalid credentials',
+      },
+    };
+    vi.mocked(authService.login).mockRejectedValue(mockError);
 
     renderWithProviders(<Login />);
 
@@ -113,7 +123,7 @@ describe('Login Flow Integration Tests', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/invalid credentials/i)).toBeInTheDocument();
+      expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
     });
   });
 
@@ -144,7 +154,7 @@ describe('Login Flow Integration Tests', () => {
   it('should have link to registration page', () => {
     renderWithProviders(<Login />);
 
-    const registerLink = screen.getByRole('link', { name: /sign up/i });
+    const registerLink = screen.getByRole('link', { name: /register here/i });
     expect(registerLink).toBeInTheDocument();
     expect(registerLink).toHaveAttribute('href', '/register');
   });

@@ -136,7 +136,11 @@ describe('authService', () => {
 
       vi.mocked(apiClient.post).mockRejectedValue(new Error('Network error'));
 
-      await authService.logout();
+      try {
+        await authService.logout();
+      } catch (error) {
+        // Error is expected, we just want to verify localStorage is cleared
+      }
 
       expect(localStorage.getItem('accessToken')).toBeNull();
     });

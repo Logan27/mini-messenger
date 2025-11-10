@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { fileService } from "@/services/file.service";
-import { Loader2, Upload, X, File, Image } from "lucide-react";
+import { Loader2, Upload, X, File, Image, CheckCircle2 } from "lucide-react";
+import { optimizeImage, calculateCompressionRatio, formatFileSize } from "@/utils/imageOptimization";
 
 interface FileUploadDialogProps {
   open: boolean;
@@ -15,13 +16,20 @@ interface FileUploadDialogProps {
 
 export function FileUploadDialog({ open, onOpenChange, onFileUploaded }: FileUploadDialogProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [compressionStats, setCompressionStats] = useState<{
+    originalSize: number;
+    optimizedSize: number;
+    ratio: number;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -35,17 +43,62 @@ export function FileUploadDialog({ open, onOpenChange, onFileUploaded }: FileUpl
       return;
     }
 
-    setSelectedFile(file);
+    setOriginalFile(file);
 
-    // Create preview for images
+    // Optimize images before upload
     if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setOptimizing(true);
+
+      try {
+        const optimized = await optimizeImage(file, {
+          maxWidth: 1920,
+          maxHeight: 1080,
+          quality: 0.85,
+          format: 'auto', // Will use WebP if supported, otherwise JPEG
+        });
+
+        setSelectedFile(optimized.file);
+        setPreviewUrl(optimized.dataUrl);
+
+        // Calculate compression stats
+        const ratio = calculateCompressionRatio(file.size, optimized.size);
+        setCompressionStats({
+          originalSize: file.size,
+          optimizedSize: optimized.size,
+          ratio,
+        });
+
+        if (ratio > 10) {
+          toast({
+            title: "Image optimized",
+            description: `Reduced file size by ${ratio}% (${formatFileSize(file.size)} → ${formatFileSize(optimized.size)})`,
+          });
+        }
+      } catch (error) {
+        console.error('Image optimization failed:', error);
+        // Fall back to original file if optimization fails
+        setSelectedFile(file);
+        setCompressionStats(null);
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviewUrl(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+
+        toast({
+          variant: "destructive",
+          title: "Optimization failed",
+          description: "Using original file instead",
+        });
+      } finally {
+        setOptimizing(false);
+      }
     } else {
+      // Non-image files: use as-is
+      setSelectedFile(file);
       setPreviewUrl(null);
+      setCompressionStats(null);
     }
   };
 
@@ -81,20 +134,14 @@ export function FileUploadDialog({ open, onOpenChange, onFileUploaded }: FileUpl
 
   const handleClose = () => {
     setSelectedFile(null);
+    setOriginalFile(null);
     setPreviewUrl(null);
     setUploadProgress(0);
+    setCompressionStats(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
     onOpenChange(false);
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
   return (
@@ -128,6 +175,13 @@ export function FileUploadDialog({ open, onOpenChange, onFileUploaded }: FileUpl
                 accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
               />
             </div>
+          ) : optimizing ? (
+            <div className="flex items-center justify-center p-8 border border-dashed rounded-lg">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Optimizing image...</p>
+              </div>
+            </div>
           ) : (
             <div className="space-y-4">
               {previewUrl ? (
@@ -143,7 +197,9 @@ export function FileUploadDialog({ open, onOpenChange, onFileUploaded }: FileUpl
                     className="absolute top-2 right-2"
                     onClick={() => {
                       setSelectedFile(null);
+                      setOriginalFile(null);
                       setPreviewUrl(null);
+                      setCompressionStats(null);
                     }}
                   >
                     <X className="h-4 w-4" />
@@ -163,11 +219,28 @@ export function FileUploadDialog({ open, onOpenChange, onFileUploaded }: FileUpl
                     variant="ghost"
                     onClick={() => {
                       setSelectedFile(null);
+                      setOriginalFile(null);
                       setPreviewUrl(null);
+                      setCompressionStats(null);
                     }}
                   >
                     <X className="h-4 w-4" />
                   </Button>
+                </div>
+              )}
+
+              {/* Compression Stats */}
+              {compressionStats && compressionStats.ratio > 0 && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-900">
+                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                      Image optimized ({compressionStats.ratio}% smaller)
+                    </p>
+                    <p className="text-xs text-green-700 dark:text-green-300">
+                      {formatFileSize(compressionStats.originalSize)} → {formatFileSize(compressionStats.optimizedSize)}
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -185,17 +258,22 @@ export function FileUploadDialog({ open, onOpenChange, onFileUploaded }: FileUpl
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={uploading}>
+          <Button variant="outline" onClick={handleClose} disabled={uploading || optimizing}>
             Cancel
           </Button>
           <Button
             onClick={handleUpload}
-            disabled={!selectedFile || uploading}
+            disabled={!selectedFile || uploading || optimizing}
           >
             {uploading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Uploading...
+              </>
+            ) : optimizing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Optimizing...
               </>
             ) : (
               <>

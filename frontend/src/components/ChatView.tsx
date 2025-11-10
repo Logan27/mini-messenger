@@ -263,16 +263,24 @@ export const ChatView = ({
       return;
     }
 
-    // Check if user is near bottom (within 150px)
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
-
     // New message arrived (count increased)
     if (currentMessageCount > previousMessageCount && !isInitialLoadRef.current) {
-      // Only auto-scroll if user was already near bottom
-      if (isNearBottom) {
-        scrollToBottom();
-      }
+      // Get the latest message to check if it's from the current user
+      const latestMessage = messages[messages.length - 1];
+      const isOwnMessage = latestMessage?.isOwn;
+
+      // Use requestAnimationFrame to ensure DOM has updated before checking scroll position
+      requestAnimationFrame(() => {
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+
+        // Always scroll for own messages, or scroll if user was already near bottom
+        if (isOwnMessage || isNearBottom) {
+          requestAnimationFrame(() => {
+            scrollToBottom();
+          });
+        }
+      });
     }
 
     previousMessageCountRef.current = currentMessageCount;

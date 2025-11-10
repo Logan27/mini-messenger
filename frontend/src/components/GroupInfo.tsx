@@ -149,7 +149,7 @@ export function GroupInfo({
 
       // Filter out users already in group
       const memberIds = new Set(members.map(m => m.id));
-      const available = (response.data.data || []).filter((contact: any) => !memberIds.has(contact.user.id));
+      const available = (response.data.data || []).filter((contact: unknown) => !memberIds.has(contact.user.id));
       setAvailableContacts(available);
     } catch (err) {
       console.error('Error fetching contacts:', err);
@@ -570,7 +570,7 @@ export function GroupInfo({
                   </p>
                 </div>
               ) : (
-                availableContacts.map((contact: any) => (
+                availableContacts.map((contact: unknown) => (
                   <div
                     key={contact.user.id}
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent cursor-pointer"

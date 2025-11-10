@@ -16,7 +16,7 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
 
   // Listen for new messages via WebSocket
   useEffect(() => {
-    const unsubscribe = socketService.on('message.new', (newMessage: any) => {
+    const unsubscribe = socketService.on('message.new', (newMessage: unknown) => {
       console.log('📨 New message received via WebSocket:', {
         messageId: newMessage.id,
         senderId: newMessage.senderId,
@@ -68,7 +68,7 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
         console.log('📨 Adding/updating message in cache:', transformedMessage.id);
         
         const queryKey = ['messages', recipientId, groupId];
-        queryClient.setQueryData(queryKey, (old: any) => {
+        queryClient.setQueryData(queryKey, (old: unknown) => {
           if (!old) {
             console.log('📨 No existing cache, creating new');
             return { pages: [[transformedMessage]], pageParams: [undefined] };
@@ -79,7 +79,7 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
           const lastPage = newPages[lastPageIndex];
           
           // Check if message already exists (replace temp or duplicate)
-          const existingIndex = lastPage.findIndex((msg: any) => 
+          const existingIndex = lastPage.findIndex((msg: unknown) => 
             msg.id === transformedMessage.id || 
             (msg.id.startsWith('temp-') && msg.text === transformedMessage.text)
           );
@@ -115,11 +115,11 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
 
-      queryClient.setQueryData(queryKey, (old: any) => {
+      queryClient.setQueryData(queryKey, (old: unknown) => {
         if (!old) return old;
 
         const newPages = old.pages.map((page: any[]) =>
-          page.map((msg: any) =>
+          page.map((msg: unknown) =>
             msg.id === messageId
               ? { ...msg, status: 'delivered' }
               : msg
@@ -138,7 +138,7 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
 
       console.log('📖 Updating query cache for key:', queryKey, 'messageId:', messageId);
 
-      queryClient.setQueryData(queryKey, (old: any) => {
+      queryClient.setQueryData(queryKey, (old: unknown) => {
         if (!old) {
           console.log('⚠️ No existing messages data in cache');
           return old;
@@ -148,7 +148,7 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
 
         const newPages = old.pages.map((page: any[], pageIndex: number) => {
           console.log(`📖 Processing page ${pageIndex} with ${page.length} messages`);
-          return page.map((msg: any) => {
+          return page.map((msg: unknown) => {
             if (msg.id === messageId) {
               console.log('✅ Found message to mark as read:', msg.id);
               return { ...msg, status: 'read' };
@@ -167,11 +167,11 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
 
-      queryClient.setQueryData(queryKey, (old: any) => {
+      queryClient.setQueryData(queryKey, (old: unknown) => {
         if (!old) return old;
 
         const newPages = old.pages.map((page: any[]) =>
-          page.filter((msg: any) => msg.id !== messageId)
+          page.filter((msg: unknown) => msg.id !== messageId)
         );
 
         return { ...old, pages: newPages };
@@ -183,11 +183,11 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
 
-      queryClient.setQueryData(queryKey, (old: any) => {
+      queryClient.setQueryData(queryKey, (old: unknown) => {
         if (!old) return old;
 
         const newPages = old.pages.map((page: any[]) =>
-          page.filter((msg: any) => msg.id !== messageId)
+          page.filter((msg: unknown) => msg.id !== messageId)
         );
 
         return { ...old, pages: newPages };
@@ -199,11 +199,11 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
       const { messageId, reactions } = data;
       const queryKey = ['messages', recipientId, groupId];
 
-      queryClient.setQueryData(queryKey, (old: any) => {
+      queryClient.setQueryData(queryKey, (old: unknown) => {
         if (!old) return old;
 
         const newPages = old.pages.map((page: any[]) =>
-          page.map((msg: any) => {
+          page.map((msg: unknown) => {
             if (msg.id === messageId) {
               return { ...msg, reactions: reactions || {} };
             }
@@ -268,7 +268,7 @@ export function useSendMessage() {
         status: 'sending' as const,
       };
 
-      queryClient.setQueryData(queryKey, (old: any) => {
+      queryClient.setQueryData(queryKey, (old: unknown) => {
         if (!old) return { pages: [[tempMessage]], pageParams: [undefined] };
 
         const newPages = [...old.pages];
@@ -310,12 +310,12 @@ export function useSendMessage() {
         } : undefined,
       };
       
-      queryClient.setQueryData(queryKey, (old: any) => {
+      queryClient.setQueryData(queryKey, (old: unknown) => {
         if (!old) return { pages: [[transformedMessage]], pageParams: [undefined] };
 
         // Replace the temp message with the real one
         const newPages = old.pages.map((page: any[]) =>
-          page.map((msg: any) =>
+          page.map((msg: unknown) =>
             msg.id === context?.tempMessage.id
               ? transformedMessage
               : msg

@@ -80,7 +80,7 @@ export function PendingContactRequests() {
       <h3 className="text-sm font-semibold text-muted-foreground uppercase">
         Pending Requests ({pendingRequests.length})
       </h3>
-      {pendingRequests.map((request: any) => {
+      {pendingRequests.map((request: unknown) => {
         // Check if current user is the sender (outgoing request) or recipient (incoming request)
         const isOutgoingRequest = request.userId === currentUser?.id;
         const isIncomingRequest = request.contactUserId === currentUser?.id;

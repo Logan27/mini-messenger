@@ -104,7 +104,7 @@ export const FileGallery = ({
           );
 
           // Transform API response to FilePreviewData format
-          const fetchedFiles: FilePreviewData[] = response.files.map((file: any) => ({
+          const fetchedFiles: FilePreviewData[] = response.files.map((file: File) => ({
             id: file.id,
             fileName: file.originalName,
             fileUrl: file.fileUrl,

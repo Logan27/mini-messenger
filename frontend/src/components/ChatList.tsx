@@ -44,7 +44,7 @@ export const ChatList = ({ chats, activeChat, onChatSelect }: ChatListProps) => 
   const pendingRequestsCount = pendingRequestsData?.length || 0;
   
   // Map contacts for group creation
-  const contactsForGroupCreation = contactsData?.map((contact: any) => ({
+  const contactsForGroupCreation = contactsData?.map((contact: unknown) => ({
     id: contact.user.id,
     username: contact.nickname || contact.user.username,
     firstName: contact.user.firstName,
@@ -54,7 +54,7 @@ export const ChatList = ({ chats, activeChat, onChatSelect }: ChatListProps) => 
   })) || [];
   
   // Map contacts for enhanced contact list
-  const enhancedContacts: Contact[] = contactsData?.map((contact: any) => ({
+  const enhancedContacts: Contact[] = contactsData?.map((contact: unknown) => ({
     id: contact.id,
     userId: contact.user.id,
     username: contact.user.username,

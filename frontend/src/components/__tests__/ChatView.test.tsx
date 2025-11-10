@@ -477,7 +477,7 @@ describe('ChatView Component', () => {
 
   describe('Message References Management', () => {
     it('should track message refs in map', () => {
-      const messageRefs = new Map<string, any>();
+      const messageRefs = new Map<string, unknown>();
 
       messageRefs.set('msg-1', { id: 'msg-1' });
       messageRefs.set('msg-2', { id: 'msg-2' });
@@ -487,7 +487,7 @@ describe('ChatView Component', () => {
     });
 
     it('should remove message ref when unmounted', () => {
-      const messageRefs = new Map<string, any>();
+      const messageRefs = new Map<string, unknown>();
 
       messageRefs.set('msg-1', { id: 'msg-1' });
       messageRefs.delete('msg-1');

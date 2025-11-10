@@ -50,7 +50,7 @@ export function BlockedContacts() {
       });
 
       // Map backend response to BlockedUser format
-      const blocked = response.data.data?.map((contact: any) => ({
+      const blocked = response.data.data?.map((contact: unknown) => ({
         id: contact.user?.id || contact.userId, // user ID for display
         contactId: contact.id, // contact record ID for API calls
         username: contact.user?.username || 'Unknown',

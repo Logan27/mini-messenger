@@ -46,7 +46,7 @@ export function getErrorMessage(error: any, defaultMessage: string = "An error o
  * @param error - The error object from axios
  * @returns Array of validation errors or empty array
  */
-export function getValidationErrors(error: any): Array<{ field: string; message: string }> {
+export function getValidationErrors(error: unknown): Array<{ field: string; message: string }> {
   if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
     return error.response.data.errors.map((err: any) => ({
       field: err.param || err.path || 'unknown',

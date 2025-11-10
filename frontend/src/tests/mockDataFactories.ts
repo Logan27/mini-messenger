@@ -5,7 +5,7 @@
 
 export const mockDataFactories = {
   // User factories
-  createMockUser: (overrides: Partial<any> = {}) => ({
+  createMockUser: (overrides: Record<string, unknown> = {}) => ({
     id: 'user-' + Math.random().toString(36).substr(2, 9),
     username: 'testuser',
     email: 'test@example.com',
@@ -25,7 +25,7 @@ export const mockDataFactories = {
   }),
 
   // Message factories
-  createMockMessage: (overrides: Partial<any> = {}) => ({
+  createMockMessage: (overrides: Record<string, unknown> = {}) => ({
     id: 'msg-' + Math.random().toString(36).substr(2, 9),
     content: 'Test message',
     text: 'Test message',
@@ -45,7 +45,7 @@ export const mockDataFactories = {
   }),
 
   // Contact factories
-  createMockContact: (overrides: Partial<any> = {}) => ({
+  createMockContact: (overrides: Record<string, unknown> = {}) => ({
     id: 'contact-' + Math.random().toString(36).substr(2, 9),
     userId: 'user-123',
     contactUserId: 'user-456',
@@ -58,7 +58,7 @@ export const mockDataFactories = {
   }),
 
   // Group factories
-  createMockGroup: (overrides: Partial<any> = {}) => ({
+  createMockGroup: (overrides: Record<string, unknown> = {}) => ({
     id: 'group-' + Math.random().toString(36).substr(2, 9),
     name: 'Test Group',
     description: 'A test group',
@@ -72,7 +72,7 @@ export const mockDataFactories = {
   }),
 
   // Conversation factories
-  createMockConversation: (overrides: Partial<any> = {}) => ({
+  createMockConversation: (overrides: Record<string, unknown> = {}) => ({
     id: 'conv-' + Math.random().toString(36).substr(2, 9),
     type: 'direct' as const,
     userId: 'user-456',
@@ -86,7 +86,7 @@ export const mockDataFactories = {
   }),
 
   // Notification factories
-  createMockNotification: (overrides: Partial<any> = {}) => ({
+  createMockNotification: (overrides: Record<string, unknown> = {}) => ({
     id: 'notif-' + Math.random().toString(36).substr(2, 9),
     type: 'message' as const,
     title: 'New message',
@@ -98,7 +98,7 @@ export const mockDataFactories = {
   }),
 
   // File factories
-  createMockFile: (overrides: Partial<any> = {}) => ({
+  createMockFile: (overrides: Record<string, unknown> = {}) => ({
     id: 'file-' + Math.random().toString(36).substr(2, 9),
     fileName: 'test-file.pdf',
     filePath: '/uploads/test-file.pdf',
@@ -110,7 +110,7 @@ export const mockDataFactories = {
   }),
 
   // Call factories
-  createMockCall: (overrides: Partial<any> = {}) => ({
+  createMockCall: (overrides: Record<string, unknown> = {}) => ({
     id: 'call-' + Math.random().toString(36).substr(2, 9),
     callerId: 'user-123',
     recipientId: 'user-456',
@@ -123,7 +123,7 @@ export const mockDataFactories = {
   }),
 
   // Reaction factories
-  createMockReaction: (overrides: Partial<any> = {}) => ({
+  createMockReaction: (overrides: Record<string, unknown> = {}) => ({
     id: 'reaction-' + Math.random().toString(36).substr(2, 9),
     messageId: 'msg-123',
     userId: 'user-123',
@@ -133,7 +133,7 @@ export const mockDataFactories = {
   }),
 
   // Settings factories
-  createMockSettings: (overrides: Partial<any> = {}) => ({
+  createMockSettings: (overrides: Record<string, unknown> = {}) => ({
     showOnlineStatus: true,
     sendReadReceipts: true,
     allowNotifications: true,
@@ -144,7 +144,7 @@ export const mockDataFactories = {
   }),
 
   // Admin stats factories
-  createMockAdminStats: (overrides: Partial<any> = {}) => ({
+  createMockAdminStats: (overrides: Record<string, unknown> = {}) => ({
     totalUsers: 100,
     activeUsers: 75,
     pendingUsers: 10,
@@ -155,7 +155,7 @@ export const mockDataFactories = {
   }),
 
   // Audit log factories
-  createMockAuditLog: (overrides: Partial<any> = {}) => ({
+  createMockAuditLog: (overrides: Record<string, unknown> = {}) => ({
     id: 'audit-' + Math.random().toString(36).substr(2, 9),
     userId: 'user-123',
     action: 'login',

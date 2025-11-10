@@ -105,7 +105,7 @@ export default function AdminAuditLogs() {
       const logsData = response.data?.data?.logs || [];
       
       // Map backend fields to frontend expected format
-      const mappedLogs = logsData.map((log: any) => ({
+      const mappedLogs = logsData.map((log: unknown) => ({
         id: log.id.toString(),
         userId: log.userId || log.user?.id || 'system',
         username: log.user?.username || 'System',

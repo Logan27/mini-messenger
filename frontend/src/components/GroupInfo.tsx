@@ -66,7 +66,7 @@ export function GroupInfo({
   isCreator,
   onLeaveGroup,
 }: GroupInfoProps) {
-  const [groupData, setGroupData] = useState<any>(null);
+  const [groupData, setGroupData] = useState<Record<string, unknown> | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -84,7 +84,7 @@ export function GroupInfo({
   // Rename group
   const [isRenaming, setIsRenaming] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
-  const [availableContacts, setAvailableContacts] = useState<any[]>([]);
+  const [availableContacts, setAvailableContacts] = useState<unknown[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -112,7 +112,7 @@ export function GroupInfo({
 
       // Transform members data from backend format
       const rawMembers = membersResponse.data.data?.members || membersResponse.data.members || [];
-      const transformedMembers = rawMembers.map((m: any) => ({
+      const transformedMembers = rawMembers.map((m: unknown) => ({
         id: m.user?.id || m.id,
         username: m.user?.username || m.username,
         firstName: m.user?.firstName || m.firstName,
@@ -149,7 +149,7 @@ export function GroupInfo({
 
       // Filter out users already in group
       const memberIds = new Set(members.map(m => m.id));
-      const available = (response.data.data || []).filter((contact: unknown) => !memberIds.has(contact.user.id));
+      const available = (response.data.data || []).filter((contact: unknown) => !memberIds.has((contact as Record<string, unknown>).user?.id as string));
       setAvailableContacts(available);
     } catch (err) {
       console.error('Error fetching contacts:', err);
@@ -570,44 +570,48 @@ export function GroupInfo({
                   </p>
                 </div>
               ) : (
-                availableContacts.map((contact: unknown) => (
+                availableContacts.map((contact: unknown) => {
+                  const c = contact as Record<string, Record<string, unknown>>;
+                  return (
                   <div
-                    key={contact.user.id}
+                    key={c.user.id as string}
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent cursor-pointer"
                     onClick={() => {
                       const newSelected = new Set(selectedContacts);
-                      if (newSelected.has(contact.user.id)) {
-                        newSelected.delete(contact.user.id);
+                      const userId = c.user.id as string;
+                      if (newSelected.has(userId)) {
+                        newSelected.delete(userId);
                       } else {
-                        newSelected.add(contact.user.id);
+                        newSelected.add(userId);
                       }
                       setSelectedContacts(newSelected);
                     }}
                   >
                     <input
                       type="checkbox"
-                      checked={selectedContacts.has(contact.user.id)}
+                      checked={selectedContacts.has(c.user.id as string)}
                       onChange={() => {}}
                       className="h-4 w-4"
                     />
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={contact.user.profilePicture} />
+                      <AvatarImage src={c.user.profilePicture as string} />
                       <AvatarFallback>
-                        {contact.user.username?.substring(0, 2).toUpperCase() || '??'}
+                        {(c.user.username as string)?.substring(0, 2).toUpperCase() || '??'}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="font-medium">
-                        {contact.nickname || contact.user.username}
+                        {(c as Record<string, unknown>).nickname as string || c.user.username as string}
                       </div>
-                      {contact.user.firstName && contact.user.lastName && (
+                      {c.user.firstName && c.user.lastName && (
                         <div className="text-sm text-muted-foreground">
-                          {contact.user.firstName} {contact.user.lastName}
+                          {c.user.firstName as string} {c.user.lastName as string}
                         </div>
                       )}
                     </div>
                   </div>
-                ))
+                  );
+                })
               )}
             </div>
           </ScrollArea>

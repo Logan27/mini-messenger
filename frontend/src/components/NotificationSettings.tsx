@@ -97,7 +97,7 @@ export const NotificationSettings = () => {
   };
 
   // Transform backend response to frontend format
-  const fromBackendFormat = (backendData: any): Partial<NotificationPreferences> => {
+  const fromBackendFormat = (backendData: Record<string, unknown>): Partial<NotificationPreferences> => {
     return {
       enabled: backendData.inAppEnabled ?? true,
       notificationTypes: {
@@ -179,14 +179,14 @@ export const NotificationSettings = () => {
     }
   };
 
-  const updatePreference = async (path: string, value: any) => {
+  const updatePreference = async (path: string, value: unknown) => {
     console.log(`🔧 NotificationSettings: Updating ${path} to:`, value, 'type:', typeof value);
 
     // Update local state
     const newPrefs = JSON.parse(JSON.stringify(preferences));
     const keys = path.split('.');
 
-    let current: any = newPrefs;
+    let current: Record<string, unknown> = newPrefs;
     for (let i = 0; i < keys.length - 1; i++) {
       current = current[keys[i]];
     }

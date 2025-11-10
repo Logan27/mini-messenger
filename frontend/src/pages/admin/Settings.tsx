@@ -168,7 +168,7 @@ export default function AdminSettings() {
     }
   };
 
-  const updateSetting = (section: keyof SystemSettings, key: string, value: any) => {
+  const updateSetting = (section: keyof SystemSettings, key: string, value: unknown) => {
     setSettings((prev) => ({
       ...prev,
       [section]: {

@@ -344,7 +344,7 @@ export const EnhancedContactList = ({
       <div className={cn('flex flex-col h-full', className)}>
         {/* Tabs */}
         <div className="p-4 pb-2 border-b">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'all' | 'online' | 'offline')}>
             <TabsList className="grid grid-cols-3 w-full">
               <TabsTrigger value="all">
                 All ({contacts.length})

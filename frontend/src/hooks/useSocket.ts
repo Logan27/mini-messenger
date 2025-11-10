@@ -24,7 +24,7 @@ export function useSocket() {
     };
   }, [isAuthenticated]);
 
-  const onNewMessage = useCallback((callback: (message: any) => void) => {
+  const onNewMessage = useCallback((callback: (message: unknown) => void) => {
     return socketService.on('message.new', callback);
   }, []);
 
@@ -63,7 +63,7 @@ export function useMessageListener(activeChat?: string) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const unsubscribeNew = socketService.on('message.new', (message: any) => {
+    const unsubscribeNew = socketService.on('message.new', (message: unknown) => {
       console.log('📨 Global message.new listener received:', {
         messageId: message.id,
         senderId: message.senderId,
@@ -159,10 +159,10 @@ export function useUserStatusListener() {
       const newStatus = data.onlineStatus || data.status;
 
       // Update contacts cache with new status
-      queryClient.setQueryData(['contacts', 'accepted'], (old: any) => {
+      queryClient.setQueryData(['contacts', 'accepted'], (old: unknown) => {
         if (!old) return old;
 
-        const updated = old.map((contact: any) => {
+        const updated = old.map((contact: unknown) => {
           if (contact.user?.id === data.userId) {
             console.log(`  📝 Updating contact ${contact.user.username} status: ${contact.user.onlineStatus} -> ${newStatus}`);
             return {
@@ -181,10 +181,10 @@ export function useUserStatusListener() {
       });
 
       // Update conversations cache with new status
-      queryClient.setQueryData(['conversations'], (old: any) => {
+      queryClient.setQueryData(['conversations'], (old: unknown) => {
         if (!old) return old;
 
-        const updated = old.map((conversation: any) => {
+        const updated = old.map((conversation: unknown) => {
           if (conversation.type === 'direct' && conversation.user?.id === data.userId) {
             console.log(`  📝 Updating conversation with ${conversation.user?.username || 'unknown'} status: ${conversation.user?.onlineStatus} -> ${newStatus}`);
             return {
@@ -220,9 +220,9 @@ export function useGroupListener() {
       console.log('🗑️ Group deleted event received:', data);
 
       // Remove from conversations cache
-      queryClient.setQueryData(['conversations'], (old: any) => {
+      queryClient.setQueryData(['conversations'], (old: unknown) => {
         if (!old) return old;
-        return old.filter((conv: any) =>
+        return old.filter((conv: unknown) =>
           conv.type !== 'group' || conv.group?.id !== data.groupId
         );
       });
@@ -232,14 +232,14 @@ export function useGroupListener() {
     });
 
     // Listen for group updates
-    const unsubscribeUpdated = socketService.on('group_updated', (data: { group: any }) => {
+    const unsubscribeUpdated = socketService.on('group_updated', (data: { group: unknown }) => {
       console.log('✏️ Group updated event received:', data);
 
       // Update conversations cache with new group data
-      queryClient.setQueryData(['conversations'], (old: any) => {
+      queryClient.setQueryData(['conversations'], (old: unknown) => {
         if (!old) return old;
 
-        const updated = old.map((conv: any) => {
+        const updated = old.map((conv: unknown) => {
           if (conv.type === 'group' && conv.group?.id === data.group.id) {
             return {
               ...conv,

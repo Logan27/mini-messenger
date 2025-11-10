@@ -153,7 +153,7 @@ export function CreateGroupDialog({
 
     try {
       // Prepare request body
-      const requestBody: any = {
+      const requestBody: Record<string, unknown> = {
         name: groupName.trim(),
         initialMembers: Array.from(selectedMembers),
       };

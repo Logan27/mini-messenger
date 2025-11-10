@@ -192,7 +192,7 @@ export function GroupSettings({
       }
 
       // Update group
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         name: groupName.trim(),
         description: groupDescription.trim() || undefined,
       };

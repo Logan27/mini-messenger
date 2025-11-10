@@ -91,7 +91,7 @@ export const FileGallery = ({
       // Fetch files for this conversation
       const fetchFiles = async () => {
         try {
-          const params: any = { limit: 100 };
+          const params: Record<string, unknown> = { limit: 100 };
           if (conversationId) {
             params.conversationWith = conversationId;
           }

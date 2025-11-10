@@ -9,7 +9,7 @@ import { apiClient } from '@/lib/api-client';
  */
 export function useGlobalNotifications() {
   const { user } = useAuth();
-  const [notificationSettings, setNotificationSettings] = useState<any>(null);
+  const [notificationSettings, setNotificationSettings] = useState<unknown>(null);
   const [mutedConversations, setMutedConversations] = useState<Set<string>>(new Set());
 
   // Track when notificationSettings state changes
@@ -42,7 +42,7 @@ export function useGlobalNotifications() {
         const response = await apiClient.get('/messages/conversations');
         if (response.data?.data) {
           const muted = new Set<string>();
-          response.data.data.forEach((conv: any) => {
+          response.data.data.forEach((conv: unknown) => {
             if (conv.isMuted) {
               // Store both userId and groupId for quick lookup
               if (conv.type === 'direct' && conv.user?.id) {
@@ -89,7 +89,7 @@ export function useGlobalNotifications() {
     console.log('🔔 Notification API status:', {
       supported: 'Notification' in window,
       permission: typeof Notification !== 'undefined' ? Notification.permission : 'undefined',
-      maxActions: typeof Notification !== 'undefined' && (Notification as any).maxActions !== undefined ? (Notification as any).maxActions : 'N/A'
+      maxActions: typeof Notification !== 'undefined' && (Notification as unknown as { maxActions?: number }).maxActions !== undefined ? (Notification as unknown as { maxActions?: number }).maxActions : 'N/A'
     });
 
     // Listen for contact requests
@@ -251,7 +251,7 @@ export function useGlobalNotifications() {
     });
 
     // Listen for ALL incoming messages
-    const unsubscribe = socketService.on('message.new', (newMessage: any) => {
+    const unsubscribe = socketService.on('message.new', (newMessage: unknown) => {
       console.log('💬 Received message via socket:', {
         id: newMessage.id,
         senderId: newMessage.senderId,

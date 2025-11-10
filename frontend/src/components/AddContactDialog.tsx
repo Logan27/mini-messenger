@@ -105,7 +105,7 @@ export function AddContactDialog({ open, onOpenChange }: AddContactDialogProps) 
 
             {!isLoading && searchResults && searchResults.length > 0 && (
               <>
-                {searchResults.map((user: any) => (
+                {searchResults.map((user: unknown) => (
                   <div
                     key={user.id}
                     className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors"

@@ -593,7 +593,7 @@ export const ChatView = ({
     }
   };
 
-  const handleFileUploaded = async (fileData: any) => {
+  const handleFileUploaded = async (fileData: unknown) => {
     if (!recipientId && !groupId) return;
 
     try {
@@ -764,7 +764,7 @@ export const ChatView = ({
               <DropdownMenuContent align="end" className="w-48">
                 {(() => {
                   // Find contact once at render time
-                  const contact = contacts?.find((c: any) => {
+                  const contact = contacts?.find((c: unknown) => {
                     // Contact can be stored with either userId or contactUserId depending on who initiated
                     return c.contactUserId === recipientId || c.userId === recipientId;
                   });
@@ -804,7 +804,7 @@ export const ChatView = ({
                           // Refetch contacts to get updated mute status
                           const result = await refetchContacts();
                           console.log('🔄 Refetched contacts:', result.data);
-                          const updatedContact = result.data?.find((c: any) => c.id === contact.id);
+                          const updatedContact = result.data?.find((c: unknown) => (c as Record<string, unknown>).id === contact.id);
                           console.log('✅ Updated contact after refetch:', updatedContact);
                           
                           // Close and reopen dropdown to show updated state
@@ -833,9 +833,9 @@ export const ChatView = ({
                     </DropdownMenuItem>
                   );
                 })()}
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={async () => {
-                    const contact = contacts?.find((c: any) => c.contactUserId === recipientId || c.userId === recipientId);
+                    const contact = contacts?.find((c: unknown) => (c as Record<string, unknown>).contactUserId === recipientId || (c as Record<string, unknown>).userId === recipientId);
                     if (!contact) {
                       toast({
                         title: "Error",
@@ -865,9 +865,9 @@ export const ChatView = ({
                   <UserX className="mr-2 h-4 w-4" />
                   Block User
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={async () => {
-                    const contact = contacts?.find((c: any) => c.contactUserId === recipientId || c.userId === recipientId);
+                    const contact = contacts?.find((c: unknown) => (c as Record<string, unknown>).contactUserId === recipientId || (c as Record<string, unknown>).userId === recipientId);
                     if (!contact) {
                       toast({
                         title: "Error",

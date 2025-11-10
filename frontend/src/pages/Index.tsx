@@ -76,7 +76,7 @@ const Index = () => {
   );
 
   // Build chats from direct contacts
-  const directChats: Chat[] = (contactsData?.map((contact: any) => {
+  const directChats: Chat[] = (contactsData?.map((contact: unknown) => {
     const userId = contact.user.id;
     const conversation = conversationMap.get(userId);
 
@@ -129,7 +129,7 @@ const Index = () => {
   // Transform messages to component format
   // Backend returns newest first (DESC), reverse to show oldest-to-newest in chat
   const messages = (messagesData?.pages.flatMap(page =>
-    page.map((msg: any) => {
+    page.map((msg: unknown) => {
       const transformed = {
         id: msg.id,
         text: msg.content,

@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 
 describe('ChatList', () => {
   it('should handle empty chat list', () => {
-    const chats: any[] = [];
+    const chats: unknown[] = [];
     expect(chats).toHaveLength(0);
   });
 

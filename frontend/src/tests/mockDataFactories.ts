@@ -170,7 +170,7 @@ export const mockDataFactories = {
   }),
 
   // Create multiple items
-  createMockUsers: (count: number, overrides: Partial<any> = {}) => {
+  createMockUsers: (count: number, overrides: Record<string, unknown> = {}) => {
     return Array.from({ length: count }, (_, i) =>
       mockDataFactories.createMockUser({
         id: `user-${i}`,
@@ -181,7 +181,7 @@ export const mockDataFactories = {
     );
   },
 
-  createMockMessages: (count: number, overrides: Partial<any> = {}) => {
+  createMockMessages: (count: number, overrides: Record<string, unknown> = {}) => {
     return Array.from({ length: count }, (_, i) =>
       mockDataFactories.createMockMessage({
         id: `msg-${i}`,
@@ -191,7 +191,7 @@ export const mockDataFactories = {
     );
   },
 
-  createMockContacts: (count: number, overrides: Partial<any> = {}) => {
+  createMockContacts: (count: number, overrides: Record<string, unknown> = {}) => {
     return Array.from({ length: count }, (_, i) =>
       mockDataFactories.createMockContact({
         id: `contact-${i}`,
@@ -204,7 +204,7 @@ export const mockDataFactories = {
     );
   },
 
-  createMockConversations: (count: number, overrides: Partial<any> = {}) => {
+  createMockConversations: (count: number, overrides: Record<string, unknown> = {}) => {
     return Array.from({ length: count }, (_, i) =>
       mockDataFactories.createMockConversation({
         id: `conv-${i}`,

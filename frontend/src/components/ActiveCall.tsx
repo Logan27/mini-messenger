@@ -865,7 +865,7 @@ export function ActiveCall({
 
       // Check if setSinkId is supported
       if ('setSinkId' in HTMLMediaElement.prototype) {
-        await (remoteVideoRef.current as any).setSinkId(deviceId);
+        await (remoteVideoRef.current as unknown as { setSinkId: (deviceId: string) => Promise<void> }).setSinkId(deviceId);
         console.log('✅ Speaker switched successfully');
         toast.success('Speaker changed');
       } else {

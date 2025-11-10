@@ -55,7 +55,7 @@ interface AuditLog {
   ipAddress: string;
   userAgent: string;
   status: 'success' | 'failure';
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   timestamp: string;
 }
 
@@ -103,9 +103,9 @@ export default function AdminAuditLogs() {
 
       // Backend returns data.data.logs with nested structure
       const logsData = response.data?.data?.logs || [];
-      
+
       // Map backend fields to frontend expected format
-      const mappedLogs = logsData.map((log: unknown) => ({
+      const mappedLogs = logsData.map((log: Record<string, unknown>) => ({
         id: log.id.toString(),
         userId: log.userId || log.user?.id || 'system',
         username: log.user?.username || 'System',

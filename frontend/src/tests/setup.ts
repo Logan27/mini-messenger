@@ -34,7 +34,7 @@ global.IntersectionObserver = class IntersectionObserver {
     return [];
   }
   unobserve() {}
-} as any;
+} as unknown as typeof IntersectionObserver;
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
@@ -42,7 +42,7 @@ global.ResizeObserver = class ResizeObserver {
   disconnect() {}
   observe() {}
   unobserve() {}
-} as any;
+} as unknown as typeof ResizeObserver;
 
 // Mock HTMLMediaElement
 Object.defineProperty(HTMLMediaElement.prototype, 'play', {
@@ -110,7 +110,7 @@ global.RTCPeerConnection = class RTCPeerConnection {
     return Promise.resolve();
   }
   close() {}
-} as any;
+} as unknown as typeof RTCPeerConnection;
 
 // Mock getUserMedia
 const mockGetUserMedia = vi.fn().mockResolvedValue({

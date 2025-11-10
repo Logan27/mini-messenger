@@ -6,7 +6,7 @@
  * @param defaultMessage - Default message to show if error extraction fails
  * @returns Extracted error message string
  */
-export function getErrorMessage(error: any, defaultMessage: string = "An error occurred. Please try again."): string {
+export function getErrorMessage(error: unknown, defaultMessage: string = "An error occurred. Please try again."): string {
   // Check for axios error response
   if (error.response?.data?.message) {
     return error.response.data.message;
@@ -48,7 +48,7 @@ export function getErrorMessage(error: any, defaultMessage: string = "An error o
  */
 export function getValidationErrors(error: unknown): Array<{ field: string; message: string }> {
   if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
-    return error.response.data.errors.map((err: any) => ({
+    return error.response.data.errors.map((err: unknown) => ({
       field: err.param || err.path || 'unknown',
       message: err.msg || err.message || 'Validation error',
     }));

@@ -126,7 +126,7 @@ export const ChatList = ({ chats, activeChat, onChatSelect }: ChatListProps) => 
       }
     } else {
       // 1-to-1 chat mute/unmute
-      const contact = contactsData?.find((c: any) => c.user.id === chatId);
+      const contact = contactsData?.find((c: unknown) => (c as Record<string, unknown>).user?.id === chatId);
       if (contact) {
         try {
           if (isMuted) {
@@ -186,7 +186,7 @@ export const ChatList = ({ chats, activeChat, onChatSelect }: ChatListProps) => 
       }
     } else {
       // Find contact by user ID and remove
-      const contact = contactsData?.find((c: any) => c.user.id === chatId);
+      const contact = contactsData?.find((c: unknown) => (c as Record<string, unknown>).user?.id === chatId);
       if (contact) {
         try {
           await contactService.removeContact(contact.id);
@@ -217,7 +217,7 @@ export const ChatList = ({ chats, activeChat, onChatSelect }: ChatListProps) => 
 
   const handleBlock = async (chatId: string) => {
     // Find contact by user ID and block
-    const contact = contactsData?.find((c: any) => c.user.id === chatId);
+    const contact = contactsData?.find((c: unknown) => (c as Record<string, unknown>).user?.id === chatId);
     if (contact) {
       try {
         await contactService.blockContact(contact.id);

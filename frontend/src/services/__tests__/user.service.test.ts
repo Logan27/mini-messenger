@@ -301,7 +301,7 @@ describe('userService', () => {
       const onProgress = vi.fn();
 
       vi.mocked(apiClient.post).mockImplementation(
-        (url, data, config: any) => {
+        (url, data, config: unknown) => {
           if (config?.onUploadProgress) {
             config.onUploadProgress({ loaded: 75, total: 100 });
           }

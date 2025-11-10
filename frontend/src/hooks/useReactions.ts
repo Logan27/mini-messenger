@@ -24,11 +24,11 @@ export function useAddReaction() {
         const newReactions = data.data.reactions;
 
         // Update all message queries
-        queryClient.setQueriesData({ queryKey: ['messages'] }, (old: any) => {
+        queryClient.setQueriesData({ queryKey: ['messages'] }, (old: unknown) => {
           if (!old) return old;
 
-          const newPages = old.pages.map((page: any[]) =>
-            page.map((msg: any) => {
+          const newPages = old.pages.map((page: unknown[]) =>
+            page.map((msg: unknown) => {
               if (msg.id === messageId) {
                 return { ...msg, reactions: newReactions };
               }
@@ -43,8 +43,9 @@ export function useAddReaction() {
       // Don't invalidate immediately - rely on WebSocket updates for real-time sync
       // Invalidating here causes a race condition where the refetch might get old data
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || 'Failed to add reaction');
+    onError: (error) => {
+      const err = error as { response?: { data?: { error?: string } } };
+      toast.error(err.response?.data?.error || 'Failed to add reaction');
     },
   });
 }

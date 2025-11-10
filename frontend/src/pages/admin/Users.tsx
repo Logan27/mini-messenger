@@ -128,7 +128,7 @@ export default function AdminUsers() {
       setFilteredUsers(response.data.data.users || []);
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || 'Failed to load users');
+      setError(((error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to load users');
     } finally {
       setIsLoading(false);
     }
@@ -147,7 +147,7 @@ export default function AdminUsers() {
       setUserDetails(response.data.data || response.data);
     } catch (err) {
       const error = err as { response?: { data?: { error?: string; message?: string } } };
-      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to load user details');
+      toast.error(error.response?.data?.error || ((error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to load user details');
     } finally {
       setIsLoadingDetails(false);
     }
@@ -210,7 +210,7 @@ export default function AdminUsers() {
       setActionDialogOpen(false);
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
-      toast.error(error.response?.data?.message || `Failed to ${actionType} user`);
+      toast.error(((error as { response?: { data?: { message?: string } } }).response?.data?.message || `Failed to ${actionType} user`);
     } finally {
       setIsProcessing(false);
     }

@@ -2,7 +2,8 @@
 export interface User {
   id: string;
   email: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   username?: string;
   avatar?: string;
   bio?: string;
@@ -14,6 +15,8 @@ export interface User {
   isOnline?: boolean;
   profilePicture?: string;
   onlineStatus?: string;
+  // Computed property for full name
+  name?: string;
 }
 
 // Contact types

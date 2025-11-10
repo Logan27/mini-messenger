@@ -76,18 +76,34 @@ const ConversationsScreen = ({ navigation }: any) => {
     const searchLower = searchQuery.toLowerCase();
     return (
       conversation.name?.toLowerCase().includes(searchLower) ||
-      (conversation.participants || []).some(p =>
-        p.name.toLowerCase().includes(searchLower) ||
-        p.email.toLowerCase().includes(searchLower)
-      )
+      (conversation.participants || []).some(p => {
+        const fullName = p.firstName && p.lastName
+          ? `${p.firstName} ${p.lastName}`.toLowerCase()
+          : (p.firstName || p.lastName || '').toLowerCase();
+        return (
+          fullName.includes(searchLower) ||
+          p.email?.toLowerCase().includes(searchLower) ||
+          p.username?.toLowerCase().includes(searchLower)
+        );
+      })
     );
   });
 
   const renderConversation = ({ item: conversation }: { item: Conversation }) => {
     const otherParticipants = (conversation.participants || []).filter(p => p.id !== user?.id);
+    const getParticipantName = (participant: any) => {
+      if (participant.name) return participant.name;
+      if (participant.firstName && participant.lastName) {
+        return `${participant.firstName} ${participant.lastName}`;
+      }
+      if (participant.firstName) return participant.firstName;
+      if (participant.username) return participant.username;
+      return participant.email || 'Unknown';
+    };
+
     const displayName = conversation.type === 'group'
       ? conversation.name || `Group (${(conversation.participants || []).length})`
-      : otherParticipants[0]?.name || otherParticipants[0]?.email || 'Unknown';
+      : getParticipantName(otherParticipants[0]) || 'Unknown';
 
     const lastMessage = conversation.lastMessage;
     const lastMessageText = lastMessage?.type === 'text'

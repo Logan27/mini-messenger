@@ -123,15 +123,15 @@ jest.mock('@react-native-firebase/messaging', () => ({
   })),
 }));
 
-// Mock react-native-fs
-jest.mock('react-native-fs', () => ({
-  DocumentDirectoryPath: '/mock/documents',
-  ExternalDirectoryPath: '/mock/external',
-  exists: jest.fn(() => Promise.resolve(true)),
-  readFile: jest.fn(() => Promise.resolve('mock-file-content')),
-  writeFile: jest.fn(() => Promise.resolve()),
-  unlink: jest.fn(() => Promise.resolve()),
-}));
+// Mock react-native-fs (disabled - package not installed)
+// jest.mock('react-native-fs', () => ({
+//   DocumentDirectoryPath: '/mock/documents',
+//   ExternalDirectoryPath: '/mock/external',
+//   exists: jest.fn(() => Promise.resolve(true)),
+//   readFile: jest.fn(() => Promise.resolve('mock-file-content')),
+//   writeFile: jest.fn(() => Promise.resolve()),
+//   unlink: jest.fn(() => Promise.resolve()),
+// }));
 
 // Mock socket.io-client
 jest.mock('socket.io-client', () => ({

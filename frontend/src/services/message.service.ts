@@ -1,4 +1,6 @@
 import apiClient from '@/lib/api-client';
+import { offlineQueueService } from './offlineQueue.service';
+import { toast } from 'sonner';
 
 export interface Message {
   id: string;
@@ -56,6 +58,36 @@ export const messageService = {
     metadata?: Record<string, any>;
   }) {
     console.log('🌐 messageService.sendMessage called with:', data);
+
+    // Check if user is offline
+    if (!navigator.onLine) {
+      console.log('📴 User is offline, adding message to queue');
+
+      // Add to offline queue
+      await offlineQueueService.addToQueue({
+        type: 'message',
+        endpoint: '/messages',
+        method: 'POST',
+        data,
+        maxRetries: 3,
+      });
+
+      toast.info('Message queued. Will send when online.');
+
+      // Return a temporary message object for optimistic UI update
+      return {
+        id: `temp-${Date.now()}`,
+        ...data,
+        status: 'sent',
+        isRead: false,
+        isDelivered: false,
+        isEdited: false,
+        messageType: data.messageType || 'text',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    }
+
     console.log('🌐 About to POST to:', '/messages');
     const response = await apiClient.post('/messages', data);
     console.log('🌐 POST response received:', response.data);

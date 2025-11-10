@@ -1,0 +1,42 @@
+{
+  "name": "Mini Messenger",
+  "short_name": "Messenger",
+  "description": "Modern secure messaging app with end-to-end encryption, video calls, and group chat",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "categories": ["social", "communication"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "New Message",
+      "short_name": "New",
+      "description": "Start a new conversation",
+      "url": "/?action=new-message",
+      "icons": []
+    },
+    {
+      "name": "Call History",
+      "short_name": "Calls",
+      "description": "View call history",
+      "url": "/calls",
+      "icons": []
+    }
+  ],
+  "prefer_related_applications": false
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,11 @@ import {
   Calendar,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { FilePreview, FilePreviewData } from './FilePreview';
+import { InlineLoadingFallback } from './LoadingFallback';
+import type { FilePreviewData } from './FilePreview';
+
+// Lazy load FilePreview component - only loaded when user clicks on a file
+const FilePreview = lazy(() => import("./FilePreview").then(module => ({ default: module.FilePreview })));
 
 interface FileGalleryProps {
   isOpen: boolean;
@@ -349,14 +353,16 @@ export const FileGallery = ({
 
       {/* File Preview Modal */}
       {selectedFile && (
-        <FilePreview
-          isOpen={!!selectedFile}
-          onClose={() => setSelectedFile(null)}
-          file={selectedFile}
-          allFiles={filteredFiles}
-          currentIndex={selectedIndex}
-          onNavigate={handleNavigate}
-        />
+        <Suspense fallback={<InlineLoadingFallback />}>
+          <FilePreview
+            isOpen={!!selectedFile}
+            onClose={() => setSelectedFile(null)}
+            file={selectedFile}
+            allFiles={filteredFiles}
+            currentIndex={selectedIndex}
+            onNavigate={handleNavigate}
+          />
+        </Suspense>
       )}
     </>
   );

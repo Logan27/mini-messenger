@@ -4,7 +4,7 @@ import { Check, CheckCheck, MoreVertical, Reply, Copy, Trash2, Edit2, Download, 
 import { MessageReactions } from "./MessageReactions";
 import { ReactionPicker } from "./ReactionPicker";
 import { ReplyPreview } from "./ReplyPreview";
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { FilePreview, FilePreviewData } from "./FilePreview";
+import { InlineLoadingFallback } from "./LoadingFallback";
+import type { FilePreviewData } from "./FilePreview";
+
+// Lazy load FilePreview component - only loaded when user clicks on a file
+const FilePreview = lazy(() => import("./FilePreview").then(module => ({ default: module.FilePreview })));
 
 interface MessageBubbleProps {
   message: Message;
@@ -273,12 +277,14 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
       </div>
 
       {/* File Preview Modal */}
-      {filePreviewData && (
-        <FilePreview
-          isOpen={showFilePreview}
-          onClose={() => setShowFilePreview(false)}
-          file={filePreviewData}
-        />
+      {filePreviewData && showFilePreview && (
+        <Suspense fallback={<InlineLoadingFallback />}>
+          <FilePreview
+            isOpen={showFilePreview}
+            onClose={() => setShowFilePreview(false)}
+            file={filePreviewData}
+          />
+        </Suspense>
       )}
     </>
   );

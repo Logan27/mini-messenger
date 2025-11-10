@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { authService, AuthResponse } from '@/services/auth.service';
 import { socketService } from '@/services/socket.service';
 import { useNavigate } from 'react-router-dom';
+import { preloadCriticalRoutes, preloadAdminRoutes } from '@/utils/routePreload';
 
 interface User {
   id: string;
@@ -108,6 +109,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Request notification permission on login
       requestNotificationPermission();
+
+      // Preload critical routes for better navigation performance
+      preloadCriticalRoutes();
+
+      // Preload admin routes if user is an admin
+      if (response.data.user.role === 'admin') {
+        preloadAdminRoutes();
+      }
 
       navigate('/');
     } catch (error: any) {

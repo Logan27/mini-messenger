@@ -1,16 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import request from 'supertest';
 import NotificationSettings from '../src/models/NotificationSettings.js';
 import notificationSettingsController from '../src/controllers/notificationSettingsController.js';
 import notificationSettingsService from '../src/services/notificationSettingsService.js';
 import { sequelize } from '../src/config/database.js';
 
-// Mock the WebSocket service
-jest.mock('../src/services/websocket.js', () => ({
-  getWebSocketService: () => ({
-    broadcastToUser: jest.fn(),
-  }),
-}));
+// Note: Mocking is disabled for ES module compatibility
+// These tests focus on notification settings model and database operations
+// WebSocket service interactions are not tested here
 
 describe('NotificationSettings', () => {
   beforeEach(async () => {

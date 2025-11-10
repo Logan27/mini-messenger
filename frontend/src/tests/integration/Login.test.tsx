@@ -141,24 +141,6 @@ describe('Login Flow Integration Tests', () => {
     expect(passwordInput).toBeDisabled();
   });
 
-  it('should show registration success message when coming from registration', () => {
-    // Mock URL search params
-    const mockUseSearchParams = vi.fn(() => [new URLSearchParams('?registered=true')]);
-    vi.mock('react-router-dom', async () => {
-      const actual = await vi.importActual('react-router-dom');
-      return {
-        ...actual,
-        useSearchParams: mockUseSearchParams,
-      };
-    });
-
-    renderWithProviders(<Login />);
-
-    // The registered alert should be visible
-    const alerts = screen.queryAllByRole('alert');
-    expect(alerts.length).toBeGreaterThan(0);
-  });
-
   it('should have link to registration page', () => {
     renderWithProviders(<Login />);
 

@@ -21,7 +21,8 @@ describe('Settings Components', () => {
       };
 
       expect(updates.firstName).toBeTruthy();
-      expect(updates.bio).toHaveLength expect(updates.bio.length).toBeGreaterThan(0);
+      expect(updates.bio).toBeTruthy();
+      expect(updates.bio.length).toBeGreaterThan(0);
     });
   });
 

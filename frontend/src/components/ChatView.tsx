@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useReducer } from "react";
+import { useState, useRef, useEffect, useReducer, lazy, Suspense } from "react";
 import { Message } from "@/types/chat";
 import { MessageBubble } from "./MessageBubble";
 import { CallMessage } from "./CallMessage";
@@ -12,8 +12,11 @@ import { MessageSkeleton } from "./SkeletonLoaders";
 import { EmojiPicker } from "./EmojiPicker";
 import { OutgoingCall } from "./OutgoingCall";
 import { IncomingCall } from "./IncomingCall";
-import { ActiveCall } from "./ActiveCall";
+import { InlineLoadingFallback } from "./LoadingFallback";
 import EmptyState from "./EmptyState";
+
+// Lazy load heavy WebRTC component - only loaded when user starts a call
+const ActiveCall = lazy(() => import("./ActiveCall").then(module => ({ default: module.ActiveCall })));
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -1218,30 +1221,32 @@ export const ChatView = ({
 
       {/* Active Call Modal */}
       {showActiveCall && activeCallData && (
-        <ActiveCall
-          open={showActiveCall}
-          onOpenChange={(open) => {
-            console.log(`🔔 ChatView: ActiveCall onOpenChange called with open=${open}`);
-            console.trace('Stack trace for onOpenChange');
-            setShowActiveCall(open);
-            if (!open) {
-              console.log('🔔 ChatView: Clearing activeCallData and refreshing messages');
-              setActiveCallData(null);
-              // Refresh messages to show the call record
-              queryClient.invalidateQueries({ 
-                queryKey: recipientId ? ['messages', recipientId] : ['groupMessages', groupId] 
-              });
-              // Also refresh conversations to update last message
-              queryClient.invalidateQueries({ queryKey: ['conversations'] });
-            }
-          }}
-          callId={activeCallData.callId}
-          participantId={activeCallData.participantId}
+        <Suspense fallback={<InlineLoadingFallback />}>
+          <ActiveCall
+            open={showActiveCall}
+            onOpenChange={(open) => {
+              console.log(`🔔 ChatView: ActiveCall onOpenChange called with open=${open}`);
+              console.trace('Stack trace for onOpenChange');
+              setShowActiveCall(open);
+              if (!open) {
+                console.log('🔔 ChatView: Clearing activeCallData and refreshing messages');
+                setActiveCallData(null);
+                // Refresh messages to show the call record
+                queryClient.invalidateQueries({
+                  queryKey: recipientId ? ['messages', recipientId] : ['groupMessages', groupId]
+                });
+                // Also refresh conversations to update last message
+                queryClient.invalidateQueries({ queryKey: ['conversations'] });
+              }
+            }}
+            callId={activeCallData.callId}
+            participantId={activeCallData.participantId}
           participantName={activeCallData.participantName}
           participantAvatar={activeCallData.participantAvatar}
           callType={activeCallData.callType}
           isInitiator={activeCallData.isInitiator}
-        />
+          />
+        </Suspense>
       )}
     </div>
   );

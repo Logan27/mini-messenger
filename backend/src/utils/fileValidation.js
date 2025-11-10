@@ -163,6 +163,27 @@ export class FileValidator {
       }
     }
 
+    // Office Open XML formats (DOCX, XLSX) - ZIP-based
+    // Check for ZIP signature (PK..)
+    if (buffer[0] === 0x50 && buffer[1] === 0x4b && buffer[2] === 0x03 && buffer[3] === 0x04) {
+      // This is a ZIP file, check if it's an Office document
+      const bufferString = buffer.toString('binary', 0, Math.min(buffer.length, 4096));
+
+      // DOCX contains word/ directory
+      if (bufferString.includes('word/')) {
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      }
+
+      // XLSX contains xl/ directory
+      if (bufferString.includes('xl/')) {
+        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      }
+
+      // If it's a ZIP but we can't determine the specific Office format,
+      // return null to fall back to MIME type validation
+      return null;
+    }
+
     // Check if content is plain text (all printable ASCII or UTF-8)
     // For text files, check if most bytes are printable characters
     let textBytes = 0;

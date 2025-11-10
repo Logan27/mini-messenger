@@ -11,6 +11,8 @@ import { AdminRoute } from "./components/AdminRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import OfflineBanner from "./components/OfflineBanner";
 import NotificationManager from "./components/NotificationManager";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import PWAUpdatePrompt from "./components/PWAUpdatePrompt";
 import { PageLoadingFallback } from "./components/LoadingFallback";
 import { registerRoutePreload } from "./utils/routePreload";
 
@@ -59,6 +61,8 @@ const App = () => (
       <ThemeProvider defaultTheme="system" storageKey="messenger-ui-theme">
         <TooltipProvider>
           <OfflineBanner />
+          <PWAUpdatePrompt />
+          <PWAInstallPrompt />
           <Toaster />
           <Sonner />
           <BrowserRouter>

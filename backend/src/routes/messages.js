@@ -617,6 +617,11 @@ router.get(
               }
             : null,
           metadata: message.metadata,
+          // Extract file metadata from metadata field for file messages
+          fileId: message.metadata?.fileId,
+          fileName: message.metadata?.fileName,
+          fileSize: message.metadata?.fileSize,
+          mimeType: message.metadata?.mimeType,
           reactions: message.reactions || {},
           editedAt: message.editedAt,
           createdAt: message.createdAt,

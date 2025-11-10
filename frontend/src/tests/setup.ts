@@ -105,3 +105,17 @@ Object.defineProperty(navigator, 'mediaDevices', {
     enumerateDevices: vi.fn().mockResolvedValue([]),
   },
 });
+
+// Mock IndexedDB
+const indexedDBMock = {
+  open: vi.fn().mockReturnValue({
+    result: {},
+    error: null,
+    onsuccess: null,
+    onerror: null,
+    onupgradeneeded: null,
+  }),
+  deleteDatabase: vi.fn(),
+  databases: vi.fn().mockResolvedValue([]),
+};
+global.indexedDB = indexedDBMock as any;

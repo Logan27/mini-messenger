@@ -48,7 +48,7 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
           fileId: newMessage.metadata?.fileId || newMessage.fileId,
           fileName: newMessage.metadata?.fileName || newMessage.fileName,
           fileUrl: newMessage.metadata?.fileId || newMessage.fileId
-            ? `/api/files/${newMessage.metadata?.fileId || newMessage.fileId}`
+            ? `${window.location.origin}/api/files/${newMessage.metadata?.fileId || newMessage.fileId}`
             : undefined,
           fileSize: newMessage.metadata?.fileSize || newMessage.fileSize,
           mimeType: newMessage.metadata?.mimeType || newMessage.mimeType,
@@ -299,7 +299,7 @@ export function useSendMessage() {
         fileId: newMessage.metadata?.fileId || newMessage.fileId,
         fileName: newMessage.metadata?.fileName || newMessage.fileName,
         fileUrl: newMessage.metadata?.fileId || newMessage.fileId
-          ? `/api/files/${newMessage.metadata?.fileId || newMessage.fileId}`
+          ? `${window.location.origin}/api/files/${newMessage.metadata?.fileId || newMessage.fileId}`
           : undefined,
         fileSize: newMessage.metadata?.fileSize || newMessage.fileSize,
         mimeType: newMessage.metadata?.mimeType || newMessage.mimeType,

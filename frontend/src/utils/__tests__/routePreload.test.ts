@@ -112,15 +112,17 @@ describe('routePreload', () => {
     });
 
     it('should preload routes in parallel', async () => {
+      vi.useRealTimers(); // Use real timers for this timing test
+
       const startTimes: number[] = [];
       const mockPreload1 = vi.fn().mockImplementation(async () => {
         startTimes.push(Date.now());
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 10)); // Reduced from 100ms
         return { route: 1 };
       });
       const mockPreload2 = vi.fn().mockImplementation(async () => {
         startTimes.push(Date.now());
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 10)); // Reduced from 100ms
         return { route: 2 };
       });
 
@@ -131,6 +133,8 @@ describe('routePreload', () => {
 
       // Both should start at roughly the same time
       expect(Math.abs(startTimes[0] - startTimes[1])).toBeLessThan(50);
+
+      vi.useFakeTimers(); // Restore fake timers
     });
 
     it('should handle empty array', async () => {

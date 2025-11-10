@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
   Switch,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -286,16 +287,16 @@ const SettingsScreen: React.FC = () => {
         <View style={styles.userCard}>
           <View style={styles.userAvatar}>
             {user?.avatar ? (
+              <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+            ) : (
               <Text style={styles.avatarText}>
-                {user.name
+                {getDisplayName()
                   .split(' ')
                   .map((n) => n[0])
                   .join('')
                   .toUpperCase()
-                  .slice(0, 2)}
+                  .slice(0, 2) || 'U'}
               </Text>
-            ) : (
-              <Ionicons name="person" size={32} color="#fff" />
             )}
           </View>
           <View style={styles.userInfo}>
@@ -368,6 +369,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+  },
+  avatarImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
   },
   avatarText: {
     color: '#fff',

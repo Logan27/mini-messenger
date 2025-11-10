@@ -152,12 +152,14 @@ const EditProfileScreen: React.FC = () => {
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Text style={styles.avatarText}>
-                  {name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                    .toUpperCase()
-                    .slice(0, 2) || 'U'}
+                  {(name && name.trim()
+                    ? name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2)
+                    : 'U') || 'U'}
                 </Text>
               </View>
             )}

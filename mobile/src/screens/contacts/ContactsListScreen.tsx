@@ -154,7 +154,17 @@ const ContactsListScreen: React.FC<ContactsListScreenProps> = ({ navigation }) =
   };
 
   const renderContactItem = ({ item }: { item: Contact }) => {
-    const displayName = item.nickname || item.user.name || item.user.username || 'Unknown';
+    const getUserDisplayName = (user: any) => {
+      if (user.name) return user.name;
+      if (user.firstName && user.lastName) {
+        return `${user.firstName} ${user.lastName}`;
+      }
+      if (user.firstName) return user.firstName;
+      if (user.username) return user.username;
+      return 'Unknown';
+    };
+
+    const displayName = item.nickname || getUserDisplayName(item.user);
     const initials = displayName.slice(0, 2).toUpperCase();
 
     return (

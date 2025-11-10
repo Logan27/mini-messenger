@@ -265,6 +265,7 @@ router.post(
               fileName: messageWithSender.metadata?.fileName || null,
               fileSize: messageWithSender.metadata?.fileSize || null,
               mimeType: messageWithSender.metadata?.mimeType || null,
+              fileUrl: messageWithSender.metadata?.fileId ? `/api/files/${messageWithSender.metadata.fileId}` : null,
               sender: messageWithSender.sender
                 ? {
                     id: messageWithSender.sender.id,
@@ -645,6 +646,7 @@ router.get(
           fileName: message.metadata?.fileName || null,
           fileSize: message.metadata?.fileSize || null,
           mimeType: message.metadata?.mimeType || null,
+          fileUrl: message.metadata?.fileId ? `/api/files/${message.metadata.fileId}` : null,
           sender: message.sender
             ? {
                 id: message.sender.id,

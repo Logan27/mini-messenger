@@ -1,5 +1,4 @@
 import { registerRootComponent } from 'expo';
-import { getApp, setBackgroundMessageHandler } from '@react-native-firebase/messaging';
 import { Platform } from 'react-native';
 
 import App from './App';
@@ -43,14 +42,17 @@ const envVars = {
 
 log.info('Environment variables check', envVars, 'Environment');
 
-// Register background message handler for FCM using modular API
+// Register background message handler for FCM
 // This must be called outside of any component lifecycle
 if (Platform.OS === 'android' || Platform.OS === 'ios') {
   log.info('Setting up FCM background message handler', undefined, 'FCM');
 
   try {
-    // Use modular API to set background message handler
-    setBackgroundMessageHandler(async (remoteMessage) => {
+    // Import Firebase messaging dynamically to avoid crashes if not configured
+    const messaging = require('@react-native-firebase/messaging').default;
+
+    // Set background message handler on the messaging instance
+    messaging().setBackgroundMessageHandler(async (remoteMessage) => {
       log.info('Background message received', {
         messageId: remoteMessage.messageId,
         from: remoteMessage.from,

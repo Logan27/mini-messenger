@@ -63,7 +63,18 @@ If you want to use Firebase Cloud Messaging for better push notification support
 
 1. In Firebase Console, go to "Cloud Messaging"
 2. Note your Server Key (needed for backend configuration)
-3. Enable "Cloud Messaging API" in Google Cloud Console
+3. **Enable "Firebase Cloud Messaging API" in Google Cloud Console**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Select your Firebase project
+   - Navigate to "APIs & Services" > "Library"
+   - Search for "Firebase Cloud Messaging API"
+   - Click "Enable"
+4. **Remove API Key Restrictions** (if any):
+   - In Firebase Console, go to Project Settings
+   - Under "Cloud Messaging", find your API key
+   - Click on the API key to view it in Google Cloud Console
+   - Under "API restrictions", ensure "Firebase Cloud Messaging API" is allowed
+   - Or select "Don't restrict key" for development (not recommended for production)
 
 ### 4. Update Backend Configuration
 
@@ -120,6 +131,29 @@ If you still see Java exceptions:
 
    - `"FirebaseApp initialization unsuccessful"`: Invalid Firebase configuration
      - **Solution**: Replace placeholder with real Firebase config or app will use fallback
+
+### Firebase API Key Error
+
+If you see an error like `"Please set a valid API key"`:
+
+1. **Enable Firebase Cloud Messaging API**:
+   - This is the most common cause
+   - Follow step 3 in "Enable Cloud Messaging" above
+   - The API must be enabled in Google Cloud Console
+
+2. **Check API Key Restrictions**:
+   - In Google Cloud Console, find your API key
+   - Ensure it allows "Firebase Cloud Messaging API"
+   - Temporarily remove all restrictions for testing
+
+3. **Verify google-services.json**:
+   - Ensure the file is in the correct location: `mobile/google-services.json`
+   - Check that the package name matches your app: `com.logan27.minimessenger`
+   - Re-download from Firebase Console if needed
+
+4. **Use Expo Notifications as Fallback**:
+   - The app will automatically fall back to Expo notifications if Firebase fails
+   - This is normal for development and the app will still work
 
 ### Push Notifications Not Working
 

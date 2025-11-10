@@ -31,6 +31,17 @@ export const fileService = {
     return response.data.data;
   },
 
+  async getConversationFiles(params: {
+    conversationWith?: string;
+    groupId?: string;
+    fileType?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const response = await apiClient.get('/files', { params });
+    return response.data;
+  },
+
   async deleteFile(fileId: string) {
     const response = await apiClient.delete(`/files/${fileId}`);
     return response.data;

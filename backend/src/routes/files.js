@@ -649,12 +649,50 @@ router.get('/', async (req, res) => {
         error: 'Authentication required',
       });
     }
-    const { page = 1, limit = 20, fileType, messageId, virusScanStatus } = req.query;
+    const { page = 1, limit = 20, fileType, messageId, virusScanStatus, conversationWith, groupId } = req.query;
 
     const offset = (page - 1) * limit;
 
     // Build where condition
-    const whereCondition = { uploaderId: userId };
+    let whereCondition = {};
+    let messageWhere = {};
+
+    // If filtering by conversation or group, we need to join with messages
+    if (conversationWith || groupId) {
+      const { Message } = await import('../models/index.js');
+
+      // Build message filter conditions
+      if (conversationWith) {
+        // Find files from messages between current user and the specified user
+        messageWhere = {
+          [Op.or]: [
+            { senderId: userId, recipientId: conversationWith },
+            { senderId: conversationWith, recipientId: userId },
+          ],
+        };
+      } else if (groupId) {
+        // Find files from messages in the specified group
+        messageWhere = { groupId };
+
+        // Verify user is a member of the group
+        const { GroupMember } = await import('../models/index.js');
+        const membership = await GroupMember.findOne({
+          where: { groupId, userId },
+        });
+
+        if (!membership) {
+          return res.status(403).json({ error: 'Access denied to group files' });
+        }
+      }
+
+      // Add message filter to file where condition
+      whereCondition.messageId = {
+        [Op.ne]: null,
+      };
+    } else {
+      // Default: only show user's own uploads
+      whereCondition.uploaderId = userId;
+    }
 
     if (fileType) {
       whereCondition.fileType = fileType;
@@ -667,6 +705,8 @@ router.get('/', async (req, res) => {
     if (virusScanStatus) {
       whereCondition.virusScanStatus = virusScanStatus;
     }
+
+    const { Message, User } = await import('../models/index.js');
 
     const { count, rows: files } = await File.findAndCountAll({
       where: whereCondition,
@@ -687,7 +727,25 @@ router.get('/', async (req, res) => {
         'downloadCount',
         'expiresAt',
         'createdAt',
+        'messageId',
+        'uploaderId',
       ],
+      include: conversationWith || groupId ? [
+        {
+          model: Message,
+          as: 'message',
+          where: messageWhere,
+          required: true,
+          attributes: ['id', 'senderId', 'recipientId', 'groupId', 'createdAt'],
+          include: [
+            {
+              model: User,
+              as: 'sender',
+              attributes: ['id', 'username', 'avatar'],
+            },
+          ],
+        },
+      ] : [],
     });
 
     res.json({
@@ -705,6 +763,13 @@ router.get('/', async (req, res) => {
         downloadCount: file.downloadCount,
         expiresAt: file.expiresAt,
         createdAt: file.createdAt,
+        fileUrl: `/api/files/${file.id}`,
+        uploadedAt: file.createdAt,
+        sender: file.message?.sender ? {
+          id: file.message.sender.id,
+          username: file.message.sender.username,
+          avatar: file.message.sender.avatar,
+        } : undefined,
       })),
       pagination: {
         total: count,

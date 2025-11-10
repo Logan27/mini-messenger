@@ -44,6 +44,14 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
           messageType: newMessage.messageType,
           imageUrl: newMessage.messageType === 'image' ? newMessage.fileName : undefined,
           reactions: newMessage.reactions || {},
+          // File attachment fields
+          fileId: newMessage.metadata?.fileId || newMessage.fileId,
+          fileName: newMessage.metadata?.fileName || newMessage.fileName,
+          fileUrl: newMessage.metadata?.fileId || newMessage.fileId
+            ? `/api/files/${newMessage.metadata?.fileId || newMessage.fileId}`
+            : undefined,
+          fileSize: newMessage.metadata?.fileSize || newMessage.fileSize,
+          mimeType: newMessage.metadata?.mimeType || newMessage.mimeType,
           // Call message fields
           callId: newMessage.metadata?.callId,
           callType: newMessage.metadata?.callType,
@@ -287,6 +295,14 @@ export function useSendMessage() {
         status: newMessage.status || 'sent',
         messageType: newMessage.messageType,
         imageUrl: newMessage.messageType === 'image' ? newMessage.fileName : undefined,
+        // File attachment fields
+        fileId: newMessage.metadata?.fileId || newMessage.fileId,
+        fileName: newMessage.metadata?.fileName || newMessage.fileName,
+        fileUrl: newMessage.metadata?.fileId || newMessage.fileId
+          ? `/api/files/${newMessage.metadata?.fileId || newMessage.fileId}`
+          : undefined,
+        fileSize: newMessage.metadata?.fileSize || newMessage.fileSize,
+        mimeType: newMessage.metadata?.mimeType || newMessage.mimeType,
         replyTo: newMessage.replyTo ? {
           id: newMessage.replyTo.id,
           text: newMessage.replyTo.content || '',

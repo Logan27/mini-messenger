@@ -127,33 +127,50 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
               
               {/* File Attachment */}
               {message.messageType === 'file' && message.fileName && (
-                <div 
-                  className="mb-2 p-3 bg-background/10 rounded-lg border border-border/20 cursor-pointer hover:bg-background/20 transition-colors"
-                  onClick={handleFileClick}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex-shrink-0">
-                      {getFileIcon()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{message.fileName}</p>
-                      {message.fileSize && (
-                        <p className="text-xs opacity-70">{formatFileSize(message.fileSize)}</p>
-                      )}
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(message.fileUrl, '_blank');
-                      }}
+                <>
+                  {/* Image preview for image files */}
+                  {message.mimeType?.startsWith('image/') && message.fileUrl && (
+                    <LazyImage
+                      src={message.fileUrl}
+                      alt={message.fileName}
+                      className="rounded-lg mb-2 max-w-full cursor-pointer"
+                      objectFit="contain"
+                      loading="lazy"
+                      onClick={handleFileClick}
+                    />
+                  )}
+
+                  {/* File card for non-image files or as fallback */}
+                  {!message.mimeType?.startsWith('image/') && (
+                    <div
+                      className="mb-2 p-3 bg-background/10 rounded-lg border border-border/20 cursor-pointer hover:bg-background/20 transition-colors"
+                      onClick={handleFileClick}
                     >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0">
+                          {getFileIcon()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{message.fileName}</p>
+                          {message.fileSize && (
+                            <p className="text-xs opacity-70">{formatFileSize(message.fileSize)}</p>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(message.fileUrl, '_blank');
+                          }}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Image (legacy support) */}

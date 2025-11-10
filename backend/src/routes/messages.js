@@ -209,6 +209,15 @@ router.post(
           { transaction }
         );
 
+        // Update file record if this message has a file attachment
+        if (metadata?.fileId) {
+          const { File } = await import('../models/index.js');
+          await File.update(
+            { messageId },
+            { where: { id: metadata.fileId }, transaction }
+          );
+        }
+
         // Get the created message with sender info
         const messageWithSender = await Message.findByPk(messageId, {
           include: [
@@ -251,6 +260,12 @@ router.post(
               metadata: messageWithSender.metadata,
               reactions: messageWithSender.reactions || {},
               createdAt: messageWithSender.createdAt,
+              // Extract file metadata fields for easier frontend access
+              fileId: messageWithSender.metadata?.fileId || null,
+              fileName: messageWithSender.metadata?.fileName || null,
+              fileSize: messageWithSender.metadata?.fileSize || null,
+              mimeType: messageWithSender.metadata?.mimeType || null,
+              fileUrl: messageWithSender.metadata?.fileId ? `/api/files/${messageWithSender.metadata.fileId}` : null,
               sender: messageWithSender.sender
                 ? {
                     id: messageWithSender.sender.id,
@@ -307,6 +322,11 @@ router.post(
             reactions: messageWithSender.reactions || {},
             createdAt: messageWithSender.createdAt,
             updatedAt: messageWithSender.updatedAt,
+            // Extract file metadata fields for easier frontend access
+            fileId: messageWithSender.metadata?.fileId || null,
+            fileName: messageWithSender.metadata?.fileName || null,
+            fileSize: messageWithSender.metadata?.fileSize || null,
+            mimeType: messageWithSender.metadata?.mimeType || null,
             sender: messageWithSender.sender
               ? {
                   id: messageWithSender.sender.id,
@@ -621,6 +641,12 @@ router.get(
           editedAt: message.editedAt,
           createdAt: message.createdAt,
           updatedAt: message.updatedAt,
+          // Extract file metadata fields for easier frontend access
+          fileId: message.metadata?.fileId || null,
+          fileName: message.metadata?.fileName || null,
+          fileSize: message.metadata?.fileSize || null,
+          mimeType: message.metadata?.mimeType || null,
+          fileUrl: message.metadata?.fileId ? `/api/files/${message.metadata.fileId}` : null,
           sender: message.sender
             ? {
                 id: message.sender.id,

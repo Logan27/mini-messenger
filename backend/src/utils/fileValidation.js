@@ -57,7 +57,17 @@ export class FileValidator {
       const detectedMimeType = this.detectMimeTypeFromBuffer(buffer);
 
       if (!detectedMimeType) {
-        throw new Error('Unable to determine file type from content');
+        // Fall back to original MIME type if detection fails
+        logger.info('Unable to detect MIME type from magic number, using original MIME type', {
+          originalMimeType,
+        });
+
+        // Validate that the original MIME type is allowed
+        if (!this.allowedTypes.includes(originalMimeType)) {
+          throw new Error(`File type ${originalMimeType} is not allowed`);
+        }
+
+        return originalMimeType;
       }
 
       // Check if detected MIME type is in allowed list
@@ -75,7 +85,7 @@ export class FileValidator {
 
       return detectedMimeType;
     } catch (error) {
-      if (error.message.includes('not allowed') || error.message.includes('determine file type')) {
+      if (error.message.includes('not allowed')) {
         throw error;
       }
 
@@ -163,8 +173,31 @@ export class FileValidator {
       }
     }
 
+    // Office Open XML formats (DOCX, XLSX) - ZIP-based
+    // Check for ZIP signature (PK..)
+    if (buffer[0] === 0x50 && buffer[1] === 0x4b && buffer[2] === 0x03 && buffer[3] === 0x04) {
+      // This is a ZIP file, check if it's an Office document
+      const bufferString = buffer.toString('binary', 0, Math.min(buffer.length, 4096));
+
+      // DOCX contains word/ directory
+      if (bufferString.includes('word/')) {
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      }
+
+      // XLSX contains xl/ directory
+      if (bufferString.includes('xl/')) {
+        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      }
+
+      // If it's a ZIP but we can't determine the specific Office format,
+      // return null to fall back to MIME type validation
+      return null;
+    }
+
     // Check if content is plain text (all printable ASCII or UTF-8)
     // For text files, check if most bytes are printable characters
+    // NOTE: Only return text/plain if we're VERY confident - PDF files contain
+    // a lot of text too, so we need to be careful not to misidentify them
     let textBytes = 0;
     const sampleSize = Math.min(buffer.length, 512); // Check first 512 bytes
     for (let i = 0; i < sampleSize; i++) {
@@ -181,8 +214,10 @@ export class FileValidator {
       }
     }
 
-    // If more than 95% of sampled bytes are text-like, consider it text/plain
-    if (textBytes / sampleSize > 0.95) {
+    // If more than 98% of sampled bytes are text-like AND no null bytes,
+    // consider it text/plain. Higher threshold to avoid false positives with PDFs.
+    const hasNullBytes = buffer.slice(0, sampleSize).includes(0);
+    if (textBytes / sampleSize > 0.98 && !hasNullBytes) {
       return 'text/plain';
     }
 

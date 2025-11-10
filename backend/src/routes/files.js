@@ -325,6 +325,7 @@ router.post('/upload', uploadRateLimit, uploadValidation, async (req, res) => {
           isImage: file.isImage,
           width: file.width,
           height: file.height,
+          fileUrl: `/api/files/${file.id}`, // Add fileUrl for image previews
           expiresAt: file.expiresAt,
         }));
 

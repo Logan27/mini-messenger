@@ -117,6 +117,7 @@ export const ChatView = ({
   const isMountedRef = useRef<boolean>(false); // Track if component is actually mounted and visible
   const isInitialLoadRef = useRef<boolean>(true); // Track if this is the initial message load
   const previousMessageCountRef = useRef<number>(0); // Track previous message count
+  const wasLoadingMoreRef = useRef<boolean>(false); // Track if we were loading more messages
 
   const { user } = useAuth();
   const sendMessage = useSendMessage();
@@ -175,8 +176,19 @@ export const ChatView = ({
   useEffect(() => {
     const container = messagesContainerRef.current;
 
-    // Don't run on initial load or while loading
-    if (!container || isLoadingMore || isInitialLoadRef.current) return;
+    // Only run when we've just finished loading more messages
+    // (transition from isLoadingMore=true to isLoadingMore=false)
+    const justFinishedLoading = wasLoadingMoreRef.current && !isLoadingMore;
+
+    // Update the ref for next time
+    wasLoadingMoreRef.current = isLoadingMore;
+
+    // Don't run if:
+    // - No container
+    // - Still loading
+    // - Initial load
+    // - Didn't just finish loading more messages
+    if (!container || isLoadingMore || isInitialLoadRef.current || !justFinishedLoading) return;
 
     // Give the DOM time to update
     const timer = setTimeout(() => {
@@ -187,7 +199,7 @@ export const ChatView = ({
     }, 50);
 
     return () => clearTimeout(timer);
-  }, [messages.length, isLoadingMore]);
+  }, [isLoadingMore]);
 
   // Focus input when chat opens or recipient changes
   useEffect(() => {
@@ -237,24 +249,12 @@ export const ChatView = ({
     const currentMessageCount = messages.length;
     const previousMessageCount = previousMessageCountRef.current;
 
-    // First load: restore scroll position or scroll to bottom
+    // First load: always scroll to bottom (don't restore scroll position)
     if (isInitialLoadRef.current && currentMessageCount > 0) {
-      const savedScrollKey = `chat_scroll_${recipientId || groupId}`;
-      const savedMessageId = localStorage.getItem(savedScrollKey);
-
       // Use requestAnimationFrame to ensure DOM is painted
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          if (savedMessageId && messageRefs.current.has(savedMessageId)) {
-            const messageElement = messageRefs.current.get(savedMessageId);
-            if (messageElement) {
-              messageElement.scrollIntoView({ block: 'center', behavior: 'auto' });
-            } else {
-              scrollToBottom();
-            }
-          } else {
-            scrollToBottom();
-          }
+          scrollToBottom();
           isInitialLoadRef.current = false;
         });
       });
@@ -263,16 +263,24 @@ export const ChatView = ({
       return;
     }
 
-    // Check if user is near bottom (within 150px)
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
-
     // New message arrived (count increased)
     if (currentMessageCount > previousMessageCount && !isInitialLoadRef.current) {
-      // Only auto-scroll if user was already near bottom
-      if (isNearBottom) {
-        scrollToBottom();
-      }
+      // Get the latest message to check if it's from the current user
+      const latestMessage = messages[messages.length - 1];
+      const isOwnMessage = latestMessage?.isOwn;
+
+      // Use requestAnimationFrame to ensure DOM has updated before checking scroll position
+      requestAnimationFrame(() => {
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+
+        // Always scroll for own messages, or scroll if user was already near bottom
+        if (isOwnMessage || isNearBottom) {
+          requestAnimationFrame(() => {
+            scrollToBottom();
+          });
+        }
+      });
     }
 
     previousMessageCountRef.current = currentMessageCount;
@@ -473,10 +481,10 @@ export const ChatView = ({
 
         setReplyingTo(null);
 
-        // Scroll to bottom after sending message
-        setTimeout(() => {
-          scrollToBottom();
-        }, 100);
+        // Multiple scroll attempts to handle DOM updates
+        setTimeout(() => scrollToBottom(), 50);
+        setTimeout(() => scrollToBottom(), 150);
+        setTimeout(() => scrollToBottom(), 300);
       }
 
       setInputValue("");
@@ -602,7 +610,12 @@ export const ChatView = ({
         ...(groupId && { groupId }),
         content: fileData.fileName,
         messageType: 'file',
-        metadata: { fileId: fileData.id, fileName: fileData.fileName },
+        metadata: {
+          fileId: fileData.id,
+          fileName: fileData.fileName,
+          fileSize: fileData.fileSize,
+          mimeType: fileData.mimeType,
+        },
       });
 
       toast({

@@ -431,17 +431,17 @@ export const ChatView = ({
   }, [messages, isConnected, queryClient]);
 
   const handleSend = async () => {
-    console.log('🔵 handleSend called', { 
-      inputValue, 
-      trimmed: inputValue.trim(), 
+    console.log('🔵 handleSend called', {
+      inputValue,
+      trimmed: inputValue.trim(),
       recipientId,
       groupId,
       isGroup,
-      hasInput: !!inputValue.trim(), 
+      hasInput: !!inputValue.trim(),
       hasRecipient: !!recipientId,
       hasGroupId: !!groupId
     });
-    
+
     if (!inputValue.trim() || (!recipientId && !groupId)) {
       console.log('⚠️ Early return - missing input or chat target');
       return;
@@ -463,15 +463,20 @@ export const ChatView = ({
         });
       } else {
         // Send new message
-        const messageData = isGroup 
+        const messageData = isGroup
           ? { groupId, content: inputValue.trim(), replyToId: replyingTo?.id }
           : { recipientId, content: inputValue.trim(), replyToId: replyingTo?.id };
-        
+
         console.log('📤 Sending NEW message:', messageData);
         await sendMessage.mutateAsync(messageData);
         console.log('✅ Message sent successfully');
 
         setReplyingTo(null);
+
+        // Scroll to bottom after sending message
+        setTimeout(() => {
+          scrollToBottom();
+        }, 100);
       }
 
       setInputValue("");

@@ -83,46 +83,49 @@ export const FileGallery = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('all');
 
-  // Mock data - Replace with actual API call
+  // Fetch files from API
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && (conversationId || groupId)) {
       setLoading(true);
-      // TODO: Fetch files from API
-      // For now, using mock data
-      setTimeout(() => {
-        const mockFiles: FilePreviewData[] = [
-          {
-            id: '1',
-            fileName: 'vacation-photo.jpg',
-            fileUrl: 'https://picsum.photos/800/600',
-            mimeType: 'image/jpeg',
-            fileSize: 2048576,
-            uploadedAt: new Date('2025-10-20'),
-            sender: { id: 'user1', username: 'john_doe' },
-          },
-          {
-            id: '2',
-            fileName: 'presentation.pdf',
-            fileUrl: '/sample.pdf',
-            mimeType: 'application/pdf',
-            fileSize: 5242880,
-            uploadedAt: new Date('2025-10-18'),
-            sender: { id: 'user2', username: 'jane_smith' },
-          },
-          {
-            id: '3',
-            fileName: 'meeting-recording.mp4',
-            fileUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-            mimeType: 'video/mp4',
-            fileSize: 15728640,
-            uploadedAt: new Date('2025-10-15'),
-            sender: { id: 'user1', username: 'john_doe' },
-          },
-        ];
-        setFiles(mockFiles);
-        setFilteredFiles(mockFiles);
-        setLoading(false);
-      }, 500);
+
+      // Fetch files for this conversation
+      const fetchFiles = async () => {
+        try {
+          const params: any = { limit: 100 };
+          if (conversationId) {
+            params.conversationWith = conversationId;
+          }
+          if (groupId) {
+            params.groupId = groupId;
+          }
+
+          const response = await import('@/services/file.service').then(
+            (module) => module.fileService.getConversationFiles(params)
+          );
+
+          // Transform API response to FilePreviewData format
+          const fetchedFiles: FilePreviewData[] = response.files.map((file: any) => ({
+            id: file.id,
+            fileName: file.originalName,
+            fileUrl: file.fileUrl,
+            mimeType: file.mimeType,
+            fileSize: file.fileSize,
+            uploadedAt: new Date(file.uploadedAt || file.createdAt),
+            sender: file.sender,
+          }));
+
+          setFiles(fetchedFiles);
+          setFilteredFiles(fetchedFiles);
+        } catch (error) {
+          console.error('Failed to fetch files:', error);
+          setFiles([]);
+          setFilteredFiles([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchFiles();
     }
   }, [isOpen, conversationId, groupId]);
 

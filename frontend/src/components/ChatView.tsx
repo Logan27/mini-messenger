@@ -117,6 +117,7 @@ export const ChatView = ({
   const isMountedRef = useRef<boolean>(false); // Track if component is actually mounted and visible
   const isInitialLoadRef = useRef<boolean>(true); // Track if this is the initial message load
   const previousMessageCountRef = useRef<number>(0); // Track previous message count
+  const wasLoadingMoreRef = useRef<boolean>(false); // Track if we were loading more messages
 
   const { user } = useAuth();
   const sendMessage = useSendMessage();
@@ -175,8 +176,19 @@ export const ChatView = ({
   useEffect(() => {
     const container = messagesContainerRef.current;
 
-    // Don't run on initial load or while loading
-    if (!container || isLoadingMore || isInitialLoadRef.current) return;
+    // Only run when we've just finished loading more messages
+    // (transition from isLoadingMore=true to isLoadingMore=false)
+    const justFinishedLoading = wasLoadingMoreRef.current && !isLoadingMore;
+
+    // Update the ref for next time
+    wasLoadingMoreRef.current = isLoadingMore;
+
+    // Don't run if:
+    // - No container
+    // - Still loading
+    // - Initial load
+    // - Didn't just finish loading more messages
+    if (!container || isLoadingMore || isInitialLoadRef.current || !justFinishedLoading) return;
 
     // Give the DOM time to update
     const timer = setTimeout(() => {
@@ -187,7 +199,7 @@ export const ChatView = ({
     }, 50);
 
     return () => clearTimeout(timer);
-  }, [messages.length, isLoadingMore]);
+  }, [isLoadingMore]);
 
   // Focus input when chat opens or recipient changes
   useEffect(() => {
@@ -590,7 +602,12 @@ export const ChatView = ({
         ...(groupId && { groupId }),
         content: fileData.fileName,
         messageType: 'file',
-        metadata: { fileId: fileData.id, fileName: fileData.fileName },
+        metadata: {
+          fileId: fileData.id,
+          fileName: fileData.fileName,
+          fileSize: fileData.fileSize,
+          mimeType: fileData.mimeType,
+        },
       });
 
       toast({

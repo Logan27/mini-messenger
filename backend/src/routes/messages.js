@@ -209,6 +209,15 @@ router.post(
           { transaction }
         );
 
+        // Update file record if this message has a file attachment
+        if (metadata?.fileId) {
+          const { File } = await import('../models/index.js');
+          await File.update(
+            { messageId },
+            { where: { id: metadata.fileId }, transaction }
+          );
+        }
+
         // Get the created message with sender info
         const messageWithSender = await Message.findByPk(messageId, {
           include: [

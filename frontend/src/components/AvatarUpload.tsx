@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Camera, Loader2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { userService } from "@/services/user.service";
+import { optimizeImage, formatFileSize, calculateCompressionRatio } from "@/utils/imageOptimization";
 
 interface AvatarUploadProps {
   currentAvatar?: string;
@@ -14,6 +15,7 @@ interface AvatarUploadProps {
 export function AvatarUpload({ currentAvatar, username, onAvatarChange }: AvatarUploadProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatar || null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -43,16 +45,32 @@ export function AvatarUpload({ currentAvatar, username, onAvatarChange }: Avatar
       return;
     }
 
-    // Show preview immediately
-    const localPreview = URL.createObjectURL(file);
-    setPreviewUrl(localPreview);
-
-    // Upload file
-    setIsUploading(true);
-    setUploadProgress(0);
+    // Optimize avatar before upload
+    setIsOptimizing(true);
 
     try {
-      const uploadedData = await userService.uploadAvatar(file, (progress) => {
+      // Optimize with square dimensions for avatars (500x500)
+      const optimized = await optimizeImage(file, {
+        maxWidth: 500,
+        maxHeight: 500,
+        quality: 0.9,
+        format: 'auto', // Will use WebP if supported
+        generateThumbnail: true, // Generate 200x200 thumbnail
+        thumbnailSize: 200,
+      });
+
+      // Show optimized preview
+      setPreviewUrl(optimized.dataUrl);
+
+      // Calculate compression
+      const ratio = calculateCompressionRatio(file.size, optimized.size);
+
+      // Upload optimized file
+      setIsOptimizing(false);
+      setIsUploading(true);
+      setUploadProgress(0);
+
+      const uploadedData = await userService.uploadAvatar(optimized.file, (progress) => {
         setUploadProgress(progress);
       });
 
@@ -62,9 +80,12 @@ export function AvatarUpload({ currentAvatar, username, onAvatarChange }: Avatar
 
       toast({
         title: "Avatar uploaded",
-        description: "Your profile picture has been updated",
+        description: ratio > 10
+          ? `Profile picture updated (${ratio}% smaller)`
+          : "Your profile picture has been updated",
       });
     } catch (error: any) {
+      console.error('Avatar optimization/upload failed:', error);
       toast({
         variant: "destructive",
         title: "Upload failed",
@@ -74,9 +95,8 @@ export function AvatarUpload({ currentAvatar, username, onAvatarChange }: Avatar
       setPreviewUrl(currentAvatar || null);
     } finally {
       setIsUploading(false);
+      setIsOptimizing(false);
       setUploadProgress(0);
-      // Clean up object URL
-      URL.revokeObjectURL(localPreview);
     }
   };
 
@@ -106,10 +126,14 @@ export function AvatarUpload({ currentAvatar, username, onAvatarChange }: Avatar
             </AvatarFallback>
           </Avatar>
 
-          {isUploading && (
+          {(isUploading || isOptimizing) && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-              <div className="text-white text-xs font-semibold">
-                {uploadProgress}%
+              <div className="text-white text-center">
+                {isOptimizing ? (
+                  <div className="text-xs font-semibold">Optimizing...</div>
+                ) : (
+                  <div className="text-xs font-semibold">{uploadProgress}%</div>
+                )}
               </div>
             </div>
           )}
@@ -118,10 +142,10 @@ export function AvatarUpload({ currentAvatar, username, onAvatarChange }: Avatar
             size="icon"
             variant="secondary"
             className="absolute bottom-0 right-0 rounded-full h-8 w-8 pointer-events-none"
-            disabled={isUploading}
+            disabled={isUploading || isOptimizing}
             type="button"
           >
-            {isUploading ? (
+            {(isUploading || isOptimizing) ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Camera className="h-4 w-4" />
@@ -135,21 +159,21 @@ export function AvatarUpload({ currentAvatar, username, onAvatarChange }: Avatar
           accept="image/*"
           className="hidden"
           onChange={handleFileSelect}
-          disabled={isUploading}
+          disabled={isUploading || isOptimizing}
         />
       </div>
 
       <div className="flex-1">
         <p className="text-sm font-medium mb-2">Profile Picture</p>
         <p className="text-xs text-muted-foreground mb-3">
-          Click the avatar to upload a new picture (max 5MB)
+          Click the avatar to upload a new picture (max 5MB). Images will be automatically optimized.
         </p>
         {previewUrl && (
           <Button
             variant="outline"
             size="sm"
             onClick={handleRemoveAvatar}
-            disabled={isUploading}
+            disabled={isUploading || isOptimizing}
           >
             <X className="h-4 w-4 mr-2" />
             Remove Avatar

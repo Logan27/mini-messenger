@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { InlineLoadingFallback } from "./LoadingFallback";
 import type { FilePreviewData } from "./FilePreview";
+import { LazyImage } from "./LazyImage";
 
 // Lazy load FilePreview component - only loaded when user clicks on a file
 const FilePreview = lazy(() => import("./FilePreview").then(module => ({ default: module.FilePreview })));
@@ -157,10 +158,12 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
 
               {/* Image (legacy support) */}
               {message.imageUrl && (
-                <img 
-                  src={message.imageUrl} 
-                  alt="Shared image" 
-                  className="rounded-lg mb-2 max-w-full cursor-pointer hover:opacity-90 transition-opacity"
+                <LazyImage
+                  src={message.imageUrl}
+                  alt="Shared image"
+                  className="rounded-lg mb-2 max-w-full"
+                  objectFit="contain"
+                  loading="lazy"
                   onClick={() => {
                     // Could open FilePreview here too
                     window.open(message.imageUrl, '_blank');

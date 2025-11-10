@@ -19,6 +19,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { LazyImage } from './LazyImage';
 
 export interface FilePreviewData {
   id: string;
@@ -165,6 +166,8 @@ export const FilePreview = ({
             transform: `rotate(${imageRotation}deg) scale(${imageScale})`,
           }}
           onClick={() => setImageScale((prev) => (prev === 1 ? 2 : 1))}
+          loading="eager"
+          decoding="async"
         />
 
         {/* Image Controls */}

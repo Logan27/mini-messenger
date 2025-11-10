@@ -4,6 +4,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import path from 'path';
 import responseTime from 'response-time';
 import swaggerUi from 'swagger-ui-express';
 
@@ -105,12 +106,13 @@ app.use(requestLogger);
 // app.use(limiter);
 
 // Serve static files from uploads directory with CORS headers
+const uploadPath = path.resolve(config.fileUpload.uploadPath);
 app.use('/uploads', (req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   next();
-}, express.static('uploads'));
+}, express.static(uploadPath));
 
 // API Routes
 app.use('/api/auth', authRoutes);

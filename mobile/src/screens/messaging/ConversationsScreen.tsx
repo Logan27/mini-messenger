@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   TextInput,
   Alert,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useMessagingStore } from '../../stores/messagingStore';
@@ -123,11 +124,22 @@ const ConversationsScreen = ({ navigation }: any) => {
         onPress={() => handleConversationPress(conversation)}
       >
         <View style={styles.avatarContainer}>
-          {conversation.avatar ? (
-            <Text style={styles.avatarText}>{conversation.avatar}</Text>
+          {/* Display avatar for group or from first other participant for direct chat */}
+          {conversation.type === 'group' && conversation.avatar ? (
+            <Image
+              source={{ uri: conversation.avatar }}
+              style={{ width: 50, height: 50, borderRadius: 25 }}
+            />
+          ) : otherParticipants[0]?.avatar ? (
+            <Image
+              source={{ uri: otherParticipants[0].avatar }}
+              style={{ width: 50, height: 50, borderRadius: 25 }}
+            />
           ) : (
             <View style={styles.avatarPlaceholder}>
-              <Ionicons name="person" size={20} color="#666" />
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#fff' }}>
+                {displayName.charAt(0).toUpperCase()}
+              </Text>
             </View>
           )}
           {conversation.type === 'group' ? (
@@ -330,7 +342,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#2563eb',
     justifyContent: 'center',
     alignItems: 'center',
   },

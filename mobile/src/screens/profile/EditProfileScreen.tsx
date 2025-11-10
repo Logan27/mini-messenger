@@ -84,8 +84,14 @@ const EditProfileScreen: React.FC = () => {
 
     setIsSaving(true);
     try {
+      // Split name into firstName and lastName for backend
+      const nameParts = name.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
       const updateData: any = {
-        name: name.trim(),
+        firstName,
+        lastName,
         email: email.trim(),
       };
 
@@ -94,7 +100,7 @@ const EditProfileScreen: React.FC = () => {
       }
 
       if (phoneNumber.trim()) {
-        updateData.phoneNumber = phoneNumber.trim();
+        updateData.phone = phoneNumber.trim();
       }
 
       const response = await userAPI.updateProfile(updateData);

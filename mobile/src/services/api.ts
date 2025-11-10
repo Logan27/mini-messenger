@@ -161,9 +161,9 @@ export class WebSocketService {
 
     this.socket.on('connect_error', (error: any) => {
       log.websocket('Connection error', {
-        message: error.message,
-        type: error.type,
-        description: error.description,
+        message: error?.message || 'Unknown error',
+        type: error?.type || 'unknown',
+        description: error?.description || 'No description available',
         reconnectAttempts: this.reconnectAttempts
       });
       this.attemptReconnect(token);

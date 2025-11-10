@@ -25,7 +25,7 @@ const loginSchema = z.object({
 });
 
 const LoginScreen = ({ navigation }: any) => {
-  const { login, isLoading, biometricAvailable, biometricEnabled, authenticateWithBiometric } = useAuthStore();
+  const { login, isLoading, biometricAvailable, biometricEnabled, authenticateWithBiometric, disableBiometric } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
 
@@ -52,16 +52,34 @@ const LoginScreen = ({ navigation }: any) => {
       const result = await authenticateWithBiometric();
 
       if (result.success) {
-        // If biometric is successful, we still need password for login
-        // In a real app, you might want to store a biometric token
+        // Retrieve stored credentials and auto-login
+        const credentials = await useAuthStore.getState().getBiometricCredentials();
+
+        if (credentials) {
+          try {
+            await login({ identifier: credentials.email, password: credentials.password });
+            // Navigation will be handled by the auth state change in AppNavigator
+          } catch (loginError: any) {
+            Alert.alert('Login Failed', loginError.message || 'Failed to log in with stored credentials');
+          }
+        } else {
+          Alert.alert(
+            'Credentials Not Found',
+            'Please enter your email and password to enable biometric login',
+            [{ text: 'OK' }]
+          );
+          disableBiometric();
+        }
+      } else {
         Alert.alert(
-          'Biometric Success',
-          'Please enter your password to complete login',
+          'Biometric Authentication Failed',
+          result.error || 'Failed to authenticate',
           [{ text: 'OK' }]
         );
       }
     } catch (error) {
       console.error('Biometric authentication error:', error);
+      Alert.alert('Error', 'An error occurred during biometric authentication');
     } finally {
       setBiometricLoading(false);
     }

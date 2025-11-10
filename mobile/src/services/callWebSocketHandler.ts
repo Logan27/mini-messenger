@@ -13,23 +13,31 @@ export const initializeCallWebSocketHandlers = () => {
 
   // Handle incoming call
   wsService.on('call.incoming', (data: { call: Call }) => {
-    console.log('Incoming call received:', data.call);
-    useCallStore.getState().setActiveCall(data.call);
+    console.log('Incoming call received:', data?.call);
+    if (data?.call) {
+      useCallStore.getState().setActiveCall(data.call);
 
-    // Navigate to IncomingCallScreen
-    navigate('IncomingCall', { call: data.call });
+      // Navigate to IncomingCallScreen
+      navigate('IncomingCall', { call: data.call });
+    } else {
+      console.error('Received call.incoming event with invalid data:', data);
+    }
   });
 
   // Handle call response (accept/reject)
   wsService.on('call.response', (data: { call: Call; accepted: boolean }) => {
     console.log('Call response received:', data);
 
-    if (data.accepted) {
-      useCallStore.getState().setActiveCall(data.call);
-      useCallStore.getState().updateCallStatus('connected');
+    if (data?.call) {
+      if (data.accepted) {
+        useCallStore.getState().setActiveCall(data.call);
+        useCallStore.getState().updateCallStatus('connected');
+      } else {
+        useCallStore.getState().updateCallStatus('rejected');
+        useCallStore.getState().clearCallState();
+      }
     } else {
-      useCallStore.getState().updateCallStatus('rejected');
-      useCallStore.getState().clearCallState();
+      console.error('Received call.response event with invalid data:', data);
     }
   });
 

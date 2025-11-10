@@ -94,23 +94,25 @@ global.testUtils = {
 };
 
 // Enhanced Jest configuration for integration tests
-jest.setTimeout(30000); // Increased timeout for integration tests
+// Note: jest.setTimeout should be set in individual test files in ESM mode
+// jest.setTimeout(30000); // Increased timeout for integration tests
 
 // Global test hooks for integration tests
-global.beforeAll(async () => {
-  // Database is already initialized by models/index.js
-  console.log('🧪 Integration tests starting...');
-});
+// Note: Global hooks should be set in individual test files in ESM mode
+// global.beforeAll(async () => {
+//   // Database is already initialized by models/index.js
+//   console.log('🧪 Integration tests starting...');
+// });
 
-global.afterAll(async () => {
-  // Cleanup test data after all tests
-  await global.testUtils.cleanupTestData();
-  console.log('✅ Integration tests completed');
-});
+// global.afterAll(async () => {
+//   // Cleanup test data after all tests
+//   await global.testUtils.cleanupTestData();
+//   console.log('✅ Integration tests completed');
+// });
 
 global.beforeEach(async () => {
   // Clean slate for each test
-  jest.clearAllMocks();
+  // jest.clearAllMocks(); // Commented out for ESM compatibility
 });
 
 global.afterEach(async () => {

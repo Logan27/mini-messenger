@@ -1,7 +1,7 @@
 import request from 'supertest';
-import app from './src/app.js';
-import { User, Session, Group, Announcement, Report, AuditLog } from './src/models/index.js';
-import { testHelpers } from './tests/testHelpers.js';
+import app from '../src/app.js';
+import { User, Session, Group, Announcement, Report, AuditLog } from '../src/models/index.js';
+import { testHelpers } from './testHelpers.js';
 
 /**
  * Comprehensive Admin API Test Suite

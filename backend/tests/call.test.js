@@ -4,18 +4,9 @@ import app from '../src/app.js';
 import { User, Call } from '../src/models/index.js';
 import { testHelpers } from './testHelpers.js';
 
-// Mock the services
-jest.mock('../src/services/websocket.js', () => ({
-  getIO: jest.fn(() => ({
-    to: jest.fn(() => ({
-      emit: jest.fn(),
-    })),
-  })),
-}));
-
-jest.mock('../src/services/fcmService.js', () => ({
-  sendPushNotification: jest.fn(),
-}));
+// Note: Mocking is disabled for ES module compatibility
+// These tests focus on API endpoints and database operations
+// WebSocket and FCM service interactions are not tested here
 
 describe('Call API', () => {
   let user1;

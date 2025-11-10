@@ -2,7 +2,7 @@ import crypto from 'crypto';
 
 import sodium from 'sodium-native';
 
-import { logger } from '../config/index.js';
+import logger from '../utils/logger.js';
 
 /**
  * Encryption service for E2E and server-side encryption

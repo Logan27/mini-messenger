@@ -544,7 +544,7 @@ export function ActiveCall({
         console.log('📞 I am the receiver, waiting for offer from initiator...');
       }
 
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to initialize call:', err);
       toast.error('Failed to access camera/microphone');
       handleEndCall();
@@ -779,7 +779,7 @@ export function ActiveCall({
         }
         
         toast.success('Camera enabled');
-      } catch (error: any) {
+      } catch (error) {
         console.error('❌ Failed to enable camera:', error);
         
         // Provide specific error messages
@@ -865,7 +865,7 @@ export function ActiveCall({
 
       // Check if setSinkId is supported
       if ('setSinkId' in HTMLMediaElement.prototype) {
-        await (remoteVideoRef.current as any).setSinkId(deviceId);
+        await (remoteVideoRef.current as unknown as { setSinkId: (deviceId: string) => Promise<void> }).setSinkId(deviceId);
         console.log('✅ Speaker switched successfully');
         toast.success('Speaker changed');
       } else {

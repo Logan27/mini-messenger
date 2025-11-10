@@ -24,7 +24,7 @@ export default function NotificationCenter() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [notificationSettings, setNotificationSettings] = useState<any>(null);
+  const [notificationSettings, setNotificationSettings] = useState<Record<string, unknown> | null>(null);
   const navigate = useNavigate();
 
   // Fetch notifications
@@ -118,8 +118,8 @@ export default function NotificationCenter() {
       });
     };
 
-    window.addEventListener('notification' as any, handleNotification);
-    return () => window.removeEventListener('notification' as any, handleNotification);
+    window.addEventListener('notification' as keyof WindowEventMap, handleNotification as EventListener);
+    return () => window.removeEventListener('notification' as keyof WindowEventMap, handleNotification as EventListener);
   }, [notificationSettings]);
 
   // Mark notification as read

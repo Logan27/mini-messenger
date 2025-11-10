@@ -23,3 +23,15 @@ dist-ssr
 *.sln
 *.sw?
 
+# Test coverage
+coverage
+.nyc_output
+
+# Playwright
+playwright-report
+test-results
+
+# Environment variables
+.env
+.env.local
+.env.*.local

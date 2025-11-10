@@ -153,7 +153,7 @@ export function CreateGroupDialog({
 
     try {
       // Prepare request body
-      const requestBody: any = {
+      const requestBody: Record<string, unknown> = {
         name: groupName.trim(),
         initialMembers: Array.from(selectedMembers),
       };
@@ -190,7 +190,7 @@ export function CreateGroupDialog({
       if (onGroupCreated && group?.id) {
         onGroupCreated(group.id);
       }
-    } catch (err: any) {
+    } catch (err) {
       // Handle both string and object error formats from backend
       let errorMsg = 'Failed to create group';
       

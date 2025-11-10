@@ -36,7 +36,7 @@ const VerifyEmail = () => {
         setTimeout(() => {
           navigate('/login');
         }, 5000);
-      } catch (err: any) {
+      } catch (err) {
         const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Verification failed. The link may be invalid or expired.';
         setError(errorMessage);
       } finally {
@@ -62,7 +62,7 @@ const VerifyEmail = () => {
       await axios.post(`${apiUrl}/api/auth/resend-verification`, { email });
       
       setResendSuccess(true);
-    } catch (err: any) {
+    } catch (err) {
       const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Failed to resend verification email.';
       setError(errorMessage);
     } finally {

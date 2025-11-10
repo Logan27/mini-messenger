@@ -78,7 +78,7 @@ const Register = () => {
         firstName: formData.firstName || undefined,
         lastName: formData.lastName || undefined,
       });
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);

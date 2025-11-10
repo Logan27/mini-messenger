@@ -48,7 +48,7 @@ export function AddContactDialog({ open, onOpenChange }: AddContactDialogProps) 
       onOpenChange(false);
       setSearchQuery("");
       setDebouncedQuery("");
-    } catch (error: any) {
+    } catch (error) {
       console.error('❌ Failed to add contact:', error);
       const errorMessage = error.response?.data?.message
         || error.response?.data?.error
@@ -105,7 +105,7 @@ export function AddContactDialog({ open, onOpenChange }: AddContactDialogProps) 
 
             {!isLoading && searchResults && searchResults.length > 0 && (
               <>
-                {searchResults.map((user: any) => (
+                {searchResults.map((user: unknown) => (
                   <div
                     key={user.id}
                     className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors"

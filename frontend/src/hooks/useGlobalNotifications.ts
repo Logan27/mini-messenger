@@ -9,7 +9,7 @@ import { apiClient } from '@/lib/api-client';
  */
 export function useGlobalNotifications() {
   const { user } = useAuth();
-  const [notificationSettings, setNotificationSettings] = useState<any>(null);
+  const [notificationSettings, setNotificationSettings] = useState<unknown>(null);
   const [mutedConversations, setMutedConversations] = useState<Set<string>>(new Set());
 
   // Track when notificationSettings state changes
@@ -42,7 +42,7 @@ export function useGlobalNotifications() {
         const response = await apiClient.get('/messages/conversations');
         if (response.data?.data) {
           const muted = new Set<string>();
-          response.data.data.forEach((conv: any) => {
+          response.data.data.forEach((conv: unknown) => {
             if (conv.isMuted) {
               // Store both userId and groupId for quick lookup
               if (conv.type === 'direct' && conv.user?.id) {
@@ -63,7 +63,7 @@ export function useGlobalNotifications() {
     loadMutedConversations();
 
     // Listen for notification settings updates
-    const unsubscribeSettings = socketService.on('notification-settings:updated', (data: any) => {
+    const unsubscribeSettings = socketService.on('notification-settings:updated', (data: unknown) => {
       console.log('🔔 WebSocket event received: notification-settings:updated', data);
       console.log('🔔 Reloading notification settings from API...');
       loadSettings();
@@ -89,11 +89,11 @@ export function useGlobalNotifications() {
     console.log('🔔 Notification API status:', {
       supported: 'Notification' in window,
       permission: typeof Notification !== 'undefined' ? Notification.permission : 'undefined',
-      maxActions: typeof Notification !== 'undefined' && (Notification as any).maxActions !== undefined ? (Notification as any).maxActions : 'N/A'
+      maxActions: typeof Notification !== 'undefined' && (Notification as unknown as { maxActions?: number }).maxActions !== undefined ? (Notification as unknown as { maxActions?: number }).maxActions : 'N/A'
     });
 
     // Listen for contact requests
-    const unsubscribeContactRequest = socketService.on('contact.request', (data: any) => {
+    const unsubscribeContactRequest = socketService.on('contact.request', (data: unknown) => {
       console.log('📇 Received contact request via socket:', data);
 
       // Check notification settings
@@ -155,7 +155,7 @@ export function useGlobalNotifications() {
     });
 
     // Listen for contact accepted
-    const unsubscribeContactAccepted = socketService.on('contact.accepted', (data: any) => {
+    const unsubscribeContactAccepted = socketService.on('contact.accepted', (data: unknown) => {
       console.log('✅ Contact request accepted via socket:', data);
 
       // Check notification settings
@@ -194,7 +194,7 @@ export function useGlobalNotifications() {
     });
 
     // Listen for incoming calls
-    const unsubscribeCall = socketService.on('call.incoming', (data: any) => {
+    const unsubscribeCall = socketService.on('call.incoming', (data: unknown) => {
       console.log('📞 Received incoming call via socket:', data);
 
       // Check notification settings
@@ -251,7 +251,7 @@ export function useGlobalNotifications() {
     });
 
     // Listen for ALL incoming messages
-    const unsubscribe = socketService.on('message.new', (newMessage: any) => {
+    const unsubscribe = socketService.on('message.new', (newMessage: unknown) => {
       console.log('💬 Received message via socket:', {
         id: newMessage.id,
         senderId: newMessage.senderId,

@@ -119,7 +119,7 @@ export function IncomingCall({
       }
 
       // Listen for call.ended event (caller cancelled)
-      const unsubscribeEnded = socketService.on('call.ended', (data: any) => {
+      const unsubscribeEnded = socketService.on('call.ended', (data: unknown) => {
         if (data.callId === callId) {
           console.log('📞 Call ended by caller');
           stopRingtone();
@@ -179,7 +179,7 @@ export function IncomingCall({
       // Store audio element for cleanup
       audioRef.current = audio;
 
-    } catch (err: any) {
+    } catch (err) {
       console.log('Ringtone playback error:', err.message);
     }
   };
@@ -208,7 +208,7 @@ export function IncomingCall({
 
       // Call the callback
       onCallAccepted?.(callId);
-    } catch (err: any) {
+    } catch (err) {
       const errorMsg = err.response?.data?.message || 'Failed to accept call';
       toast.error(errorMsg);
     } finally {
@@ -230,7 +230,7 @@ export function IncomingCall({
 
       // Call the callback
       onCallRejected?.();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to reject call:', err);
       // If the call is already ended, just show info
       if (err?.response?.status === 400 || err?.response?.status === 404) {

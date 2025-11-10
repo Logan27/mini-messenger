@@ -56,7 +56,7 @@ export function formatTimeAgo(date: Date | string | number | null | undefined): 
  * @param value - Date to check
  * @returns true if valid, false otherwise
  */
-export function isValidDate(value: any): boolean {
+export function isValidDate(value: unknown): boolean {
   if (!value) return false;
   const date = new Date(value);
   return !isNaN(date.getTime());

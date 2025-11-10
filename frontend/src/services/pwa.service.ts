@@ -64,7 +64,7 @@ class PWAService {
     }
 
     // Check for iOS standalone mode
-    if ((window.navigator as any).standalone === true) {
+    if ((window.navigator as { standalone?: boolean }).standalone === true) {
       return true;
     }
 

@@ -22,7 +22,7 @@ export function PendingContactRequests() {
         title: "Contact request accepted",
         description: `${username} is now your contact`,
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Failed to accept request",
@@ -38,7 +38,7 @@ export function PendingContactRequests() {
         title: "Contact request rejected",
         description: `You rejected the request from ${username}`,
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Failed to reject request",
@@ -54,7 +54,7 @@ export function PendingContactRequests() {
         title: "Contact request cancelled",
         description: `Your request to ${username} has been cancelled`,
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Failed to cancel request",
@@ -80,7 +80,7 @@ export function PendingContactRequests() {
       <h3 className="text-sm font-semibold text-muted-foreground uppercase">
         Pending Requests ({pendingRequests.length})
       </h3>
-      {pendingRequests.map((request: any) => {
+      {pendingRequests.map((request: unknown) => {
         // Check if current user is the sender (outgoing request) or recipient (incoming request)
         const isOutgoingRequest = request.userId === currentUser?.id;
         const isIncomingRequest = request.contactUserId === currentUser?.id;

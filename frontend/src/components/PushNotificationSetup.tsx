@@ -35,7 +35,7 @@ export default function PushNotificationSetup() {
       const hasTokens = status.registeredTokens > 0;
       setIsSetup(hasTokens);
       setIsEnabled(hasTokens);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to check push notification status:', error);
     } finally {
       setIsLoading(false);
@@ -65,7 +65,7 @@ export default function PushNotificationSetup() {
       } else {
         toast.error(result.error || 'Failed to enable push notifications');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Push notification setup error:', error);
       toast.error('Failed to enable push notifications');
     } finally {
@@ -86,7 +86,7 @@ export default function PushNotificationSetup() {
       setIsSetup(false);
       await checkStatus();
       toast.success('Push notifications disabled');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to disable push notifications:', error);
       toast.error('Failed to disable push notifications');
     } finally {
@@ -101,7 +101,7 @@ export default function PushNotificationSetup() {
       toast.success(
         `Test notification sent! (${result.data.successCount}/${result.data.totalTokens} successful)`
       );
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to send test notification:', error);
       const message =
         error.response?.data?.error?.message || 'Failed to send test notification';

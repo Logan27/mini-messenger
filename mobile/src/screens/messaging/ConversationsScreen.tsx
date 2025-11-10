@@ -92,6 +92,7 @@ const ConversationsScreen = ({ navigation }: any) => {
   const renderConversation = ({ item: conversation }: { item: Conversation }) => {
     const otherParticipants = (conversation.participants || []).filter(p => p.id !== user?.id);
     const getParticipantName = (participant: any) => {
+      if (!participant) return 'Unknown';
       if (participant.name) return participant.name;
       if (participant.firstName && participant.lastName) {
         return `${participant.firstName} ${participant.lastName}`;

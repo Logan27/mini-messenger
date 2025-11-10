@@ -75,8 +75,19 @@ const BlockedContactsScreen = ({ navigation }: any) => {
   }, [unblockContact]);
 
   const renderBlockedContact = ({ item }: { item: Contact }) => {
+    const getUserDisplayName = (user: any) => {
+      if (user.name) return user.name;
+      if (user.firstName && user.lastName) {
+        return `${user.firstName} ${user.lastName}`;
+      }
+      if (user.firstName) return user.firstName;
+      if (user.username) return user.username;
+      return 'Unknown';
+    };
+
     const isUnblocking = unblockingId === item.id;
-    const initials = (item.user.name || 'U').slice(0, 2).toUpperCase();
+    const displayName = getUserDisplayName(item.user);
+    const initials = displayName.slice(0, 2).toUpperCase();
 
     return (
       <View style={styles.contactItem}>
@@ -86,10 +97,10 @@ const BlockedContactsScreen = ({ navigation }: any) => {
 
         <View style={styles.contactInfo}>
           <Text style={styles.contactName}>
-            {item.nickname || item.user.name}
+            {item.nickname || displayName}
           </Text>
           {item.nickname && (
-            <Text style={styles.contactActualName}>{item.user.name}</Text>
+            <Text style={styles.contactActualName}>{displayName}</Text>
           )}
           <Text style={styles.contactEmail}>{item.user.email}</Text>
           {item.blockedAt && (

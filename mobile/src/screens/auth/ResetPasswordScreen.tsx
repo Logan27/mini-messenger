@@ -174,6 +174,7 @@ export default function ResetPasswordScreen({
                     onBlur={onBlur}
                     autoCapitalize="none"
                     editable={!isLoading}
+                    testID="token-input"
                   />
                 )}
               />
@@ -203,12 +204,14 @@ export default function ResetPasswordScreen({
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     editable={!isLoading}
+                    testID="password-input"
                   />
                 )}
               />
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeIcon}
+                testID="password-toggle"
               >
                 <Ionicons
                   name={showPassword ? 'eye-off' : 'eye'}
@@ -267,12 +270,14 @@ export default function ResetPasswordScreen({
                     secureTextEntry={!showConfirmPassword}
                     autoCapitalize="none"
                     editable={!isLoading}
+                    testID="confirm-password-input"
                   />
                 )}
               />
               <TouchableOpacity
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 style={styles.eyeIcon}
+                testID="confirm-password-toggle"
               >
                 <Ionicons
                   name={showConfirmPassword ? 'eye-off' : 'eye'}
@@ -344,6 +349,7 @@ export default function ResetPasswordScreen({
             style={[styles.button, isLoading && styles.buttonDisabled]}
             onPress={handleSubmit(onSubmit)}
             disabled={isLoading}
+            testID="submit-button"
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" />
@@ -356,6 +362,7 @@ export default function ResetPasswordScreen({
           <TouchableOpacity
             onPress={() => navigation.navigate('Login')}
             disabled={isLoading}
+            testID="back-to-login-button"
           >
             <Text style={styles.linkText}>Back to Login</Text>
           </TouchableOpacity>

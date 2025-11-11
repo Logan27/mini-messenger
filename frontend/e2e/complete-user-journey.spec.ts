@@ -10,12 +10,17 @@ test.describe('Complete User Journey', () => {
     await page.getByLabel(/username/i).fill('e2euser');
     await page.getByLabel(/email/i).fill('e2euser@test.com');
     await page.getByLabel(/^password/i).first().fill('TestPass123!');
+    await page.getByLabel(/confirm password/i).fill('TestPass123!');
 
-    // Step 3: Verify form is filled
+    // Step 3: Accept required consents
+    await page.getByLabel(/I agree to the Terms of Service/i).check();
+    await page.getByLabel(/I agree to the Privacy Policy/i).check();
+
+    // Step 4: Verify form is filled
     await expect(page.getByLabel(/username/i)).toHaveValue('e2euser');
     await expect(page.getByLabel(/email/i)).toHaveValue('e2euser@test.com');
 
-    // Step 4: Check that form elements are properly structured
+    // Step 5: Check that form elements are properly structured
     const submitButton = page.getByRole('button', { name: /create account/i });
     await expect(submitButton).toBeVisible();
     await expect(submitButton).toBeEnabled();

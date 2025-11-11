@@ -13,8 +13,8 @@ test.describe('Complete User Journey', () => {
     await page.getByLabel(/confirm password/i).fill('TestPass123!');
 
     // Step 3: Accept required consents
-    await page.getByLabel(/I agree to the Terms of Service/i).check();
-    await page.getByLabel(/I agree to the Privacy Policy/i).check();
+    await page.locator('#terms').check();
+    await page.locator('#privacy').check();
 
     // Step 4: Verify form is filled
     await expect(page.getByLabel(/username/i)).toHaveValue('e2euser');

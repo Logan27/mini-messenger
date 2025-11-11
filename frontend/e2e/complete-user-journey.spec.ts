@@ -10,13 +10,25 @@ test.describe('Complete User Journey', () => {
     await page.getByLabel(/username/i).fill('e2euser');
     await page.getByLabel(/email/i).fill('e2euser@test.com');
     await page.getByLabel(/^password/i).first().fill('TestPass123!');
+    await page.getByLabel(/confirm password/i).fill('TestPass123!');
 
-    // Step 3: Verify form is filled
+    // Step 3: Accept required consents (use role-based selectors for Radix UI)
+    const termsCheckbox = page.getByRole('checkbox', { name: /terms of service/i });
+    const privacyCheckbox = page.getByRole('checkbox', { name: /privacy policy/i });
+
+    await termsCheckbox.click();
+    await privacyCheckbox.click();
+
+    // Wait for checkboxes to be checked
+    await expect(termsCheckbox).toBeChecked();
+    await expect(privacyCheckbox).toBeChecked();
+
+    // Step 4: Verify form is filled
     await expect(page.getByLabel(/username/i)).toHaveValue('e2euser');
     await expect(page.getByLabel(/email/i)).toHaveValue('e2euser@test.com');
 
-    // Step 4: Check that form elements are properly structured
-    const submitButton = page.getByRole('button', { name: /sign up/i });
+    // Step 5: Check that form elements are properly structured
+    const submitButton = page.getByRole('button', { name: /create account/i });
     await expect(submitButton).toBeVisible();
     await expect(submitButton).toBeEnabled();
 
@@ -90,7 +102,7 @@ test.describe('Complete User Journey', () => {
     await expect(button).toBeEnabled();
 
     // Verify links are accessible
-    const registerLink = page.getByRole('link', { name: /sign up/i });
+    const registerLink = page.getByRole('link', { name: /register here/i });
     const forgotPasswordLink = page.getByRole('link', { name: /forgot password/i });
 
     await expect(registerLink).toBeVisible();

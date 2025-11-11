@@ -21,7 +21,7 @@ test.describe('Authentication Flow', () => {
 
   test('should navigate to registration page', async ({ page }) => {
     await page.goto('/login');
-    await page.getByRole('link', { name: /sign up/i }).click();
+    await page.getByRole('link', { name: /register here/i }).click();
     await expect(page).toHaveURL(/.*register/);
     await expect(page.getByRole('heading', { name: /create account/i })).toBeVisible();
   });
@@ -52,7 +52,7 @@ test.describe('Authentication Flow', () => {
     await expect(page.getByLabel(/username/i)).toBeVisible();
     await expect(page.getByLabel(/email/i)).toBeVisible();
     await expect(page.getByLabel(/^password/i).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: /sign up/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /create account/i })).toBeVisible();
   });
 
   test('should validate registration form fields', async ({ page }) => {

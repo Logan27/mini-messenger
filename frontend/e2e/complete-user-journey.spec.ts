@@ -16,7 +16,7 @@ test.describe('Complete User Journey', () => {
     await expect(page.getByLabel(/email/i)).toHaveValue('e2euser@test.com');
 
     // Step 4: Check that form elements are properly structured
-    const submitButton = page.getByRole('button', { name: /sign up/i });
+    const submitButton = page.getByRole('button', { name: /create account/i });
     await expect(submitButton).toBeVisible();
     await expect(submitButton).toBeEnabled();
 
@@ -90,7 +90,7 @@ test.describe('Complete User Journey', () => {
     await expect(button).toBeEnabled();
 
     // Verify links are accessible
-    const registerLink = page.getByRole('link', { name: /sign up/i });
+    const registerLink = page.getByRole('link', { name: /register here/i });
     const forgotPasswordLink = page.getByRole('link', { name: /forgot password/i });
 
     await expect(registerLink).toBeVisible();

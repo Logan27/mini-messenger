@@ -72,7 +72,7 @@ const VerifyEmail = () => {
 
   if (isVerifying) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="flex items-center justify-center min-h-screen bg-background px-4">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center justify-center py-10">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
@@ -85,7 +85,7 @@ const VerifyEmail = () => {
 
   if (isSuccess) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="flex items-center justify-center min-h-screen bg-background px-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <div className="flex justify-center mb-4">

@@ -178,15 +178,15 @@ export default function CallHistory() {
   };
 
   return (
-    <div className="container mx-auto max-w-4xl p-6 space-y-6">
+    <div className="container mx-auto max-w-4xl p-4 md:p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Call History</h1>
-          <p className="text-muted-foreground">View your recent calls</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Call History</h1>
+          <p className="text-sm md:text-base text-muted-foreground">View your recent calls</p>
         </div>
       </div>
 

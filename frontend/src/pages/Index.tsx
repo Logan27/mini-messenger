@@ -204,21 +204,33 @@ const Index = () => {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       <ReconnectingIndicator isConnected={isConnected} isReconnecting={isReconnecting} />
-      
+
+      {/* ChatList - hidden on mobile when a chat is active */}
       {isLoadingContacts ? (
-        <div className="w-full md:w-80 lg:w-96 border-r border-border">
+        <div className={cn(
+          "w-full md:w-80 lg:w-96 border-r border-border",
+          activeChat && "hidden md:block"
+        )}>
           <ChatListSkeleton count={8} />
         </div>
       ) : (
-        <ChatList
-          chats={chats}
-          activeChat={activeChat}
-          onChatSelect={handleChatSelect}
-        />
+        <div className={cn(
+          activeChat && "hidden md:block"
+        )}>
+          <ChatList
+            chats={chats}
+            activeChat={activeChat}
+            onChatSelect={handleChatSelect}
+          />
+        </div>
       )}
 
+      {/* ChatView - full width on mobile, flex-1 on desktop */}
       {activeChatData ? (
-        <div className="flex-1">
+        <div className={cn(
+          "flex-1",
+          activeChat && "w-full"
+        )}>
           <ChatView
             chatName={activeChatData.name}
             chatAvatar={activeChatData.avatar}
@@ -236,7 +248,7 @@ const Index = () => {
           />
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center p-8">
+        <div className="hidden md:flex flex-1 items-center justify-center p-8">
           <EmptyState
             icon={MessageSquare}
             title="Select a chat to start messaging"

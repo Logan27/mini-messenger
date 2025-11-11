@@ -217,20 +217,20 @@ export default function Settings() {
         <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-2xl font-bold">Settings</h1>
+        <h1 className="text-xl md:text-2xl font-bold">Settings</h1>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="max-w-4xl mx-auto space-y-6">
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="security">Security</TabsTrigger>
-              <TabsTrigger value="privacy">Privacy</TabsTrigger>
-              <TabsTrigger value="notifications">Notifications</TabsTrigger>
-              <TabsTrigger value="contacts">Contacts</TabsTrigger>
-              <TabsTrigger value="account">Account</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 gap-1 md:gap-0 h-auto md:h-10">
+              <TabsTrigger value="profile" className="text-xs md:text-sm">Profile</TabsTrigger>
+              <TabsTrigger value="security" className="text-xs md:text-sm">Security</TabsTrigger>
+              <TabsTrigger value="privacy" className="text-xs md:text-sm">Privacy</TabsTrigger>
+              <TabsTrigger value="notifications" className="text-xs md:text-sm">Notifs</TabsTrigger>
+              <TabsTrigger value="contacts" className="text-xs md:text-sm">Contacts</TabsTrigger>
+              <TabsTrigger value="account" className="text-xs md:text-sm">Account</TabsTrigger>
             </TabsList>
 
             {/* Profile Tab */}
@@ -252,7 +252,7 @@ export default function Settings() {
                   <Separator />
 
                   <form onSubmit={handleUpdateProfile} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="firstName">First Name</Label>
                         <Input
@@ -473,7 +473,7 @@ export default function Settings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Account Status</Label>
                       <p className="text-sm font-medium capitalize">{user?.status || 'active'}</p>
@@ -508,7 +508,7 @@ export default function Settings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Status</Label>
                       <p className="text-sm font-medium capitalize">{user?.status || 'active'}</p>
@@ -526,7 +526,7 @@ export default function Settings() {
                       <p className="text-sm font-medium">{user?.email}</p>
                     </div>
                     {user?.lastLogin && (
-                      <div className="space-y-2 col-span-2">
+                      <div className="space-y-2 md:col-span-2">
                         <Label>Last Login</Label>
                         <p className="text-sm font-medium">
                           {new Date(user.lastLogin).toLocaleString()}

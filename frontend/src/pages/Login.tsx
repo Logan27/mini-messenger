@@ -36,7 +36,7 @@ const Login = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <div className="flex-1 flex items-center justify-center py-8">
+      <div className="flex-1 flex items-center justify-center py-8 px-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl">Welcome Back</CardTitle>

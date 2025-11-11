@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useReducer, lazy, Suspense } from "react";
+import { useNavigate } from "react-router-dom";
 import { Message } from "@/types/chat";
 import { MessageBubble } from "./MessageBubble";
 import { CallMessage } from "./CallMessage";
@@ -25,7 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Send, MoreVertical, Phone, Video, ArrowDown, X, Paperclip, Smile, MessageSquare, FolderOpen, Settings, Users, Info, Loader2, LogOut, Bell, BellOff, UserPlus, UserX, Trash2 } from "lucide-react";
+import { Send, MoreVertical, Phone, Video, ArrowDown, ArrowLeft, X, Paperclip, Smile, MessageSquare, FolderOpen, Settings, Users, Info, Loader2, LogOut, Bell, BellOff, UserPlus, UserX, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { getAvatarUrl } from "@/lib/avatar-utils";
@@ -119,6 +120,7 @@ export const ChatView = ({
   const previousMessageCountRef = useRef<number>(0); // Track previous message count
   const wasLoadingMoreRef = useRef<boolean>(false); // Track if we were loading more messages
 
+  const navigate = useNavigate();
   const { user } = useAuth();
   const sendMessage = useSendMessage();
   const editMessage = useEditMessage();
@@ -649,6 +651,17 @@ export const ChatView = ({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-background">
         <div className="flex items-center gap-3">
+          {/* Back button for mobile */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/')}
+            className="md:hidden"
+            title="Back to chat list"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+
           <div className="relative">
             <Avatar className="h-10 w-10">
               <AvatarImage src={getAvatarUrl(chatAvatar)} alt={chatName} />

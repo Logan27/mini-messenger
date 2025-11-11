@@ -15,7 +15,7 @@ export default function SavedMessages() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-2xl font-bold">Saved Messages</h1>
+        <h1 className="text-xl md:text-2xl font-bold">Saved Messages</h1>
       </div>
 
       {/* Content */}

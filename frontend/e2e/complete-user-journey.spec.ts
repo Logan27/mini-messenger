@@ -12,9 +12,9 @@ test.describe('Complete User Journey', () => {
     await page.getByLabel(/^password/i).first().fill('TestPass123!');
     await page.getByLabel(/confirm password/i).fill('TestPass123!');
 
-    // Step 3: Accept required consents
-    await page.locator('#terms').check();
-    await page.locator('#privacy').check();
+    // Step 3: Accept required consents (Radix UI checkboxes need click)
+    await page.locator('#terms').click();
+    await page.locator('#privacy').click();
 
     // Step 4: Verify form is filled
     await expect(page.getByLabel(/username/i)).toHaveValue('e2euser');

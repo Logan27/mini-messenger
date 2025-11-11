@@ -218,6 +218,7 @@ export default function AccountPendingScreen({
               style={styles.button}
               onPress={checkAccountStatus}
               disabled={isChecking}
+              testID="check-status-button"
             >
               {isChecking ? (
                 <ActivityIndicator color="#fff" />
@@ -232,12 +233,13 @@ export default function AccountPendingScreen({
             <TouchableOpacity
               style={[styles.button, styles.secondaryButton]}
               onPress={handleContactSupport}
+              testID="contact-support-button"
             >
               <Ionicons name="help-circle-outline" size={20} color="#2563eb" />
               <Text style={styles.secondaryButtonText}>Contact Support</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={handleLogout} style={styles.linkButton}>
+            <TouchableOpacity onPress={handleLogout} style={styles.linkButton} testID="logout-button">
               <Text style={styles.linkText}>Logout</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -264,6 +266,7 @@ export default function AccountPendingScreen({
             <TouchableOpacity
               style={styles.button}
               onPress={() => navigation.navigate('Register')}
+              testID="register-again-button"
             >
               <Text style={styles.buttonText}>Register Again</Text>
             </TouchableOpacity>
@@ -271,12 +274,13 @@ export default function AccountPendingScreen({
             <TouchableOpacity
               style={[styles.button, styles.secondaryButton]}
               onPress={handleContactSupport}
+              testID="rejected-contact-support-button"
             >
               <Ionicons name="help-circle-outline" size={20} color="#2563eb" />
               <Text style={styles.secondaryButtonText}>Contact Support</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={handleLogout} style={styles.linkButton}>
+            <TouchableOpacity onPress={handleLogout} style={styles.linkButton} testID="rejected-logout-button">
               <Text style={styles.linkText}>Back to Login</Text>
             </TouchableOpacity>
           </View>
@@ -297,12 +301,13 @@ export default function AccountPendingScreen({
             <TouchableOpacity
               style={styles.button}
               onPress={handleContactSupport}
+              testID="suspended-contact-support-button"
             >
               <Ionicons name="help-circle-outline" size={20} color="#fff" />
               <Text style={styles.buttonText}>Contact Support</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={handleLogout} style={styles.linkButton}>
+            <TouchableOpacity onPress={handleLogout} style={styles.linkButton} testID="suspended-logout-button">
               <Text style={styles.linkText}>Logout</Text>
             </TouchableOpacity>
           </View>

@@ -2,11 +2,12 @@ import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../stores/authStore';
-import { RootStackParamList, MainTabParamList, AuthStackParamList } from '../types';
+import { RootStackParamList, AuthStackParamList } from '../types';
 import { navigationRef } from '../services/navigationService';
+import DrawerMenu from '../components/common/DrawerMenu';
 
 // Import screens
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -15,13 +16,11 @@ import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen';
 import EmailVerificationScreen from '../screens/auth/EmailVerificationScreen';
 import AccountPendingScreen from '../screens/auth/AccountPendingScreen';
-import ConversationsScreen from '../screens/messaging/ConversationsScreen';
+import HomeScreen from '../screens/HomeScreen';
 import ChatScreen from '../screens/messaging/ChatScreen';
-import ContactsListScreen from '../screens/contacts/ContactsListScreen';
 import AddContactScreen from '../screens/contacts/AddContactScreen';
 import ContactRequestsScreen from '../screens/contacts/ContactRequestsScreen';
 import ContactProfileScreen from '../screens/contacts/ContactProfileScreen';
-import GroupsScreen from '../screens/groups/GroupsScreen';
 import CreateGroupScreen from '../screens/groups/CreateGroupScreen';
 import GroupInfoScreen from '../screens/groups/GroupInfoScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
@@ -42,7 +41,7 @@ import OutgoingCallScreen from '../screens/calls/OutgoingCallScreen';
 import ActiveCallScreen from '../screens/calls/ActiveCallScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
-const Tab = createBottomTabNavigator<MainTabParamList>();
+const Drawer = createDrawerNavigator();
 const AuthStack = createStackNavigator<AuthStackParamList>();
 
 // Auth Navigator
@@ -63,62 +62,38 @@ const AuthNavigator = () => {
   );
 };
 
-// Main Tab Navigator
-const MainTabNavigator = () => {
+// Main Drawer Navigator
+const MainDrawerNavigator = () => {
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap;
-
-          if (route.name === 'Conversations') {
-            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
-          } else if (route.name === 'Groups') {
-            iconName = focused ? 'people-circle' : 'people-circle-outline';
-          } else if (route.name === 'Contacts') {
-            iconName = focused ? 'people' : 'people-outline';
-          } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
-          } else {
-            iconName = 'ellipse-outline';
-          }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: '#2563eb',
-        tabBarInactiveTintColor: 'gray',
+    <Drawer.Navigator
+      drawerContent={(props) => <DrawerMenu {...props} />}
+      screenOptions={{
         headerShown: false,
-      })}
+        drawerType: 'front',
+        drawerStyle: {
+          width: 280,
+        },
+      }}
     >
-      <Tab.Screen
-        name="Conversations"
-        component={ConversationsScreen}
-        options={{ tabBarLabel: 'Chats' }}
+      <Drawer.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ drawerLabel: 'Messages' }}
       />
-      <Tab.Screen
-        name="Groups"
-        component={GroupsScreen}
-        options={{ tabBarLabel: 'Groups' }}
-      />
-      <Tab.Screen
-        name="Contacts"
-        component={ContactsListScreen}
-        options={{ tabBarLabel: 'Contacts' }}
-      />
-      <Tab.Screen
+      <Drawer.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ tabBarLabel: 'Profile' }}
+        options={{ drawerLabel: 'Profile' }}
       />
-    </Tab.Navigator>
+    </Drawer.Navigator>
   );
 };
 
-// Main Stack Navigator (includes tabs and modals)
+// Main Stack Navigator (includes drawer and modals)
 const MainNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+      <Stack.Screen name="MainDrawer" component={MainDrawerNavigator} />
       <Stack.Screen
         name="Chat"
         component={ChatScreen}
@@ -130,70 +105,138 @@ const MainNavigator = () => {
       <Stack.Screen
         name="AddContact"
         component={AddContactScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Add Contact',
+        }}
       />
       <Stack.Screen
         name="ContactRequests"
         component={ContactRequestsScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Contact Requests',
+        }}
       />
       <Stack.Screen
         name="ContactProfile"
         component={ContactProfileScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Contact Profile',
+        }}
       />
       <Stack.Screen
         name="CreateGroup"
         component={CreateGroupScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Create Group',
+        }}
       />
       <Stack.Screen
         name="GroupInfo"
         component={GroupInfoScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Group Info',
+        }}
       />
       <Stack.Screen
         name="EditProfile"
         component={EditProfileScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Edit Profile',
+        }}
       />
       <Stack.Screen
         name="Settings"
         component={SettingsScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Settings',
+        }}
       />
       <Stack.Screen
         name="NotificationSettings"
         component={NotificationSettingsScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Notifications',
+        }}
       />
       <Stack.Screen
         name="PrivacySettings"
         component={PrivacySettingsScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Privacy',
+        }}
       />
       <Stack.Screen
         name="AppearanceSettings"
         component={AppearanceSettingsScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Appearance',
+        }}
       />
       <Stack.Screen
         name="DataStorageSettings"
         component={DataStorageSettingsScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Data & Storage',
+        }}
       />
       <Stack.Screen
         name="UserSearch"
         component={UserSearchScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Search Users',
+        }}
       />
       <Stack.Screen
         name="BlockedContacts"
         component={BlockedContactsScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Blocked Contacts',
+        }}
       />
       <Stack.Screen
         name="TwoFactorAuth"
         component={TwoFactorAuthScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Two-Factor Authentication',
+        }}
       />
       <Stack.Screen
         name="AccountDeletion"
         component={AccountDeletionScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Delete Account',
+        }}
       />
       <Stack.Screen
         name="DataExport"
         component={DataExportScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Export Data',
+        }}
       />
       <Stack.Screen
         name="ConsentManagement"
         component={ConsentManagementScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Consent Management',
+        }}
       />
       <Stack.Screen
         name="IncomingCall"

@@ -199,8 +199,10 @@ export interface ResetPasswordForm {
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
-  Chat: { conversationId: string; contactId?: string };
-  Profile: { userId: string };
+  MainDrawer: undefined;
+  Home: undefined;
+  Chat: { conversationId?: string | null; contactId?: string; recipientId?: string; recipientName?: string };
+  Profile: { userId?: string };
   EditProfile: undefined;
   Settings: undefined;
   NotificationSettings: undefined;
@@ -232,10 +234,9 @@ export type AuthStackParamList = {
   AccountPending: { email?: string; username?: string };
 };
 
-export type MainTabParamList = {
-  Conversations: undefined;
-  Groups: undefined;
-  Contacts: undefined;
+// Drawer navigation types
+export type MainDrawerParamList = {
+  Home: undefined;
   Profile: undefined;
 };
 

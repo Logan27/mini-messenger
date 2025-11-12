@@ -177,6 +177,7 @@ export default function EmailVerificationScreen({
           <TouchableOpacity
             style={styles.button}
             onPress={() => navigation.navigate('Login')}
+            testID="success-continue-button"
           >
             <Text style={styles.buttonText}>Continue to Login</Text>
           </TouchableOpacity>
@@ -195,6 +196,7 @@ export default function EmailVerificationScreen({
           <TouchableOpacity
             style={styles.button}
             onPress={handleManualVerification}
+            testID="try-again-button"
           >
             <Text style={styles.buttonText}>Try Again</Text>
           </TouchableOpacity>
@@ -203,6 +205,7 @@ export default function EmailVerificationScreen({
               style={[styles.button, styles.secondaryButton]}
               onPress={handleResendVerification}
               disabled={isResending || !canResend}
+              testID="error-resend-button"
             >
               {isResending ? (
                 <ActivityIndicator color="#2563eb" />
@@ -259,6 +262,7 @@ export default function EmailVerificationScreen({
         <TouchableOpacity
           style={styles.button}
           onPress={handleManualVerification}
+          testID="manual-verify-button"
         >
           <Text style={styles.buttonText}>Enter Verification Code</Text>
         </TouchableOpacity>
@@ -268,6 +272,7 @@ export default function EmailVerificationScreen({
             style={[styles.button, styles.secondaryButton]}
             onPress={handleResendVerification}
             disabled={isResending || !canResend}
+            testID="resend-button"
           >
             {isResending ? (
               <ActivityIndicator color="#2563eb" />
@@ -284,6 +289,7 @@ export default function EmailVerificationScreen({
         <TouchableOpacity
           onPress={() => navigation.navigate('Login')}
           style={styles.linkButton}
+          testID="back-to-login-button"
         >
           <Text style={styles.linkText}>Back to Login</Text>
         </TouchableOpacity>

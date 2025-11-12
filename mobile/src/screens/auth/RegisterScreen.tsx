@@ -77,6 +77,7 @@ const RegisterScreen = ({ navigation }: any) => {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      testID="register-screen-container"
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
@@ -99,6 +100,7 @@ const RegisterScreen = ({ navigation }: any) => {
                   onChangeText={onChange}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  testID="username-input"
                 />
               )}
             />
@@ -120,6 +122,7 @@ const RegisterScreen = ({ navigation }: any) => {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  testID="email-input"
                 />
               )}
             />
@@ -141,12 +144,14 @@ const RegisterScreen = ({ navigation }: any) => {
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  testID="password-input"
                 />
               )}
             />
             <TouchableOpacity
               style={styles.passwordToggle}
               onPress={() => setShowPassword(!showPassword)}
+              testID="password-toggle"
             >
               <Ionicons
                 name={showPassword ? 'eye-off' : 'eye'}
@@ -189,12 +194,14 @@ const RegisterScreen = ({ navigation }: any) => {
                   secureTextEntry={!showConfirmPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  testID="confirm-password-input"
                 />
               )}
             />
             <TouchableOpacity
               style={styles.passwordToggle}
               onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              testID="confirm-password-toggle"
             >
               <Ionicons
                 name={showConfirmPassword ? 'eye-off' : 'eye'}
@@ -210,6 +217,7 @@ const RegisterScreen = ({ navigation }: any) => {
             style={[styles.registerButton, isLoading && styles.disabledButton]}
             onPress={handleSubmit(onSubmit)}
             disabled={isLoading}
+            testID="register-button"
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" />
@@ -221,7 +229,7 @@ const RegisterScreen = ({ navigation }: any) => {
           {/* Login Link */}
           <View style={styles.loginContainer}>
             <Text style={styles.loginText}>Already have an account? </Text>
-            <TouchableOpacity onPress={navigateToLogin}>
+            <TouchableOpacity onPress={navigateToLogin} testID="login-link">
               <Text style={styles.loginLink}>Sign In</Text>
             </TouchableOpacity>
           </View>

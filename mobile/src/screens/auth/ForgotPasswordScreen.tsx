@@ -82,11 +82,11 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
           </View>
 
           <View style={styles.form}>
-            <TouchableOpacity style={styles.primaryButton} onPress={handleResendEmail}>
+            <TouchableOpacity style={styles.primaryButton} onPress={handleResendEmail} testID="resend-email-button">
               <Text style={styles.primaryButtonText}>Resend Email</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.secondaryButton} onPress={navigateToLogin}>
+            <TouchableOpacity style={styles.secondaryButton} onPress={navigateToLogin} testID="success-back-to-login-button">
               <Text style={styles.secondaryButtonText}>Back to Login</Text>
             </TouchableOpacity>
 
@@ -130,6 +130,7 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  testID="email-input"
                 />
               )}
             />
@@ -141,6 +142,7 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
             style={[styles.submitButton, isLoading && styles.disabledButton]}
             onPress={handleSubmit(onSubmit)}
             disabled={isLoading}
+            testID="submit-button"
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" />
@@ -150,7 +152,7 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
           </TouchableOpacity>
 
           {/* Back to Login */}
-          <TouchableOpacity style={styles.backButton} onPress={navigateToLogin}>
+          <TouchableOpacity style={styles.backButton} onPress={navigateToLogin} testID="back-to-login-button">
             <Ionicons name="arrow-back" size={16} color="#2563eb" />
             <Text style={styles.backButtonText}>Back to Login</Text>
           </TouchableOpacity>

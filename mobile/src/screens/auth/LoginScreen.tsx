@@ -20,8 +20,8 @@ import { LoginForm } from '../../types';
 
 // Validation schema
 const loginSchema = z.object({
-  identifier: z.string().min(3, 'Please enter your email or username'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  identifier: z.string({ required_error: 'Email is required' }).min(3, 'Please enter your email or username'),
+  password: z.string({ required_error: 'Password is required' }).min(6, 'Password must be at least 6 characters'),
 });
 
 const LoginScreen = ({ navigation }: any) => {
@@ -106,6 +106,7 @@ const LoginScreen = ({ navigation }: any) => {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      testID="screen-container"
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
@@ -155,6 +156,7 @@ const LoginScreen = ({ navigation }: any) => {
                   onChangeText={onChange}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  testID="email-input"
                 />
               )}
             />
@@ -176,12 +178,14 @@ const LoginScreen = ({ navigation }: any) => {
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  testID="password-input"
                 />
               )}
             />
             <TouchableOpacity
               style={styles.passwordToggle}
               onPress={() => setShowPassword(!showPassword)}
+              testID="password-toggle"
             >
               <Ionicons
                 name={showPassword ? 'eye-off' : 'eye'}
@@ -193,7 +197,7 @@ const LoginScreen = ({ navigation }: any) => {
           {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
 
           {/* Forgot Password */}
-          <TouchableOpacity style={styles.forgotButton} onPress={navigateToForgotPassword}>
+          <TouchableOpacity style={styles.forgotButton} onPress={navigateToForgotPassword} testID="forgot-password-button">
             <Text style={styles.forgotButtonText}>Forgot Password?</Text>
           </TouchableOpacity>
 
@@ -202,6 +206,7 @@ const LoginScreen = ({ navigation }: any) => {
             style={[styles.loginButton, isLoading && styles.disabledButton]}
             onPress={handleSubmit(onSubmit)}
             disabled={isLoading}
+            testID="login-button"
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" />
@@ -213,7 +218,7 @@ const LoginScreen = ({ navigation }: any) => {
           {/* Register Link */}
           <View style={styles.registerContainer}>
             <Text style={styles.registerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={navigateToRegister}>
+            <TouchableOpacity onPress={navigateToRegister} testID="register-link">
               <Text style={styles.registerLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>

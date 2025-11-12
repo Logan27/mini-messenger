@@ -59,17 +59,17 @@ const ProfileScreen = ({ navigation }: any) => {
     {
       title: 'Privacy & Security',
       icon: 'shield-checkmark',
-      onPress: () => Alert.alert('Privacy & Security', 'Privacy settings coming soon!'),
+      onPress: () => navigation.navigate('PrivacySettings'),
     },
     {
       title: 'Notifications',
       icon: 'notifications',
-      onPress: () => Alert.alert('Notifications', 'Notification settings coming soon!'),
+      onPress: () => navigation.navigate('NotificationSettings'),
     },
     {
       title: 'Data & Storage',
       icon: 'server',
-      onPress: () => Alert.alert('Data & Storage', 'Storage settings coming soon!'),
+      onPress: () => navigation.navigate('DataStorageSettings'),
     },
     {
       title: 'Help & Support',

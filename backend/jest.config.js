@@ -30,4 +30,8 @@ export default {
   clearMocks: true,
   // Restore mocks between tests
   restoreMocks: true,
+  // Force exit to prevent hanging on background jobs
+  forceExit: true,
+  // Detect open handles
+  detectOpenHandles: false,
 };

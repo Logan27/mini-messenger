@@ -3,15 +3,15 @@ import { performance } from 'perf_hooks';
 import request from 'supertest';
 import app from '../src/app.js';
 import { User, Call } from '../src/models/index.js';
-import { testHelpers } from './testHelpers.js';
 
 // Note: Mocking is disabled for ES module compatibility
 // These tests focus on performance metrics and database operations
 // WebSocket and FCM service interactions are not tested here
 
 describe('Call System Performance Tests', () => {
+  const { factory: testFactory } = global.testUtils;
   let testUsers = [];
-  let tokens = [];
+  let authData = [];
   const CONCURRENT_CALLS = 10;
   let performanceResults = {
     callInitiation: [],
@@ -20,30 +20,31 @@ describe('Call System Performance Tests', () => {
     callQuality: [],
   };
 
-  beforeAll(async () => {
-    await testHelpers.cleanup();
-
-    // Create test users
-    console.log(`Creating ${CONCURRENT_CALLS * 2} test users...`);
-    for (let i = 0; i < CONCURRENT_CALLS * 2; i++) {
-      const user = await testHelpers.createTestUser({
-        username: `perfuser${i}`,
-        email: `perfuser${i}@example.com`
-      });
-      testUsers.push(user);
-      tokens.push(testHelpers.generateToken(user));
-    }
-
-    console.log('Test users created successfully');
+  beforeEach(async () => {
+    await testFactory.cleanup();
   });
 
-  afterAll(async () => {
-    await testHelpers.cleanup();
+  afterEach(async () => {
+    await testFactory.cleanup();
   });
 
   describe('10 Concurrent Calls Simulation', () => {
     it('should handle 10 concurrent call initiations', async () => {
       const promises = [];
+
+      // Create test users for this performance test
+      console.log(`Creating ${CONCURRENT_CALLS * 2} test users...`);
+      testUsers = [];
+      authData = [];
+      for (let i = 0; i < CONCURRENT_CALLS * 2; i++) {
+        const auth = await testFactory.createAuthenticatedUser({
+          username: `perfuser${i}`,
+          email: `perfuser${i}@example.com`
+        });
+        testUsers.push(auth.user);
+        authData.push(auth);
+      }
+      console.log('Test users created successfully');
 
       console.log('Starting 10 concurrent call initiations...');
 
@@ -51,7 +52,7 @@ describe('Call System Performance Tests', () => {
         const startTime = performance.now();
         const promise = request(app)
           .post('/api/calls/initiate')
-          .set('Authorization', `Bearer ${tokens[i]}`)
+          .set('Authorization', authData[i].authHeader)
           .send({
             recipientId: testUsers[i + CONCURRENT_CALLS].id,
             callType: 'video',
@@ -96,11 +97,11 @@ describe('Call System Performance Tests', () => {
       for (let i = 0; i < calls.length; i++) {
         const call = calls[i];
         const startTime = performance.now();
-        const recipientToken = tokens.find((_, idx) => testUsers[idx].id === call.recipientId);
+        const recipientAuth = authData.find((auth) => auth.user.id === call.recipientId);
 
         const promise = request(app)
           .post(`/api/calls/accept/${call.id}`)
-          .set('Authorization', `Bearer ${recipientToken}`)
+          .set('Authorization', recipientAuth.authHeader)
           .then((response) => {
             const endTime = performance.now();
             const latency = endTime - startTime;
@@ -170,7 +171,7 @@ describe('Call System Performance Tests', () => {
         promises.push(
           request(app)
             .get('/api/calls/turn-credentials')
-            .set('Authorization', `Bearer ${tokens[0]}`)
+            .set('Authorization', authData[0].authHeader)
         );
       }
 
@@ -253,7 +254,7 @@ describe('Call System Performance Tests', () => {
         promises.push(
           request(app)
             .get('/api/calls/turn-credentials')
-            .set('Authorization', `Bearer ${tokens[i]}`)
+            .set('Authorization', authData[i].authHeader)
             .then((response) => {
               expect(response.status).toBe(200);
               expect(response.body.username).toBeDefined();

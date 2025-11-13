@@ -1,6 +1,6 @@
 import { DeviceToken } from '../models/index.js';
-import fcmService from '../services/fcmService.js';
 import auditService from '../services/auditService.js';
+import fcmService from '../services/fcmService.js';
 import logger from '../utils/logger.js';
 
 class PushNotificationController {
@@ -118,7 +118,7 @@ class PushNotificationController {
         severity: 'low',
         status: 'success',
         details: {
-          token: token.substring(0, 20) + '...',
+          token: `${token.substring(0, 20)}...`,
         },
       });
 

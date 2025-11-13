@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import request from 'supertest';
 import NotificationSettings from '../src/models/NotificationSettings.js';
 import notificationSettingsController from '../src/controllers/notificationSettingsController.js';
@@ -10,21 +10,24 @@ import { sequelize } from '../src/config/database.js';
 // WebSocket service interactions are not tested here
 
 describe('NotificationSettings', () => {
+  const { factory: testFactory } = global.testUtils;
+
   beforeEach(async () => {
-    // Clear database before each test
-    await NotificationSettings.destroy({ where: {} });
+    // Clean up using testFactory
+    await testFactory.cleanup();
   });
 
   afterEach(async () => {
     // Clean up after each test
-    await NotificationSettings.destroy({ where: {} });
+    await testFactory.cleanup();
   });
 
   describe('Model', () => {
     it('should create default notification settings', async () => {
-      const settings = await NotificationSettings.createDefaultSettings('user-123');
+      const user = await testFactory.createUser();
+      const settings = await NotificationSettings.createDefaultSettings(user.id);
 
-      expect(settings.userId).toBe('user-123');
+      expect(settings.userId).toBe(user.id);
       expect(settings.inAppEnabled).toBe(true);
       expect(settings.emailEnabled).toBe(true);
       expect(settings.pushEnabled).toBe(true);
@@ -37,18 +40,21 @@ describe('NotificationSettings', () => {
     });
 
     it('should get or create default settings', async () => {
+      const user = await testFactory.createUser();
+
       // First call should create new settings
-      const settings1 = await NotificationSettings.getOrCreateDefault('user-123');
+      const settings1 = await NotificationSettings.getOrCreateDefault(user.id);
       expect(settings1).toBeTruthy();
 
       // Second call should return existing settings
-      const settings2 = await NotificationSettings.getOrCreateDefault('user-123');
+      const settings2 = await NotificationSettings.getOrCreateDefault(user.id);
       expect(settings2.id).toBe(settings1.id);
     });
 
     it('should validate quiet hours correctly', async () => {
+      const user = await testFactory.createUser();
       const settings = await NotificationSettings.create({
-        userId: 'user-123',
+        userId: user.id,
         quietHoursStart: '09:00',
         quietHoursEnd: '17:00',
         inAppEnabled: true,
@@ -62,14 +68,15 @@ describe('NotificationSettings', () => {
         systemNotifications: true,
       });
 
-      expect(settings.quietHoursStart).toBe('09:00');
-      expect(settings.quietHoursEnd).toBe('17:00');
+      expect(settings.quietHoursStart).toBe('09:00:00');
+      expect(settings.quietHoursEnd).toBe('17:00:00');
     });
 
     it('should reject invalid quiet hours', async () => {
+      const user = await testFactory.createUser();
       await expect(
         NotificationSettings.create({
-          userId: 'user-123',
+          userId: user.id,
           quietHoursStart: '25:00', // Invalid hour
           quietHoursEnd: '17:00',
           inAppEnabled: true,
@@ -86,8 +93,9 @@ describe('NotificationSettings', () => {
     });
 
     it('should check if user should receive notification correctly', async () => {
+      const user = await testFactory.createUser();
       const settings = await NotificationSettings.create({
-        userId: 'user-123',
+        userId: user.id,
         quietHoursStart: '09:00',
         quietHoursEnd: '17:00',
         doNotDisturb: false,
@@ -111,8 +119,9 @@ describe('NotificationSettings', () => {
     });
 
     it('should reset settings to defaults', async () => {
+      const user = await testFactory.createUser();
       const settings = await NotificationSettings.create({
-        userId: 'user-123',
+        userId: user.id,
         inAppEnabled: false,
         emailEnabled: false,
         pushEnabled: false,
@@ -124,7 +133,7 @@ describe('NotificationSettings', () => {
         systemNotifications: false,
       });
 
-      const resetSettings = await NotificationSettings.resetToDefaults('user-123');
+      const resetSettings = await NotificationSettings.resetToDefaults(user.id);
 
       expect(resetSettings.inAppEnabled).toBe(true);
       expect(resetSettings.emailEnabled).toBe(true);
@@ -141,37 +150,41 @@ describe('NotificationSettings', () => {
     });
 
     it('should get user settings with caching', async () => {
-      const settings1 = await notificationSettingsService.getUserSettings('user-123');
-      const settings2 = await notificationSettingsService.getUserSettings('user-123');
+      const user = await testFactory.createUser();
+      const settings1 = await notificationSettingsService.getUserSettings(user.id);
+      const settings2 = await notificationSettingsService.getUserSettings(user.id);
 
       // Should return the same instance due to caching
       expect(settings1).toBe(settings2);
     });
 
     it('should update user settings and invalidate cache', async () => {
-      await notificationSettingsService.updateUserSettings('user-123', {
+      const user = await testFactory.createUser();
+      await notificationSettingsService.updateUserSettings(user.id, {
         inAppEnabled: false,
       });
 
-      const settings = await notificationSettingsService.getUserSettings('user-123');
+      const settings = await notificationSettingsService.getUserSettings(user.id);
       expect(settings.inAppEnabled).toBe(false);
     });
 
     it('should validate settings updates', async () => {
+      const user = await testFactory.createUser();
       await expect(
-        notificationSettingsService.updateUserSettings('user-123', {
+        notificationSettingsService.updateUserSettings(user.id, {
           invalidField: 'value',
         })
       ).rejects.toThrow('Invalid field: invalidField');
     });
 
     it('should check notification preferences correctly', async () => {
-      await notificationSettingsService.updateUserSettings('user-123', {
+      const user = await testFactory.createUser();
+      await notificationSettingsService.updateUserSettings(user.id, {
         messageNotifications: false,
       });
 
       const shouldReceive = await notificationSettingsService.shouldReceiveNotification(
-        'user-123',
+        user.id,
         'message'
       );
 
@@ -179,8 +192,9 @@ describe('NotificationSettings', () => {
     });
 
     it('should generate preview correctly', async () => {
+      const user = await testFactory.createUser();
       const preview = await notificationSettingsService.generatePreview(
-        'user-123',
+        user.id,
         'message',
         'inApp'
       );
@@ -192,27 +206,45 @@ describe('NotificationSettings', () => {
     });
 
     it('should handle bulk preference checking', async () => {
-      const userIds = ['user-1', 'user-2', 'user-3'];
+      const user1 = await testFactory.createUser();
+      const user2 = await testFactory.createUser();
+      const user3 = await testFactory.createUser();
+      const userIds = [user1.id, user2.id, user3.id];
       const preferences = await notificationSettingsService.bulkCheckNotificationPreferences(
         userIds,
         'message'
       );
 
       expect(Object.keys(preferences)).toHaveLength(3);
-      expect(preferences).toHaveProperty('user-1');
-      expect(preferences).toHaveProperty('user-2');
-      expect(preferences).toHaveProperty('user-3');
+      expect(preferences).toHaveProperty(user1.id);
+      expect(preferences).toHaveProperty(user2.id);
+      expect(preferences).toHaveProperty(user3.id);
     });
   });
 
   describe('API Endpoints', () => {
     let authToken;
     let testUser;
+    let testSettings;
 
     beforeEach(async () => {
-      // Create test user and get auth token
-      testUser = await NotificationSettings.create({
-        userId: 'test-user-123',
+      // Import User model
+      const { User } = await import('../src/models/index.js');
+
+      // Create test user first
+      testUser = await User.create({
+        username: `testuser${Date.now()}`,
+        email: `test${Date.now()}@example.com`,
+        passwordHash: 'TestPassword123!',
+        firstName: 'Test',
+        lastName: 'User',
+        approvalStatus: 'approved',
+        emailVerified: true,
+      });
+
+      // Create notification settings for the user
+      testSettings = await NotificationSettings.create({
+        userId: testUser.id,
         inAppEnabled: true,
         emailEnabled: true,
         pushEnabled: true,
@@ -232,7 +264,7 @@ describe('NotificationSettings', () => {
       // This would require setting up a proper test app with authentication middleware
       // For now, we'll test the controller method directly
       const mockReq = {
-        user: { id: 'test-user-123', username: 'testuser' },
+        user: { id: testUser.id, username: testUser.username },
       };
       const mockRes = {
         status: jest.fn().mockReturnThis(),
@@ -252,7 +284,7 @@ describe('NotificationSettings', () => {
 
     it('should update notification settings', async () => {
       const mockReq = {
-        user: { id: 'test-user-123', username: 'testuser' },
+        user: { id: testUser.id, username: testUser.username },
         body: {
           inAppEnabled: false,
           messageNotifications: false,
@@ -276,7 +308,7 @@ describe('NotificationSettings', () => {
 
     it('should reset settings to defaults', async () => {
       const mockReq = {
-        user: { id: 'test-user-123', username: 'testuser' },
+        user: { id: testUser.id, username: testUser.username },
       };
       const mockRes = {
         status: jest.fn().mockReturnThis(),
@@ -296,7 +328,7 @@ describe('NotificationSettings', () => {
 
     it('should preview notification settings', async () => {
       const mockReq = {
-        user: { id: 'test-user-123', username: 'testuser' },
+        user: { id: testUser.id, username: testUser.username },
         query: {
           notificationType: 'message',
           channel: 'inApp',
@@ -320,7 +352,7 @@ describe('NotificationSettings', () => {
 
     it('should validate quiet hours format', async () => {
       const mockReq = {
-        user: { id: 'test-user-123', username: 'testuser' },
+        user: { id: testUser.id, username: testUser.username },
         body: {
           quietHoursStart: '25:00', // Invalid format
           quietHoursEnd: '17:00',
@@ -347,14 +379,14 @@ describe('NotificationSettings', () => {
 
   describe('Integration', () => {
     it('should handle complete notification settings workflow', async () => {
-      const userId = 'workflow-user-123';
+      const user = await testFactory.createUser();
 
       // 1. Create default settings
-      const settings = await NotificationSettings.createDefaultSettings(userId);
+      const settings = await NotificationSettings.createDefaultSettings(user.id);
       expect(settings.inAppEnabled).toBe(true);
 
       // 2. Update settings via service
-      await notificationSettingsService.updateUserSettings(userId, {
+      await notificationSettingsService.updateUserSettings(user.id, {
         doNotDisturb: true,
         quietHoursStart: '22:00',
         quietHoursEnd: '08:00',
@@ -362,24 +394,30 @@ describe('NotificationSettings', () => {
 
       // 3. Check that preferences are respected
       const shouldReceive = await notificationSettingsService.shouldReceiveNotification(
-        userId,
+        user.id,
         'message'
       );
       expect(shouldReceive).toBe(false); // Should be blocked due to DND
 
       // 4. Reset to defaults
-      await notificationSettingsService.resetUserSettings(userId);
+      await notificationSettingsService.resetUserSettings(user.id);
 
       // 5. Verify reset worked
-      const resetSettings = await notificationSettingsService.getUserSettings(userId);
+      const resetSettings = await notificationSettingsService.getUserSettings(user.id);
       expect(resetSettings.doNotDisturb).toBe(false);
       expect(resetSettings.quietHoursStart).toBeNull();
       expect(resetSettings.quietHoursEnd).toBeNull();
     });
 
     it('should handle quiet hours logic correctly', async () => {
+      // Create a test user for quiet hours testing
+      const quietHoursUser = await testFactory.createUser({
+        firstName: 'Quiet',
+        lastName: 'User',
+      });
+
       const settings = await NotificationSettings.create({
-        userId: 'quiet-hours-user',
+        userId: quietHoursUser.id,
         quietHoursStart: '22:00',
         quietHoursEnd: '08:00', // Overnight quiet hours
         doNotDisturb: false,

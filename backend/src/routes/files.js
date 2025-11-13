@@ -4,6 +4,7 @@ import path from 'path';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { body, param, validationResult } from 'express-validator';
+import { Op } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 
 import { authenticate } from '../middleware/auth.js';
@@ -650,12 +651,20 @@ router.get('/', async (req, res) => {
         error: 'Authentication required',
       });
     }
-    const { page = 1, limit = 20, fileType, messageId, virusScanStatus, conversationWith, groupId } = req.query;
+    const {
+      page = 1,
+      limit = 20,
+      fileType,
+      messageId,
+      virusScanStatus,
+      conversationWith,
+      groupId,
+    } = req.query;
 
     const offset = (page - 1) * limit;
 
     // Build where condition
-    let whereCondition = {};
+    const whereCondition = {};
     let messageWhere = {};
 
     // If filtering by conversation or group, we need to join with messages
@@ -731,22 +740,25 @@ router.get('/', async (req, res) => {
         'messageId',
         'uploaderId',
       ],
-      include: conversationWith || groupId ? [
-        {
-          model: Message,
-          as: 'message',
-          where: messageWhere,
-          required: true,
-          attributes: ['id', 'senderId', 'recipientId', 'groupId', 'createdAt'],
-          include: [
-            {
-              model: User,
-              as: 'sender',
-              attributes: ['id', 'username', 'avatar'],
-            },
-          ],
-        },
-      ] : [],
+      include:
+        conversationWith || groupId
+          ? [
+              {
+                model: Message,
+                as: 'message',
+                where: messageWhere,
+                required: true,
+                attributes: ['id', 'senderId', 'recipientId', 'groupId', 'createdAt'],
+                include: [
+                  {
+                    model: User,
+                    as: 'sender',
+                    attributes: ['id', 'username', 'avatar'],
+                  },
+                ],
+              },
+            ]
+          : [],
     });
 
     res.json({
@@ -766,11 +778,13 @@ router.get('/', async (req, res) => {
         createdAt: file.createdAt,
         fileUrl: `/api/files/${file.id}`,
         uploadedAt: file.createdAt,
-        sender: file.message?.sender ? {
-          id: file.message.sender.id,
-          username: file.message.sender.username,
-          avatar: file.message.sender.avatar,
-        } : undefined,
+        sender: file.message?.sender
+          ? {
+              id: file.message.sender.id,
+              username: file.message.sender.username,
+              avatar: file.message.sender.avatar,
+            }
+          : undefined,
       })),
       pagination: {
         total: count,

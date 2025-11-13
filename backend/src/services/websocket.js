@@ -901,6 +901,22 @@ class WebSocketService {
 
   // Broadcast message to specific user across all servers
   async broadcastToUser(userId, event, data) {
+    // Skip if WebSocket service is not properly initialized
+    if (!this.io) {
+      console.warn('⚠️ WebSocket service: this.io is undefined');
+      return;
+    }
+
+    // Check if io.to exists and is a function
+    if (!this.io.to || typeof this.io.to !== 'function') {
+      console.warn('⚠️ WebSocket service: io.to is not available', {
+        ioType: typeof this.io,
+        ioToType: typeof this.io?.to,
+        ioKeys: this.io ? Object.keys(this.io) : 'io is null/undefined',
+      });
+      return;
+    }
+
     // SKIP REDIS PUB/SUB - Redis client is in subscriber mode and can't publish
     // This needs separate Redis clients for pub and sub
     // For now, use local Socket.IO broadcasting only
@@ -910,7 +926,14 @@ class WebSocketService {
 
     // Broadcast locally
     const room = `user:${userId}`;
-    const socketsInRoom = this.io?.sockets.adapter.rooms.get(room);
+
+    // Additional safety checks before accessing adapter
+    if (!this.io.sockets || !this.io.sockets.adapter) {
+      console.warn('⚠️ WebSocket service: adapter not available');
+      return;
+    }
+
+    const socketsInRoom = this.io.sockets.adapter.rooms.get(room);
 
     console.log('🔥 BROADCAST DEBUG:', {
       userId,
@@ -918,6 +941,9 @@ class WebSocketService {
       room,
       dataKeys: Object.keys(data),
       ioExists: !!this.io,
+      ioToFunction: typeof this.io.to,
+      socketsExists: !!this.io.sockets,
+      adapterExists: !!this.io.sockets?.adapter,
       roomExists: !!socketsInRoom,
       roomSize: socketsInRoom?.size || 0,
     });
@@ -927,9 +953,15 @@ class WebSocketService {
       return;
     }
 
-    console.log(`📡 Emitting ${event} to ${socketsInRoom.size} socket(s) in room: ${room}`);
-    this.io.to(room).emit(event, data);
-    console.log(`✅ Emit complete for event: ${event}`);
+    try {
+      console.log(`📡 Emitting ${event} to ${socketsInRoom.size} socket(s) in room: ${room}`);
+      this.io.to(room).emit(event, data);
+      console.log(`✅ Emit complete for event: ${event}`);
+    } catch (error) {
+      console.error(`❌ Failed to emit ${event} to room ${room}:`, error);
+      // Don't throw error to avoid breaking the API response
+      console.log('🔄 WebSocket broadcast failed, but continuing with API response');
+    }
   }
 
   // Get connected users count

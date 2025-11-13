@@ -1,10 +1,11 @@
+import path from 'path';
+
 import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import path from 'path';
 import responseTime from 'response-time';
 import swaggerUi from 'swagger-ui-express';
 
@@ -59,7 +60,7 @@ app.use(
       },
     },
     crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
   })
 );
 
@@ -107,12 +108,16 @@ app.use(requestLogger);
 
 // Serve static files from uploads directory with CORS headers
 const uploadPath = path.resolve(config.fileUpload.uploadPath);
-app.use('/uploads', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-  next();
-}, express.static(uploadPath));
+app.use(
+  '/uploads',
+  (req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    next();
+  },
+  express.static(uploadPath)
+);
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -141,8 +146,8 @@ if (config.swagger.enabled) {
       persistAuthorization: true,
       displayRequestDuration: true,
       filter: true,
-      tryItOutEnabled: true
-    }
+      tryItOutEnabled: true,
+    },
   };
 
   // Serve Swagger JSON
@@ -152,11 +157,7 @@ if (config.swagger.enabled) {
   });
 
   // Serve Swagger UI
-  app.use(
-    config.swagger.path,
-    swaggerUi.serve,
-    swaggerUi.setup(swaggerSpec, swaggerUiOptions)
-  );
+  app.use(config.swagger.path, swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
 
   console.log(`📚 Swagger UI will be available at ${config.swagger.path}`);
 }

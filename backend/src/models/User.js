@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 import bcrypt from 'bcryptjs';
 import { DataTypes, Op } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
@@ -345,6 +347,14 @@ User.prototype.isPasswordInHistory = async function (password) {
 User.prototype.generateEmailVerificationToken = function () {
   this.emailVerificationToken = uuidv4().replace(/-/g, '');
   return this.emailVerificationToken;
+};
+
+User.prototype.generatePasswordResetToken = function () {
+  // Use dynamic import for crypto in ES modules
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  this.passwordResetToken = resetToken;
+  this.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  return resetToken;
 };
 
 // Static methods

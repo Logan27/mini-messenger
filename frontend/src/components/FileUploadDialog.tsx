@@ -50,11 +50,14 @@ export function FileUploadDialog({ open, onOpenChange, onFileUploaded }: FileUpl
       setOptimizing(true);
 
       try {
+        // Preserve original format (jpeg/png) instead of converting to WebP
+        const originalFormat = file.type === 'image/png' ? 'png' : 'jpeg';
+
         const optimized = await optimizeImage(file, {
           maxWidth: 1920,
           maxHeight: 1080,
           quality: 0.85,
-          format: 'auto', // Will use WebP if supported, otherwise JPEG
+          format: originalFormat, // Preserve original format
         });
 
         setSelectedFile(optimized.file);

@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { Op } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 
+import { sequelize } from '../config/database.js';
 import { getRedisClient } from '../config/redis.js';
 import { User, Session } from '../models/index.js';
 import auditService from '../services/auditService.js';

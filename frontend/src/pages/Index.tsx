@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { getAvatarUrl } from "@/lib/avatar-utils";
 import { safeParseDate } from "@/lib/date-utils";
+import { cn } from "@/lib/utils";
 import { MessageSquare } from "lucide-react";
 import type { Chat } from "@/types/chat";
 
@@ -35,8 +36,8 @@ const Index = () => {
   );
 
   // Fetch messages for active chat with pagination
-  const { 
-    data: messagesData, 
+  const {
+    data: messagesData,
     isLoading: isLoadingMessages,
     fetchNextPage,
     hasNextPage,
@@ -44,7 +45,7 @@ const Index = () => {
   } = useMessages({
     recipientId: isActiveGroup ? undefined : (activeChat || undefined),
     groupId: isActiveGroup ? activeChat : undefined,
-    limit: 30, // Load only 30 messages initially
+    limit: 20, // Load only 20 messages initially (one page)
   });
 
   // Listen for real-time updates and get connection status
@@ -139,6 +140,12 @@ const Index = () => {
         imageUrl: msg.messageType === 'image' ? msg.fileName : undefined,
         messageType: msg.messageType,
         reactions: msg.reactions || {},
+        // File attachment fields
+        fileId: msg.fileId || msg.metadata?.fileId,
+        fileName: msg.fileName || msg.metadata?.fileName,
+        fileUrl: msg.fileUrl || msg.metadata?.fileUrl,
+        fileSize: msg.fileSize || msg.metadata?.fileSize,
+        mimeType: msg.mimeType || msg.metadata?.mimeType,
         // Call message fields
         callId: msg.metadata?.callId,
         callType: msg.metadata?.callType,
@@ -215,6 +222,7 @@ const Index = () => {
         </div>
       ) : (
         <div className={cn(
+          "w-full md:w-80 lg:w-96",
           activeChat && "hidden md:block"
         )}>
           <ChatList

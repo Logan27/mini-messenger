@@ -1,19 +1,38 @@
-import { TestHelpers } from './testHelpers.js';
 import { Group, GroupMember, Message, File, User } from '../src/models/index.js';
 import fileUploadService from '../src/services/fileUploadService.js';
+import { generateTokens } from '../src/utils/jwt.js';
 import fs from 'fs/promises';
 import path from 'path';
 
 /**
  * Enhanced test helpers specifically for messaging functionality
  */
-export class MessagingTestHelpers extends TestHelpers {
+export class MessagingTestHelpers {
   constructor() {
-    super();
     this.testGroups = new Map();
     this.testMessages = new Map();
     this.testFiles = new Map();
     this.testWebSocketClients = new Map();
+  }
+
+  /**
+   * Create a test user (wrapper for testFactory)
+   */
+  async createTestUser(userData = {}) {
+    return await global.testUtils.factory.createUser(userData);
+  }
+
+  /**
+   * Authenticate a user (wrapper for testFactory)
+   */
+  async authenticateUser(user) {
+    const tokens = generateTokens(user);
+    return {
+      user,
+      token: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      authHeader: `Bearer ${tokens.accessToken}`,
+    };
   }
 
   /**
@@ -62,7 +81,7 @@ export class MessagingTestHelpers extends TestHelpers {
     const group = groupId ? await Group.findByPk(groupId) : await this.createTestGroup();
 
     for (let i = 0; i < count; i++) {
-      const user = await this.createTestUser({
+      const user = await global.testUtils.factory.createUser({
         username: `groupmember${i}_${Date.now()}`,
         email: `groupmember${i}_${Date.now()}@example.com`,
         firstName: `Group`,
@@ -170,11 +189,10 @@ export class MessagingTestHelpers extends TestHelpers {
       ...options,
     };
 
-    const response = await this.makeAuthRequest(
-      'POST',
+    const response = await global.testUtils.api.post(
       '/api/messages/send',
-      senderAuth.token,
-      messageData
+      messageData,
+      senderAuth.token
     );
 
     return response;
@@ -191,11 +209,10 @@ export class MessagingTestHelpers extends TestHelpers {
       ...options,
     };
 
-    const response = await this.makeAuthRequest(
-      'POST',
+    const response = await global.testUtils.api.post(
       '/api/messages/send',
-      senderAuth.token,
-      messageData
+      messageData,
+      senderAuth.token
     );
 
     return response;
@@ -205,11 +222,10 @@ export class MessagingTestHelpers extends TestHelpers {
    * Upload a file via API
    */
   async uploadFile(senderAuth, filePath, options = {}) {
-    const response = await this.makeAuthRequest(
-      'POST',
+    const response = await global.testUtils.api.post(
       '/api/files/upload',
-      senderAuth.token,
-      options
+      options,
+      senderAuth.token
     );
 
     // Attach file to the request
@@ -230,11 +246,10 @@ export class MessagingTestHelpers extends TestHelpers {
       ...options,
     };
 
-    const response = await this.makeAuthRequest(
-      'GET',
+    const response = await global.testUtils.api.get(
       '/api/messages',
-      userAuth.token,
-      query
+      query,
+      userAuth.token
     );
 
     return response;
@@ -251,11 +266,10 @@ export class MessagingTestHelpers extends TestHelpers {
       ...options,
     };
 
-    const response = await this.makeAuthRequest(
-      'GET',
+    const response = await global.testUtils.api.get(
       '/api/messages',
-      userAuth.token,
-      query
+      query,
+      userAuth.token
     );
 
     return response;
@@ -347,8 +361,10 @@ export class MessagingTestHelpers extends TestHelpers {
     }
     this.testMessages.clear();
 
-    // Call parent cleanup
-    await super.cleanup();
+    // Clean up base test data using global testUtils
+    if (global.testUtils && global.testUtils.cleanup) {
+      await global.testUtils.cleanup();
+    }
   }
 
   /**

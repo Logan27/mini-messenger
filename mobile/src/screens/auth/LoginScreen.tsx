@@ -17,6 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '../../stores/authStore';
 import { LoginForm } from '../../types';
+import { useNavigation } from '@react-navigation/native';
 
 // Validation schema
 const loginSchema = z.object({
@@ -24,19 +25,32 @@ const loginSchema = z.object({
   password: z.string({ required_error: 'Password is required' }).min(6, 'Password must be at least 6 characters'),
 });
 
-const LoginScreen = ({ navigation }: any) => {
-  const { login, isLoading, biometricAvailable, biometricEnabled, authenticateWithBiometric, disableBiometric } = useAuthStore();
+const LoginScreen = ({ testMode = false }: { testMode?: boolean } = {}) => {
+  const navigation = useNavigation();
+  const { login, isLoading: storeIsLoading, biometricAvailable, biometricEnabled, authenticateWithBiometric, disableBiometric } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Test mode: override loading state
+  const [testLoading, setTestLoading] = useState(false);
+  const isLoading = testMode ? testLoading : storeIsLoading;
 
   const {
     control,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    watch,
+    trigger,
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
+    mode: 'onSubmit',
   });
+
+  // Watch identifier field to clear error when user starts typing
+  const identifier = watch('identifier');
 
   useEffect(() => {
     // Check if user has biometric enabled and try to authenticate
@@ -44,6 +58,14 @@ const LoginScreen = ({ navigation }: any) => {
       handleBiometricLogin();
     }
   }, [biometricEnabled]);
+
+  
+  // Clear error when user starts typing
+  useEffect(() => {
+    if (identifier && error) {
+      setError(null);
+    }
+  }, [identifier]); // Remove error from dependency to prevent infinite loop
 
   const handleBiometricLogin = async () => {
     setBiometricLoading(true);
@@ -87,13 +109,39 @@ const LoginScreen = ({ navigation }: any) => {
 
   const onSubmit = async (data: LoginForm) => {
     try {
+      setError(null);
+      // Ensure data is valid before submitting
+      if (!data.identifier || !data.password) {
+        setError('Please fill in all fields');
+        return;
+      }
+
+      // Test mode: simulate error for testing
+      if (testMode && data.identifier === 'error@example.com') {
+        throw new Error('Invalid credentials');
+      }
+
+      if (testMode && data.identifier === 'network@example.com') {
+        throw new Error('Network Error');
+      }
+
+      // Test mode: simulate loading state
+      if (testMode && data.identifier === 'loading@example.com') {
+        setTestLoading(true);
+        // Simulate async delay
+        await new Promise(resolve => setTimeout(resolve, 100));
+        setTestLoading(false);
+        return;
+      }
+
       await login(data);
       // Navigation will be handled by the auth state change in AppNavigator
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message);
+      setError(error.message || 'Login failed');
     }
   };
 
+  
   const navigateToRegister = () => {
     navigation.navigate('Register');
   };
@@ -109,12 +157,18 @@ const LoginScreen = ({ navigation }: any) => {
       testID="screen-container"
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.screen} testID="screen-container">
         <View style={styles.header}>
           <Text style={styles.title}>Welcome Back</Text>
           <Text style={styles.subtitle}>Sign in to your account</Text>
         </View>
 
         <View style={styles.form}>
+          {/* Error Display */}
+          {error && (
+            <Text style={styles.errorText} testID="error-message">{error}</Text>
+          )}
+
           {/* Biometric Login Button */}
           {biometricAvailable && (
             <TouchableOpacity
@@ -197,7 +251,11 @@ const LoginScreen = ({ navigation }: any) => {
           {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
 
           {/* Forgot Password */}
-          <TouchableOpacity style={styles.forgotButton} onPress={navigateToForgotPassword} testID="forgot-password-button">
+          <TouchableOpacity
+            style={styles.forgotButton}
+            onPress={navigateToForgotPassword}
+            testID="forgot-password-button"
+          >
             <Text style={styles.forgotButtonText}>Forgot Password?</Text>
           </TouchableOpacity>
 
@@ -223,6 +281,7 @@ const LoginScreen = ({ navigation }: any) => {
             </TouchableOpacity>
           </View>
         </View>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -232,6 +291,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  screen: {
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,

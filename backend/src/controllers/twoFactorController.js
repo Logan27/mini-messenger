@@ -1,11 +1,12 @@
 import crypto from 'crypto';
-import speakeasy from 'speakeasy';
-import QRCode from 'qrcode';
+
 import bcrypt from 'bcryptjs';
+import QRCode from 'qrcode';
+import speakeasy from 'speakeasy';
 
 import { User } from '../models/index.js';
-import logger from '../utils/logger.js';
 import auditService from '../services/auditService.js';
+import logger from '../utils/logger.js';
 
 class TwoFactorController {
   /**
@@ -54,9 +55,7 @@ class TwoFactorController {
       }
 
       // Hash backup codes before storing
-      const hashedBackupCodes = await Promise.all(
-        backupCodes.map(code => bcrypt.hash(code, 10))
-      );
+      const hashedBackupCodes = await Promise.all(backupCodes.map(code => bcrypt.hash(code, 10)));
 
       // Store secret temporarily (not enabled yet until verified)
       user.twoFactorSecret = secret.base32;
@@ -406,9 +405,7 @@ class TwoFactorController {
       }
 
       // Hash backup codes
-      const hashedBackupCodes = await Promise.all(
-        backupCodes.map(code => bcrypt.hash(code, 10))
-      );
+      const hashedBackupCodes = await Promise.all(backupCodes.map(code => bcrypt.hash(code, 10)));
 
       user.twoFactorBackupCodes = JSON.stringify(hashedBackupCodes);
       await user.save();

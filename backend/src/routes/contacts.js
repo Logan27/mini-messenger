@@ -1119,13 +1119,34 @@ router.post(
       await contact.mute();
 
       // Emit WebSocket event to notify client about contact update
-      const io = getWebSocketService();
-      if (io) {
-        io.to(`user:${userId}`).emit('contact.updated', {
-          contactId: contact.id,
-          isMuted: contact.isMuted,
-          timestamp: new Date().toISOString(),
-        });
+      try {
+        const wsService = getWebSocketService();
+
+        // Enhanced safety check for WebSocket service
+        if (!wsService) {
+          logger.warn('⚠️ WebSocket service not available for mute notification');
+        } else if (!wsService.broadcastToUser || typeof wsService.broadcastToUser !== 'function') {
+          logger.warn('⚠️ WebSocket broadcastToUser is not a function');
+        } else {
+          // WebSocket service is properly initialized, proceed with broadcast
+          await wsService.broadcastToUser(userId, 'contact.updated', {
+            contactId: contact.id,
+            isMuted: contact.isMuted,
+            timestamp: new Date().toISOString(),
+          });
+
+          // Also emit contact.muted event for frontend real-time updates
+          await wsService.broadcastToUser(userId, 'contact.muted', {
+            contactId: contact.id,
+            isMuted: true,
+            action: 'muted',
+            timestamp: new Date().toISOString(),
+          });
+          logger.info(`✅ Contact mute notification sent to user ${userId}`);
+        }
+      } catch (wsError) {
+        logger.error('❌ Failed to send WebSocket notification for contact mute:', wsError);
+        // Don't fail the request if WebSocket notification fails
       }
 
       res.status(200).json({
@@ -1203,13 +1224,34 @@ router.delete(
       await contact.unmute();
 
       // Emit WebSocket event to notify client about contact update
-      const io = getWebSocketService();
-      if (io) {
-        io.to(`user:${userId}`).emit('contact.updated', {
-          contactId: contact.id,
-          isMuted: contact.isMuted,
-          timestamp: new Date().toISOString(),
-        });
+      try {
+        const wsService = getWebSocketService();
+
+        // Enhanced safety check for WebSocket service
+        if (!wsService) {
+          logger.warn('⚠️ WebSocket service not available for unmute notification');
+        } else if (!wsService.broadcastToUser || typeof wsService.broadcastToUser !== 'function') {
+          logger.warn('⚠️ WebSocket broadcastToUser is not a function');
+        } else {
+          // WebSocket service is properly initialized, proceed with broadcast
+          await wsService.broadcastToUser(userId, 'contact.updated', {
+            contactId: contact.id,
+            isMuted: contact.isMuted,
+            timestamp: new Date().toISOString(),
+          });
+
+          // Also emit contact.unmuted event for frontend real-time updates
+          await wsService.broadcastToUser(userId, 'contact.unmuted', {
+            contactId: contact.id,
+            isMuted: false,
+            action: 'unmuted',
+            timestamp: new Date().toISOString(),
+          });
+          logger.info(`✅ Contact unmute notification sent to user ${userId}`);
+        }
+      } catch (wsError) {
+        logger.error('❌ Failed to send WebSocket notification for contact unmute:', wsError);
+        // Don't fail the request if WebSocket notification fails
       }
 
       res.status(200).json({

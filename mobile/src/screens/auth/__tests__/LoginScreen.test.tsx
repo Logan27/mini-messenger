@@ -84,7 +84,7 @@ describe('LoginScreen', () => {
   });
 
   it('renders all form elements', () => {
-    const { getByTestId } = renderWithQueryClient(<LoginScreen navigation={mockNavigation} />);
+    const { getByTestId } = renderWithQueryClient(<LoginScreen />);
 
     expect(getByTestId('email-input')).toBeTruthy();
     expect(getByTestId('password-input')).toBeTruthy();
@@ -94,7 +94,7 @@ describe('LoginScreen', () => {
   });
 
   it('shows validation errors for empty fields', async () => {
-    const { getByTestId } = renderWithQueryClient(<LoginScreen navigation={mockNavigation} />);
+    const { getByTestId } = renderWithQueryClient(<LoginScreen />);
 
     const loginButton = getByTestId('login-button');
 
@@ -110,7 +110,7 @@ describe('LoginScreen', () => {
   });
 
   it('shows validation error for invalid email', async () => {
-    const { getByTestId, getByText } = renderWithQueryClient(<LoginScreen navigation={mockNavigation} />);
+    const { getByTestId, getByText } = renderWithQueryClient(<LoginScreen />);
 
     const emailInput = getByTestId('email-input');
     const passwordInput = getByTestId('password-input');
@@ -130,7 +130,7 @@ describe('LoginScreen', () => {
   it('successfully logs in with valid credentials', async () => {
     mockLogin.mockResolvedValueOnce(undefined);
 
-    const { getByTestId } = renderWithQueryClient(<LoginScreen navigation={mockNavigation} />);
+    const { getByTestId } = renderWithQueryClient(<LoginScreen />);
 
     const emailInput = getByTestId('email-input');
     const passwordInput = getByTestId('password-input');
@@ -157,7 +157,7 @@ describe('LoginScreen', () => {
     const errorMessage = 'Invalid credentials';
     mockLogin.mockRejectedValueOnce(new Error(errorMessage));
 
-    const { getByTestId } = renderWithQueryClient(<LoginScreen navigation={mockNavigation} />);
+    const { getByTestId, getByText } = renderWithQueryClient(<LoginScreen />);
 
     const emailInput = getByTestId('email-input');
     const passwordInput = getByTestId('password-input');
@@ -173,12 +173,12 @@ describe('LoginScreen', () => {
     });
 
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith('Login Failed', errorMessage);
+      expect(getByText(errorMessage)).toBeTruthy();
     });
   });
 
   it('toggles password visibility', async () => {
-    const { getByTestId } = renderWithQueryClient(<LoginScreen navigation={mockNavigation} />);
+    const { getByTestId } = renderWithQueryClient(<LoginScreen />);
 
     const passwordInput = getByTestId('password-input');
     const toggleButton = getByTestId('password-toggle');
@@ -202,7 +202,7 @@ describe('LoginScreen', () => {
   });
 
   it('navigates to forgot password screen', () => {
-    const { getByTestId } = renderWithQueryClient(<LoginScreen navigation={mockNavigation} />);
+    const { getByTestId } = renderWithQueryClient(<LoginScreen />);
 
     const forgotPasswordButton = getByTestId('forgot-password-button');
     fireEvent.press(forgotPasswordButton);
@@ -211,7 +211,7 @@ describe('LoginScreen', () => {
   });
 
   it('navigates to register screen', () => {
-    const { getByTestId } = renderWithQueryClient(<LoginScreen navigation={mockNavigation} />);
+    const { getByTestId } = renderWithQueryClient(<LoginScreen />);
 
     const registerLink = getByTestId('register-link');
     fireEvent.press(registerLink);
@@ -233,7 +233,7 @@ describe('LoginScreen', () => {
       error: null,
     }));
 
-    const { getByTestId } = renderWithQueryClient(<LoginScreen navigation={mockNavigation} />);
+    const { getByTestId } = renderWithQueryClient(<LoginScreen />);
 
     const loginButton = getByTestId('login-button');
 
@@ -244,7 +244,7 @@ describe('LoginScreen', () => {
   it('handles network errors gracefully', async () => {
     mockLogin.mockRejectedValueOnce(new Error('Network Error'));
 
-    const { getByTestId } = renderWithQueryClient(<LoginScreen navigation={mockNavigation} />);
+    const { getByTestId, getByText } = renderWithQueryClient(<LoginScreen />);
 
     const emailInput = getByTestId('email-input');
     const passwordInput = getByTestId('password-input');
@@ -260,13 +260,13 @@ describe('LoginScreen', () => {
     });
 
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith('Login Failed', 'Network Error');
+      expect(getByText('Network Error')).toBeTruthy();
     });
   });
 
   it('clears error message when user starts typing', async () => {
     // This test validates that form validation updates as user types
-    const { getByTestId } = renderWithQueryClient(<LoginScreen navigation={mockNavigation} />);
+    const { getByTestId } = renderWithQueryClient(<LoginScreen />);
 
     const emailInput = getByTestId('email-input');
     const passwordInput = getByTestId('password-input');
@@ -302,7 +302,7 @@ describe('LoginScreen', () => {
   });
 
   it('handles keyboard dismissal', () => {
-    const { getByTestId } = renderWithQueryClient(<LoginScreen navigation={mockNavigation} />);
+    const { getByTestId } = renderWithQueryClient(<LoginScreen />);
 
     const emailInput = getByTestId('email-input');
     const screenContainer = getByTestId('screen-container');

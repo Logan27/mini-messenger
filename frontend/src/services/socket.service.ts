@@ -210,6 +210,16 @@ class SocketService {
       this.emit('contact.unblocked', data);
     });
 
+    this.socket.on('contact.muted', (data) => {
+      console.log('🔵 Socket.IO received: contact.muted', data);
+      this.emit('contact.muted', data);
+    });
+
+    this.socket.on('contact.unmuted', (data) => {
+      console.log('🔵 Socket.IO received: contact.unmuted', data);
+      this.emit('contact.unmuted', data);
+    });
+
     // Group events
     this.socket.on('group_updated', (data) => {
       console.log('🔵 Socket.IO received: group_updated', data);
@@ -312,6 +322,17 @@ class SocketService {
         }
       }
     };
+  }
+
+  // Unsubscribe from events
+  off(event: string, callback: EventHandler) {
+    const callbacks = this.listeners.get(event);
+    if (callbacks) {
+      callbacks.delete(callback);
+      if (callbacks.size === 0) {
+        this.listeners.delete(event);
+      }
+    }
   }
 
   // Emit to local listeners

@@ -91,16 +91,17 @@ export const MainMenu = () => {
           <Separator />
 
           <div className="flex flex-col py-2">
-            <div
-              className="flex items-center justify-between gap-3 px-6 py-3 h-auto cursor-pointer hover:bg-accent rounded-md transition-colors"
+            <Button
+              variant="ghost"
+              className="justify-between gap-3 px-6 py-3 h-auto text-base font-normal"
               onClick={toggleTheme}
             >
               <div className="flex items-center gap-3">
                 {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-                <span className="text-base">Night Mode</span>
+                <span>Night Mode</span>
               </div>
-              <Switch checked={isDark} />
-            </div>
+              <Switch checked={isDark} className="pointer-events-none" />
+            </Button>
           </div>
 
           <Separator />

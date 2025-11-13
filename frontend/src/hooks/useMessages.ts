@@ -10,7 +10,7 @@ interface UseMessagesParams {
   limit?: number;
 }
 
-export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesParams) {
+export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesParams) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
@@ -44,14 +44,12 @@ export function useMessages({ recipientId, groupId, limit = 50 }: UseMessagesPar
           messageType: newMessage.messageType,
           imageUrl: newMessage.messageType === 'image' ? newMessage.fileName : undefined,
           reactions: newMessage.reactions || {},
-          // File attachment fields
-          fileId: newMessage.metadata?.fileId || newMessage.fileId,
-          fileName: newMessage.metadata?.fileName || newMessage.fileName,
-          fileUrl: newMessage.metadata?.fileId || newMessage.fileId
-            ? `${window.location.origin}/api/files/${newMessage.metadata?.fileId || newMessage.fileId}`
-            : undefined,
-          fileSize: newMessage.metadata?.fileSize || newMessage.fileSize,
-          mimeType: newMessage.metadata?.mimeType || newMessage.mimeType,
+          // File attachment fields - use backend-provided values directly
+          fileId: newMessage.fileId || newMessage.metadata?.fileId,
+          fileName: newMessage.fileName || newMessage.metadata?.fileName,
+          fileUrl: newMessage.fileUrl || newMessage.metadata?.fileUrl,
+          fileSize: newMessage.fileSize || newMessage.metadata?.fileSize,
+          mimeType: newMessage.mimeType || newMessage.metadata?.mimeType,
           // Call message fields
           callId: newMessage.metadata?.callId,
           callType: newMessage.metadata?.callType,
@@ -295,14 +293,12 @@ export function useSendMessage() {
         status: newMessage.status || 'sent',
         messageType: newMessage.messageType,
         imageUrl: newMessage.messageType === 'image' ? newMessage.fileName : undefined,
-        // File attachment fields
-        fileId: newMessage.metadata?.fileId || newMessage.fileId,
-        fileName: newMessage.metadata?.fileName || newMessage.fileName,
-        fileUrl: newMessage.metadata?.fileId || newMessage.fileId
-          ? `${window.location.origin}/api/files/${newMessage.metadata?.fileId || newMessage.fileId}`
-          : undefined,
-        fileSize: newMessage.metadata?.fileSize || newMessage.fileSize,
-        mimeType: newMessage.metadata?.mimeType || newMessage.mimeType,
+        // File attachment fields - use backend-provided values directly
+        fileId: newMessage.fileId || newMessage.metadata?.fileId,
+        fileName: newMessage.fileName || newMessage.metadata?.fileName,
+        fileUrl: newMessage.fileUrl || newMessage.metadata?.fileUrl,
+        fileSize: newMessage.fileSize || newMessage.metadata?.fileSize,
+        mimeType: newMessage.mimeType || newMessage.metadata?.mimeType,
         replyTo: newMessage.replyTo ? {
           id: newMessage.replyTo.id,
           text: newMessage.replyTo.content || '',

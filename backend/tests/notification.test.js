@@ -2,50 +2,32 @@ import request from 'supertest';
 import { User, Notification } from '../src/models/index.js';
 import notificationService from '../src/services/notificationService.js';
 import app from '../src/app.js';
-import { testHelpers } from './testHelpers.js';
 
 describe('Notification System', () => {
-  let testUser, adminUser, authData;
+  const { factory: testFactory } = global.testUtils;
 
   beforeEach(async () => {
     // Clean up before each test
-    await testHelpers.cleanup();
-
-    // Create test users
-    testUser = await testHelpers.createTestUser({
-      username: 'notificationuser',
-      email: 'notification@example.com',
-      approvalStatus: 'approved',
-      emailVerified: true,
-    });
-
-    adminUser = await testHelpers.createTestUser({
-      username: 'adminuser',
-      email: 'admin@example.com',
-      role: 'admin',
-      approvalStatus: 'approved',
-      emailVerified: true,
-    });
-
-    // Authenticate test user
-    authData = await testHelpers.authenticateUser(testUser);
+    await testFactory.cleanup();
   });
 
-  afterAll(async () => {
-    // Clean up after all tests
-    await testHelpers.cleanup();
+  afterEach(async () => {
+    // Clean up after each test
+    await testFactory.cleanup();
   });
 
   describe('Notification Model', () => {
     describe('Notification Creation', () => {
       it('should create a notification successfully', async () => {
+        const testUser = await testFactory.createUser();
+
         const notificationData = {
           userId: testUser.id,
           type: 'message',
           title: 'New Message',
           content: 'You have received a new message',
           category: 'message',
-          priority: 'medium',
+          priority: 'normal',
           data: { messageId: 'test-message-id' }
         };
 
@@ -58,13 +40,15 @@ describe('Notification System', () => {
         expect(notification.title).toBe('New Message');
         expect(notification.content).toBe('You have received a new message');
         expect(notification.category).toBe('message');
-        expect(notification.priority).toBe('medium');
+        expect(notification.priority).toBe('normal');
         expect(notification.read).toBe(false);
         expect(notification.expiresAt).toBeDefined();
         expect(notification.data.messageId).toBe('test-message-id');
       });
 
       it('should set default expiration to 30 days', async () => {
+        const testUser = await testFactory.createUser();
+
         const notificationData = {
           userId: testUser.id,
           type: 'system',
@@ -80,6 +64,8 @@ describe('Notification System', () => {
       });
 
       it('should validate required fields', async () => {
+        const testUser = await testFactory.createUser();
+
         await expect(Notification.createNotification({
           userId: testUser.id,
           // Missing type, title, content, category
@@ -87,6 +73,8 @@ describe('Notification System', () => {
       });
 
       it('should validate notification type', async () => {
+        const testUser = await testFactory.createUser();
+
         const notificationData = {
           userId: testUser.id,
           type: 'invalid_type',
@@ -99,6 +87,8 @@ describe('Notification System', () => {
       });
 
       it('should validate priority level', async () => {
+        const testUser = await testFactory.createUser();
+
         const notificationData = {
           userId: testUser.id,
           type: 'message',
@@ -112,6 +102,8 @@ describe('Notification System', () => {
       });
 
       it('should validate category', async () => {
+        const testUser = await testFactory.createUser();
+
         const notificationData = {
           userId: testUser.id,
           type: 'message',
@@ -125,7 +117,9 @@ describe('Notification System', () => {
     });
 
     describe('Notification Queries', () => {
-      beforeEach(async () => {
+      it('should find notifications by user ID', async () => {
+        const testUser = await testFactory.createUser();
+
         // Create test notifications
         await Notification.createNotification({
           userId: testUser.id,
@@ -143,22 +137,20 @@ describe('Notification System', () => {
           title: 'Call Notification',
           content: 'Missed call',
           category: 'call',
-          priority: 'medium',
+          priority: 'normal',
           read: true
         });
 
         await Notification.createNotification({
           userId: testUser.id,
-          type: 'mention',
+          type: 'message',
           title: 'Mention',
           content: 'You were mentioned',
-          category: 'mention',
+          category: 'system',
           priority: 'low',
           read: false
         });
-      });
 
-      it('should find notifications by user ID', async () => {
         const notifications = await Notification.findByUserId(testUser.id);
 
         expect(notifications).toHaveLength(3);
@@ -166,6 +158,39 @@ describe('Notification System', () => {
       });
 
       it('should filter by read status', async () => {
+        const testUser = await testFactory.createUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'system',
+          title: 'Message 1',
+          content: 'Content 1',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'call',
+          title: 'Call Notification',
+          content: 'Missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'message',
+          title: 'Mention',
+          content: 'You were mentioned',
+          category: 'system',
+          priority: 'low',
+          read: false
+        });
+
         const unreadNotifications = await Notification.findByUserId(testUser.id, { read: false });
         const readNotifications = await Notification.findByUserId(testUser.id, { read: true });
 
@@ -174,6 +199,39 @@ describe('Notification System', () => {
       });
 
       it('should filter by type', async () => {
+        const testUser = await testFactory.createUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'message',
+          title: 'Message 1',
+          content: 'Content 1',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'call',
+          title: 'Call Notification',
+          content: 'Missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'system',
+          title: 'Mention',
+          content: 'You were mentioned',
+          category: 'system',
+          priority: 'low',
+          read: false
+        });
+
         const messageNotifications = await Notification.findByUserId(testUser.id, { type: 'message' });
 
         expect(messageNotifications).toHaveLength(1);
@@ -181,6 +239,39 @@ describe('Notification System', () => {
       });
 
       it('should filter by priority', async () => {
+        const testUser = await testFactory.createUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'message',
+          title: 'Message 1',
+          content: 'Content 1',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'call',
+          title: 'Call Notification',
+          content: 'Missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'message',
+          title: 'Mention',
+          content: 'You were mentioned',
+          category: 'system',
+          priority: 'low',
+          read: false
+        });
+
         const highPriorityNotifications = await Notification.findByUserId(testUser.id, { priority: 'high' });
 
         expect(highPriorityNotifications).toHaveLength(1);
@@ -188,12 +279,78 @@ describe('Notification System', () => {
       });
 
       it('should get unread count', async () => {
+        const testUser = await testFactory.createUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'system',
+          title: 'Message 1',
+          content: 'Content 1',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'call',
+          title: 'Call Notification',
+          content: 'Missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'message',
+          title: 'Mention',
+          content: 'You were mentioned',
+          category: 'system',
+          priority: 'low',
+          read: false
+        });
+
         const unreadCount = await Notification.getUnreadCount(testUser.id);
 
         expect(unreadCount).toBe(2);
       });
 
       it('should mark all as read', async () => {
+        const testUser = await testFactory.createUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'system',
+          title: 'Message 1',
+          content: 'Content 1',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'call',
+          title: 'Call Notification',
+          content: 'Missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'message',
+          title: 'Mention',
+          content: 'You were mentioned',
+          category: 'system',
+          priority: 'low',
+          read: false
+        });
+
         const affectedRows = await Notification.markAllAsRead(testUser.id);
 
         expect(affectedRows).toBe(2); // 2 unread notifications
@@ -203,6 +360,39 @@ describe('Notification System', () => {
       });
 
       it('should find notification by ID and user', async () => {
+        const testUser = await testFactory.createUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'system',
+          title: 'Message 1',
+          content: 'Content 1',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'call',
+          title: 'Call Notification',
+          content: 'Missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'message',
+          title: 'Mention',
+          content: 'You were mentioned',
+          category: 'system',
+          priority: 'low',
+          read: false
+        });
+
         const notifications = await Notification.findByUserId(testUser.id);
         const notificationId = notifications[0].id;
 
@@ -212,6 +402,40 @@ describe('Notification System', () => {
       });
 
       it('should not find notification for different user', async () => {
+        const testUser = await testFactory.createUser();
+        const adminUser = await testFactory.createUser({ role: 'admin' });
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'system',
+          title: 'Message 1',
+          content: 'Content 1',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'call',
+          title: 'Call Notification',
+          content: 'Missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'message',
+          title: 'Mention',
+          content: 'You were mentioned',
+          category: 'system',
+          priority: 'low',
+          read: false
+        });
+
         const notifications = await Notification.findByUserId(testUser.id);
         const notificationId = notifications[0].id;
 
@@ -221,19 +445,17 @@ describe('Notification System', () => {
     });
 
     describe('Notification Instance Methods', () => {
-      let notification;
+      it('should mark notification as read', async () => {
+        const testUser = await testFactory.createUser();
 
-      beforeEach(async () => {
-        notification = await Notification.createNotification({
+        const notification = await Notification.createNotification({
           userId: testUser.id,
           type: 'system',
           title: 'System Notification',
           content: 'System update available',
           category: 'system'
         });
-      });
 
-      it('should mark notification as read', async () => {
         expect(notification.read).toBe(false);
 
         await notification.markAsRead();
@@ -244,6 +466,16 @@ describe('Notification System', () => {
       });
 
       it('should mark notification as unread', async () => {
+        const testUser = await testFactory.createUser();
+
+        const notification = await Notification.createNotification({
+          userId: testUser.id,
+          type: 'system',
+          title: 'System Notification',
+          content: 'System update available',
+          category: 'system'
+        });
+
         await notification.markAsRead();
         expect(notification.read).toBe(true);
 
@@ -255,6 +487,16 @@ describe('Notification System', () => {
       });
 
       it('should check if notification is expired', async () => {
+        const testUser = await testFactory.createUser();
+
+        const notification = await Notification.createNotification({
+          userId: testUser.id,
+          type: 'system',
+          title: 'System Notification',
+          content: 'System update available',
+          category: 'system'
+        });
+
         expect(notification.isExpired()).toBe(false);
 
         // Set expiration to past date
@@ -267,9 +509,11 @@ describe('Notification System', () => {
   describe('Notification Service', () => {
     describe('Rate Limiting', () => {
       it('should allow notification creation within limits', async () => {
+        const testUser = await testFactory.createUser();
+
         const notificationData = {
           userId: testUser.id,
-          type: 'message',
+          type: 'system',
           title: 'Test Notification',
           content: 'Test content',
           category: 'message'
@@ -281,6 +525,8 @@ describe('Notification System', () => {
       });
 
       it('should track notification creation for rate limiting', async () => {
+        const testUser = await testFactory.createUser();
+
         const notificationData = {
           userId: testUser.id,
           type: 'message',
@@ -297,11 +543,15 @@ describe('Notification System', () => {
       });
 
       it('should allow actions within limits', async () => {
+        const testUser = await testFactory.createUser();
+
         const rateLimitCheck = notificationService.canPerformAction(testUser.id);
         expect(rateLimitCheck.allowed).toBe(true);
       });
 
       it('should track actions for rate limiting', async () => {
+        const testUser = await testFactory.createUser();
+
         // Create a notification first
         const notification = await Notification.createNotification({
           userId: testUser.id,
@@ -320,19 +570,9 @@ describe('Notification System', () => {
     });
 
     describe('Notification Operations', () => {
-      let testNotification;
-
-      beforeEach(async () => {
-        testNotification = await Notification.createNotification({
-          userId: testUser.id,
-          type: 'message',
-          title: 'Test Notification',
-          content: 'Test content',
-          category: 'message'
-        });
-      });
-
       it('should create notification through service', async () => {
+        const testUser = await testFactory.createUser();
+
         const notificationData = {
           userId: testUser.id,
           type: 'system',
@@ -348,6 +588,16 @@ describe('Notification System', () => {
       });
 
       it('should mark notification as read through service', async () => {
+        const testUser = await testFactory.createUser();
+
+        const testNotification = await Notification.createNotification({
+          userId: testUser.id,
+          type: 'message',
+          title: 'Test Notification',
+          content: 'Test content',
+          category: 'message'
+        });
+
         expect(testNotification.read).toBe(false);
 
         await notificationService.markAsRead(testNotification.id, testUser.id);
@@ -357,6 +607,16 @@ describe('Notification System', () => {
       });
 
       it('should mark all notifications as read through service', async () => {
+        const testUser = await testFactory.createUser();
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'message',
+          title: 'Test Notification',
+          content: 'Test content',
+          category: 'message'
+        });
+
         // Create another unread notification
         await Notification.createNotification({
           userId: testUser.id,
@@ -375,6 +635,16 @@ describe('Notification System', () => {
       });
 
       it('should delete notification through service', async () => {
+        const testUser = await testFactory.createUser();
+
+        const testNotification = await Notification.createNotification({
+          userId: testUser.id,
+          type: 'message',
+          title: 'Test Notification',
+          content: 'Test content',
+          category: 'message'
+        });
+
         const notificationId = testNotification.id;
 
         const result = await notificationService.deleteNotification(notificationId, testUser.id);
@@ -387,6 +657,16 @@ describe('Notification System', () => {
       });
 
       it('should get user notifications through service', async () => {
+        const testUser = await testFactory.createUser();
+
+        await Notification.createNotification({
+          userId: testUser.id,
+          type: 'message',
+          title: 'Test Notification',
+          content: 'Test content',
+          category: 'message'
+        });
+
         const result = await notificationService.getUserNotifications(testUser.id);
 
         expect(result.notifications).toHaveLength(1);
@@ -397,31 +677,31 @@ describe('Notification System', () => {
   });
 
   describe('Notification API Endpoints', () => {
-    beforeEach(async () => {
-      // Create test notifications
-      await Notification.createNotification({
-        userId: testUser.id,
-        type: 'message',
-        title: 'New Message',
-        content: 'You received a message',
-        category: 'message',
-        priority: 'high',
-        read: false
-      });
-
-      await Notification.createNotification({
-        userId: testUser.id,
-        type: 'call',
-        title: 'Missed Call',
-        content: 'You have a missed call',
-        category: 'call',
-        priority: 'medium',
-        read: true
-      });
-    });
-
     describe('GET /api/notifications', () => {
       it('should get user notifications', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'message',
+          title: 'New Message',
+          content: 'You received a message',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'call',
+          title: 'Missed Call',
+          content: 'You have a missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
         const response = await request(app)
           .get('/api/notifications')
           .set('Authorization', authData.authHeader)
@@ -434,6 +714,29 @@ describe('Notification System', () => {
       });
 
       it('should filter by read status', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'message',
+          title: 'New Message',
+          content: 'You received a message',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'call',
+          title: 'Missed Call',
+          content: 'You have a missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
         const response = await request(app)
           .get('/api/notifications?read=false')
           .set('Authorization', authData.authHeader)
@@ -445,6 +748,29 @@ describe('Notification System', () => {
       });
 
       it('should filter by type', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'message',
+          title: 'New Message',
+          content: 'You received a message',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'call',
+          title: 'Missed Call',
+          content: 'You have a missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
         const response = await request(app)
           .get('/api/notifications?type=message')
           .set('Authorization', authData.authHeader)
@@ -456,6 +782,29 @@ describe('Notification System', () => {
       });
 
       it('should paginate results', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'message',
+          title: 'New Message',
+          content: 'You received a message',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'call',
+          title: 'Missed Call',
+          content: 'You have a missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
         const response = await request(app)
           .get('/api/notifications?page=1&limit=1')
           .set('Authorization', authData.authHeader)
@@ -473,10 +822,12 @@ describe('Notification System', () => {
           .expect(401);
 
         expect(response.body.success).toBe(false);
-        expect(response.body.error.type).toBe('MISSING_TOKEN');
+        expect(response.body.error.type).toBe('TOKEN_MISSING');
       });
 
       it('should validate query parameters', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
         const response = await request(app)
           .get('/api/notifications?limit=150') // Exceeds max limit
           .set('Authorization', authData.authHeader)
@@ -489,6 +840,29 @@ describe('Notification System', () => {
 
     describe('GET /api/notifications/unread-count', () => {
       it('should get unread count', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'message',
+          title: 'New Message',
+          content: 'You received a message',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'call',
+          title: 'Missed Call',
+          content: 'You have a missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
         const response = await request(app)
           .get('/api/notifications/unread-count')
           .set('Authorization', authData.authHeader)
@@ -509,7 +883,30 @@ describe('Notification System', () => {
 
     describe('PUT /api/notifications/:id/read', () => {
       it('should mark notification as read', async () => {
-        const notifications = await Notification.findByUserId(testUser.id, { read: false });
+        const authData = await testFactory.createAuthenticatedUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'message',
+          title: 'New Message',
+          content: 'You received a message',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'call',
+          title: 'Missed Call',
+          content: 'You have a missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
+        const notifications = await Notification.findByUserId(authData.user.id, { read: false });
         const notificationId = notifications[0].id;
 
         const response = await request(app)
@@ -526,7 +923,30 @@ describe('Notification System', () => {
       });
 
       it('should handle already read notification', async () => {
-        const notifications = await Notification.findByUserId(testUser.id, { read: true });
+        const authData = await testFactory.createAuthenticatedUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'message',
+          title: 'New Message',
+          content: 'You received a message',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'call',
+          title: 'Missed Call',
+          content: 'You have a missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
+        const notifications = await Notification.findByUserId(authData.user.id, { read: true });
         const notificationId = notifications[0].id;
 
         const response = await request(app)
@@ -539,6 +959,7 @@ describe('Notification System', () => {
       });
 
       it('should return 404 for non-existent notification', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
         const fakeId = '550e8400-e29b-41d4-a716-446655440000';
 
         const response = await request(app)
@@ -551,6 +972,8 @@ describe('Notification System', () => {
       });
 
       it('should validate notification ID format', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
         const response = await request(app)
           .put('/api/notifications/invalid-id/read')
           .set('Authorization', authData.authHeader)
@@ -563,6 +986,29 @@ describe('Notification System', () => {
 
     describe('PUT /api/notifications/mark-all-read', () => {
       it('should mark all notifications as read', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'message',
+          title: 'New Message',
+          content: 'You received a message',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'call',
+          title: 'Missed Call',
+          content: 'You have a missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
         const response = await request(app)
           .put('/api/notifications/mark-all-read')
           .set('Authorization', authData.authHeader)
@@ -572,14 +1018,37 @@ describe('Notification System', () => {
         expect(response.body.data.affectedCount).toBe(1); // Only unread notifications
 
         // Verify in database
-        const unreadCount = await Notification.getUnreadCount(testUser.id);
+        const unreadCount = await Notification.getUnreadCount(authData.user.id);
         expect(unreadCount).toBe(0);
       });
 
       it('should mark only specific type as read', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'message',
+          title: 'New Message',
+          content: 'You received a message',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'call',
+          title: 'Missed Call',
+          content: 'You have a missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
         // Create another notification of different type
         await Notification.createNotification({
-          userId: testUser.id,
+          userId: authData.user.id,
           type: 'call',
           title: 'Another Call',
           content: 'Another call notification',
@@ -598,6 +1067,8 @@ describe('Notification System', () => {
       });
 
       it('should validate request body', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
         const response = await request(app)
           .put('/api/notifications/mark-all-read')
           .send({ type: 'invalid_type' })
@@ -611,7 +1082,30 @@ describe('Notification System', () => {
 
     describe('DELETE /api/notifications/:id', () => {
       it('should delete notification', async () => {
-        const notifications = await Notification.findByUserId(testUser.id);
+        const authData = await testFactory.createAuthenticatedUser();
+
+        // Create test notifications
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'message',
+          title: 'New Message',
+          content: 'You received a message',
+          category: 'message',
+          priority: 'high',
+          read: false
+        });
+
+        await Notification.createNotification({
+          userId: authData.user.id,
+          type: 'call',
+          title: 'Missed Call',
+          content: 'You have a missed call',
+          category: 'call',
+          priority: 'normal',
+          read: true
+        });
+
+        const notifications = await Notification.findByUserId(authData.user.id);
         const notificationId = notifications[0].id;
 
         const response = await request(app)
@@ -628,6 +1122,7 @@ describe('Notification System', () => {
       });
 
       it('should return 404 for non-existent notification', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
         const fakeId = '550e8400-e29b-41d4-a716-446655440000';
 
         const response = await request(app)
@@ -640,6 +1135,8 @@ describe('Notification System', () => {
       });
 
       it('should validate notification ID format', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
         const response = await request(app)
           .delete('/api/notifications/invalid-id')
           .set('Authorization', authData.authHeader)
@@ -652,8 +1149,10 @@ describe('Notification System', () => {
 
     describe('POST /api/notifications', () => {
       it('should create notification', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
         const notificationData = {
-          userId: testUser.id,
+          userId: authData.user.id,
           type: 'system',
           title: 'System Notification',
           content: 'System maintenance scheduled',
@@ -675,11 +1174,13 @@ describe('Notification System', () => {
       });
 
       it('should validate required fields', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
         const response = await request(app)
           .post('/api/notifications')
           .set('Authorization', authData.authHeader)
           .send({
-            userId: testUser.id,
+            userId: authData.user.id,
             // Missing required fields
           })
           .expect(400);
@@ -689,11 +1190,13 @@ describe('Notification System', () => {
       });
 
       it('should validate notification type', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
         const response = await request(app)
           .post('/api/notifications')
           .set('Authorization', authData.authHeader)
           .send({
-            userId: testUser.id,
+            userId: authData.user.id,
             type: 'invalid_type',
             title: 'Test',
             content: 'Test content',
@@ -706,11 +1209,13 @@ describe('Notification System', () => {
       });
 
       it('should validate priority level', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
         const response = await request(app)
           .post('/api/notifications')
           .set('Authorization', authData.authHeader)
           .send({
-            userId: testUser.id,
+            userId: authData.user.id,
             type: 'message',
             title: 'Test',
             content: 'Test content',
@@ -725,7 +1230,11 @@ describe('Notification System', () => {
     });
 
     describe('POST /api/notifications/cleanup', () => {
-      beforeEach(async () => {
+      it('should cleanup expired notifications (admin only)', async () => {
+        const testUser = await testFactory.createUser();
+        const adminUser = await testFactory.createUser({ role: 'admin' });
+        const adminAuthData = await testFactory.createAuthenticatedUser({ role: 'admin' });
+
         // Create expired notification
         await Notification.create({
           userId: testUser.id,
@@ -735,10 +1244,6 @@ describe('Notification System', () => {
           category: 'system',
           expiresAt: new Date(Date.now() - 1000) // Expired 1 second ago
         });
-      });
-
-      it('should cleanup expired notifications (admin only)', async () => {
-        const adminAuthData = await testHelpers.authenticateUser(adminUser);
 
         const response = await request(app)
           .post('/api/notifications/cleanup')
@@ -750,6 +1255,8 @@ describe('Notification System', () => {
       });
 
       it('should reject non-admin users', async () => {
+        const authData = await testFactory.createAuthenticatedUser();
+
         const response = await request(app)
           .post('/api/notifications/cleanup')
           .set('Authorization', authData.authHeader)
@@ -763,9 +1270,32 @@ describe('Notification System', () => {
 
   describe('Integration Tests', () => {
     it('should handle complete notification workflow', async () => {
+      const authData = await testFactory.createAuthenticatedUser();
+
+      // Create initial notifications for workflow test
+      await Notification.createNotification({
+        userId: authData.user.id,
+        type: 'message',
+        title: 'New Message',
+        content: 'You received a message',
+        category: 'message',
+        priority: 'high',
+        read: false
+      });
+
+      await Notification.createNotification({
+        userId: authData.user.id,
+        type: 'call',
+        title: 'Missed Call',
+        content: 'You have a missed call',
+        category: 'call',
+        priority: 'normal',
+        read: true
+      });
+
       // 1. Create notification
       const notificationData = {
-        userId: testUser.id,
+        userId: authData.user.id,
         type: 'message',
         title: 'Integration Test',
         content: 'Testing complete workflow',
@@ -826,8 +1356,10 @@ describe('Notification System', () => {
     });
 
     it('should handle rate limiting for notification creation', async () => {
+      const authData = await testFactory.createAuthenticatedUser();
+
       const notificationData = {
-        userId: testUser.id,
+        userId: authData.user.id,
         type: 'system',
         title: 'Rate Limit Test',
         content: 'Testing rate limits',

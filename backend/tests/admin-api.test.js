@@ -1,7 +1,6 @@
 import request from 'supertest';
 import app from '../src/app.js';
 import { User, Session, Group, Announcement, Report, AuditLog } from '../src/models/index.js';
-import { testHelpers } from './testHelpers.js';
 
 /**
  * Comprehensive Admin API Test Suite
@@ -9,77 +8,14 @@ import { testHelpers } from './testHelpers.js';
  */
 
 describe('Admin API Tests', () => {
-  let adminUser, regularUser, adminAuth, regularAuth;
-  let testUsers = [];
-  let testGroups = [];
-  let testAnnouncements = [];
-  let testReports = [];
+  const { factory: testFactory } = global.testUtils;
 
-  beforeAll(async () => {
-    // Create admin user
-    adminUser = await testHelpers.createTestAdmin({
-      username: 'testadmin',
-      email: 'admin@test.com',
-      password: 'AdminPass123!',
-    });
-    adminAuth = await testHelpers.authenticateUser(adminUser);
-
-    // Create regular user
-    regularUser = await testHelpers.createTestUser({
-      username: 'regularuser',
-      email: 'regular@test.com',
-      password: 'RegularPass123!',
-    });
-    regularAuth = await testHelpers.authenticateUser(regularUser);
-
-    // Create additional test users for testing
-    for (let i = 0; i < 5; i++) {
-      const user = await testHelpers.createTestUser({
-        username: `testuser${i}`,
-        email: `testuser${i}@test.com`,
-        approvalStatus: i % 2 === 0 ? 'pending' : 'approved',
-      });
-      testUsers.push(user);
-    }
-
-    // Create test groups
-    for (let i = 0; i < 3; i++) {
-      const group = await Group.create({
-        name: `Test Group ${i}`,
-        description: `Test group description ${i}`,
-        isPrivate: i % 2 === 0,
-        creatorId: adminUser.id,
-      });
-      testGroups.push(group);
-    }
-
-    // Create test announcements
-    for (let i = 0; i < 3; i++) {
-      const announcement = await Announcement.create({
-        title: `Test Announcement ${i}`,
-        content: `Test announcement content ${i}`,
-        type: i % 2 === 0 ? 'info' : 'warning',
-        isActive: true,
-        createdBy: adminUser.id,
-      });
-      testAnnouncements.push(announcement);
-    }
-
-    // Create test reports
-    for (let i = 0; i < 3; i++) {
-      const report = await Report.create({
-        reportedBy: regularUser.id,
-        reportedUser: testUsers[i]?.id || regularUser.id,
-        reason: `Test report reason ${i}`,
-        description: `Test report description ${i}`,
-        status: 'pending',
-      });
-      testReports.push(report);
-    }
+  beforeEach(async () => {
+    await testFactory.cleanup();
   });
 
-  afterAll(async () => {
-    await testHelpers.cleanup();
+  afterEach(async () => {
+    await testFactory.cleanup();
   });
 
   describe('Admin Authentication & Authorization', () => {
@@ -89,10 +25,12 @@ describe('Admin API Tests', () => {
         .expect(401);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.type).toBe('MISSING_TOKEN');
+      expect(response.body.error.type).toBe('TOKEN_MISSING');
     });
 
     it('should reject admin endpoints with regular user token', async () => {
+      const regularAuth = await testFactory.createAuthenticatedUser();
+
       const response = await request(app)
         .get('/api/admin/users')
         .set('Authorization', regularAuth.authHeader)
@@ -103,6 +41,8 @@ describe('Admin API Tests', () => {
     });
 
     it('should allow admin endpoints with admin token', async () => {
+      const adminAuth = await testFactory.createAuthenticatedAdmin();
+
       const response = await request(app)
         .get('/api/admin/users')
         .set('Authorization', adminAuth.authHeader)
@@ -117,6 +57,7 @@ describe('Admin API Tests', () => {
   describe('Admin User Management', () => {
     describe('GET /api/admin/users', () => {
       it('should get all users as admin', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const startTime = Date.now();
         const response = await request(app)
           .get('/api/admin/users')
@@ -144,6 +85,7 @@ describe('Admin API Tests', () => {
       });
 
       it('should support pagination', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
           .get('/api/admin/users?page=1&limit=3')
           .set('Authorization', adminAuth.authHeader)
@@ -155,6 +97,7 @@ describe('Admin API Tests', () => {
       });
 
       it('should support filtering by role', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
           .get('/api/admin/users?role=admin')
           .set('Authorization', adminAuth.authHeader)
@@ -166,6 +109,7 @@ describe('Admin API Tests', () => {
       });
 
       it('should support filtering by approval status', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
           .get('/api/admin/users?approvalStatus=pending')
           .set('Authorization', adminAuth.authHeader)
@@ -179,6 +123,7 @@ describe('Admin API Tests', () => {
 
     describe('GET /api/admin/users/pending', () => {
       it('should get pending users', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
           .get('/api/admin/users/pending')
           .set('Authorization', adminAuth.authHeader)
@@ -196,8 +141,8 @@ describe('Admin API Tests', () => {
 
     describe('PUT /api/admin/users/{userId}/approve', () => {
       it('should approve a pending user', async () => {
-        const pendingUser = testUsers.find(u => u.approvalStatus === 'pending');
-        expect(pendingUser).toBeDefined();
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
+        const pendingUser = await testFactory.createUser({ approvalStatus: 'pending' });
 
         const response = await request(app)
           .put(`/api/admin/users/${pendingUser.id}/approve`)
@@ -216,8 +161,9 @@ describe('Admin API Tests', () => {
       });
 
       it('should log approval action', async () => {
-        const pendingUser = testUsers.find(u => u.approvalStatus === 'pending');
-        
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
+        const pendingUser = await testFactory.createUser({ approvalStatus: 'pending' });
+
         await request(app)
           .put(`/api/admin/users/${pendingUser.id}/approve`)
           .set('Authorization', adminAuth.authHeader)
@@ -229,7 +175,7 @@ describe('Admin API Tests', () => {
         const auditLog = await AuditLog.findOne({
           where: {
             action: 'user_approve',
-            userId: adminUser.id
+            userId: adminAuth.user.id
           }
         });
         expect(auditLog).toBeTruthy();
@@ -239,8 +185,8 @@ describe('Admin API Tests', () => {
 
     describe('PUT /api/admin/users/{userId}/reject', () => {
       it('should reject a pending user', async () => {
-        const pendingUser = testUsers.find(u => u.approvalStatus === 'pending');
-        expect(pendingUser).toBeDefined();
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
+        const pendingUser = await testFactory.createUser({ approvalStatus: 'pending' });
 
         const response = await request(app)
           .put(`/api/admin/users/${pendingUser.id}/reject`)
@@ -262,8 +208,8 @@ describe('Admin API Tests', () => {
 
     describe('PUT /api/admin/users/{userId}/deactivate', () => {
       it('should deactivate an active user', async () => {
-        const activeUser = testUsers.find(u => u.approvalStatus === 'approved' && u.status === 'active');
-        expect(activeUser).toBeDefined();
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
+        const activeUser = await testFactory.createUser({ approvalStatus: 'approved', status: 'active' });
 
         const response = await request(app)
           .put(`/api/admin/users/${activeUser.id}/deactivate`)
@@ -283,8 +229,9 @@ describe('Admin API Tests', () => {
       });
 
       it('should prevent deactivating admin users', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
-          .put(`/api/admin/users/${adminUser.id}/deactivate`)
+          .put(`/api/admin/users/${adminAuth.user.id}/deactivate`)
           .set('Authorization', adminAuth.authHeader)
           .send({
             reason: 'Test deactivation'
@@ -298,23 +245,23 @@ describe('Admin API Tests', () => {
 
     describe('PUT /api/admin/users/{userId}/reactivate', () => {
       it('should reactivate an inactive user', async () => {
-        const inactiveUser = testUsers.find(u => u.status === 'inactive');
-        if (inactiveUser) {
-          const response = await request(app)
-            .put(`/api/admin/users/${inactiveUser.id}/reactivate`)
-            .set('Authorization', adminAuth.authHeader)
-            .send({
-              adminNotes: 'User has been reviewed and reactivated'
-            })
-            .expect(200);
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
+        const inactiveUser = await testFactory.createUser({ status: 'inactive' });
 
-          expect(response.body.success).toBe(true);
-          expect(response.body.data.user.status).toBe('active');
+        const response = await request(app)
+          .put(`/api/admin/users/${inactiveUser.id}/reactivate`)
+          .set('Authorization', adminAuth.authHeader)
+          .send({
+            adminNotes: 'User has been reviewed and reactivated'
+          })
+          .expect(200);
 
-          // Verify user was updated in database
-          await inactiveUser.reload();
-          expect(inactiveUser.status).toBe('active');
-        }
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.user.status).toBe('active');
+
+        // Verify user was updated in database
+        await inactiveUser.reload();
+        expect(inactiveUser.status).toBe('active');
       });
     });
   });
@@ -322,6 +269,7 @@ describe('Admin API Tests', () => {
   describe('Admin Statistics', () => {
     describe('GET /api/admin/stats', () => {
       it('should get system statistics', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const startTime = Date.now();
         const response = await request(app)
           .get('/api/admin/stats')
@@ -350,6 +298,7 @@ describe('Admin API Tests', () => {
       });
 
       it('should include accurate data', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
           .get('/api/admin/stats')
           .set('Authorization', adminAuth.authHeader)
@@ -370,6 +319,7 @@ describe('Admin API Tests', () => {
   describe('Admin Audit Logs', () => {
     describe('GET /api/admin/audit-logs', () => {
       it('should get audit logs', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
           .get('/api/admin/audit-logs')
           .set('Authorization', adminAuth.authHeader)
@@ -391,6 +341,7 @@ describe('Admin API Tests', () => {
       });
 
       it('should support filtering by action', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
           .get('/api/admin/audit-logs?action=user_approve')
           .set('Authorization', adminAuth.authHeader)
@@ -402,6 +353,7 @@ describe('Admin API Tests', () => {
       });
 
       it('should support date range filtering', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const today = new Date().toISOString().split('T')[0];
         const response = await request(app)
           .get(`/api/admin/audit-logs?startDate=${today}&endDate=${today}`)
@@ -416,6 +368,7 @@ describe('Admin API Tests', () => {
   describe('Admin Reports', () => {
     describe('GET /api/admin/reports', () => {
       it('should get all reports', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
           .get('/api/admin/reports')
           .set('Authorization', adminAuth.authHeader)
@@ -437,6 +390,7 @@ describe('Admin API Tests', () => {
       });
 
       it('should support filtering by status', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
           .get('/api/admin/reports?status=pending')
           .set('Authorization', adminAuth.authHeader)
@@ -450,8 +404,16 @@ describe('Admin API Tests', () => {
 
     describe('PUT /api/admin/reports/{reportId}/resolve', () => {
       it('should resolve a report', async () => {
-        const pendingReport = testReports.find(r => r.status === 'pending');
-        expect(pendingReport).toBeDefined();
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
+        const reportingUser = await testFactory.createUser();
+        const reportedUser = await testFactory.createUser();
+        const pendingReport = await Report.create({
+          reportedBy: reportingUser.id,
+          reportedUser: reportedUser.id,
+          reason: 'Test report reason',
+          description: 'Test report description',
+          status: 'pending',
+        });
 
         const response = await request(app)
           .put(`/api/admin/reports/${pendingReport.id}/resolve`)
@@ -475,6 +437,7 @@ describe('Admin API Tests', () => {
   describe('Admin Announcements', () => {
     describe('GET /api/admin/announcements', () => {
       it('should get all announcements', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
           .get('/api/admin/announcements')
           .set('Authorization', adminAuth.authHeader)
@@ -498,6 +461,7 @@ describe('Admin API Tests', () => {
 
     describe('POST /api/admin/announcements', () => {
       it('should create a new announcement', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const announcementData = {
           title: 'System Maintenance',
           content: 'System will be under maintenance from 2AM to 4AM EST',
@@ -519,6 +483,7 @@ describe('Admin API Tests', () => {
       });
 
       it('should validate announcement data', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
           .post('/api/admin/announcements')
           .set('Authorization', adminAuth.authHeader)
@@ -535,7 +500,15 @@ describe('Admin API Tests', () => {
 
     describe('PUT /api/admin/announcements/{announcementId}', () => {
       it('should update an announcement', async () => {
-        const announcement = testAnnouncements[0];
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
+        const creatorUser = await testFactory.createUser();
+        const announcement = await Announcement.create({
+          title: 'Test Announcement',
+          content: 'Test announcement content',
+          type: 'info',
+          isActive: true,
+          createdBy: creatorUser.id,
+        });
         const updateData = {
           title: 'Updated Announcement Title',
           content: 'Updated announcement content',
@@ -557,7 +530,15 @@ describe('Admin API Tests', () => {
 
     describe('DELETE /api/admin/announcements/{announcementId}', () => {
       it('should delete an announcement', async () => {
-        const announcement = testAnnouncements[testAnnouncements.length - 1];
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
+        const creatorUser = await testFactory.createUser();
+        const announcement = await Announcement.create({
+          title: 'Test Announcement to Delete',
+          content: 'Test announcement content',
+          type: 'info',
+          isActive: true,
+          createdBy: creatorUser.id,
+        });
 
         const response = await request(app)
           .delete(`/api/admin/announcements/${announcement.id}`)
@@ -576,6 +557,7 @@ describe('Admin API Tests', () => {
   describe('Admin Export Functions', () => {
     describe('GET /api/admin/export/audit-logs/csv', () => {
       it('should export audit logs as CSV', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
           .get('/api/admin/export/audit-logs/csv')
           .set('Authorization', adminAuth.authHeader)
@@ -589,6 +571,7 @@ describe('Admin API Tests', () => {
 
     describe('GET /api/admin/export/reports/csv', () => {
       it('should export reports as CSV', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
           .get('/api/admin/export/reports/csv')
           .set('Authorization', adminAuth.authHeader)
@@ -602,6 +585,7 @@ describe('Admin API Tests', () => {
 
     describe('GET /api/admin/export/statistics/csv', () => {
       it('should export statistics as CSV', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
           .get('/api/admin/export/statistics/csv')
           .set('Authorization', adminAuth.authHeader)
@@ -616,6 +600,7 @@ describe('Admin API Tests', () => {
   describe('Admin System Settings', () => {
     describe('GET /api/admin/settings', () => {
       it('should get system settings', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const response = await request(app)
           .get('/api/admin/settings')
           .set('Authorization', adminAuth.authHeader)
@@ -628,6 +613,7 @@ describe('Admin API Tests', () => {
 
     describe('PUT /api/admin/settings', () => {
       it('should update system settings', async () => {
+        const adminAuth = await testFactory.createAuthenticatedAdmin();
         const settingsData = {
           siteName: 'Test Messenger',
           maxUsers: 100,
@@ -648,6 +634,7 @@ describe('Admin API Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle non-existent user ID', async () => {
+      const adminAuth = await testFactory.createAuthenticatedAdmin();
       const response = await request(app)
         .put('/api/admin/users/99999/approve')
         .set('Authorization', adminAuth.authHeader)
@@ -658,7 +645,8 @@ describe('Admin API Tests', () => {
     });
 
     it('should handle invalid user status update', async () => {
-      const user = testUsers[0];
+      const adminAuth = await testFactory.createAuthenticatedAdmin();
+      const user = await testFactory.createUser({ approvalStatus: 'approved' });
       const response = await request(app)
         .put(`/api/admin/users/${user.id}/approve`)
         .set('Authorization', adminAuth.authHeader)
@@ -669,6 +657,7 @@ describe('Admin API Tests', () => {
     });
 
     it('should handle malformed request data', async () => {
+      const adminAuth = await testFactory.createAuthenticatedAdmin();
       const response = await request(app)
         .post('/api/admin/announcements')
         .set('Authorization', adminAuth.authHeader)
@@ -685,6 +674,7 @@ describe('Admin API Tests', () => {
 
   describe('Performance Tests', () => {
     it('should handle large user list efficiently', async () => {
+      const adminAuth = await testFactory.createAuthenticatedAdmin();
       const startTime = Date.now();
       const response = await request(app)
         .get('/api/admin/users?limit=100')
@@ -697,6 +687,7 @@ describe('Admin API Tests', () => {
     });
 
     it('should handle concurrent admin requests', async () => {
+      const adminAuth = await testFactory.createAuthenticatedAdmin();
       const promises = [];
       for (let i = 0; i < 10; i++) {
         promises.push(

@@ -199,7 +199,7 @@ Session.findValidSessionsByUserId = function (userId) {
   });
 };
 
-Session.expireAllUserSessions = function (userId) {
+Session.expireAllUserSessions = function (userId, options = {}) {
   return this.update(
     {
       expiresAt: new Date(),
@@ -211,6 +211,7 @@ Session.expireAllUserSessions = function (userId) {
           [Op.gt]: new Date(),
         },
       },
+      ...options,
     }
   );
 };

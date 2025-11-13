@@ -26,14 +26,14 @@ export const Notification = sequelize.define(
       },
     },
     type: {
-      type: DataTypes.ENUM('message', 'call', 'mention', 'admin', 'system'),
+      type: DataTypes.ENUM('message', 'call', 'admin', 'system'),
       allowNull: false,
       validate: {
         notEmpty: {
           msg: 'Notification type is required',
         },
         isIn: {
-          args: [['message', 'call', 'mention', 'admin', 'system']],
+          args: [['message', 'call', 'admin', 'system']],
           msg: 'Invalid notification type',
         },
       },
@@ -83,25 +83,25 @@ export const Notification = sequelize.define(
       allowNull: false,
     },
     priority: {
-      type: DataTypes.ENUM('low', 'medium', 'high', 'urgent'),
-      defaultValue: 'medium',
+      type: DataTypes.ENUM('low', 'normal', 'high', 'urgent'),
+      defaultValue: 'normal',
       allowNull: false,
       validate: {
         isIn: {
-          args: [['low', 'medium', 'high', 'urgent']],
+          args: [['low', 'normal', 'high', 'urgent']],
           msg: 'Invalid priority level',
         },
       },
     },
     category: {
-      type: DataTypes.ENUM('message', 'call', 'mention', 'admin', 'system'),
+      type: DataTypes.ENUM('general', 'message', 'group', 'call', 'system', 'admin'),
       allowNull: false,
       validate: {
         notEmpty: {
           msg: 'Notification category is required',
         },
         isIn: {
-          args: [['message', 'call', 'mention', 'admin', 'system']],
+          args: [['general', 'message', 'group', 'call', 'system', 'admin']],
           msg: 'Invalid notification category',
         },
       },
@@ -202,9 +202,10 @@ Notification.createNotification = async function (notificationData) {
     title,
     content,
     data = {},
-    priority = 'medium',
+    priority = 'normal',
     category,
     expiresAt,
+    read,
   } = notificationData;
 
   // Validate required fields
@@ -224,6 +225,7 @@ Notification.createNotification = async function (notificationData) {
     priority,
     category,
     expiresAt: expiryDate,
+    ...(read !== undefined && { read }),
   });
 };
 
@@ -266,7 +268,18 @@ Notification.findByUserId = function (userId, options = {}) {
   return this.findAll({
     where: whereClause,
     order: [
-      ['priority', 'DESC'], // Higher priority first
+      [
+        sequelize.literal(
+          `CASE priority
+            WHEN 'urgent' THEN 4
+            WHEN 'high' THEN 3
+            WHEN 'normal' THEN 2
+            WHEN 'low' THEN 1
+            ELSE 0
+          END`
+        ),
+        'DESC',
+      ], // Higher priority first
       ['createdAt', 'DESC'], // Most recent first
     ],
     limit,
@@ -287,7 +300,10 @@ Notification.getUnreadCount = function (userId) {
 };
 
 Notification.markAllAsRead = async function (userId, filters = {}) {
-  const whereClause = { userId };
+  const whereClause = {
+    userId,
+    read: false, // Only mark unread notifications
+  };
 
   // Apply optional filters
   if (filters.type) {

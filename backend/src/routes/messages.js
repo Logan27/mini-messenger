@@ -212,10 +212,7 @@ router.post(
         // Update file record if this message has a file attachment
         if (metadata?.fileId) {
           const { File } = await import('../models/index.js');
-          await File.update(
-            { messageId },
-            { where: { id: metadata.fileId }, transaction }
-          );
+          await File.update({ messageId }, { where: { id: metadata.fileId }, transaction });
         }
 
         // Get the created message with sender info
@@ -265,7 +262,9 @@ router.post(
               fileName: messageWithSender.metadata?.fileName || null,
               fileSize: messageWithSender.metadata?.fileSize || null,
               mimeType: messageWithSender.metadata?.mimeType || null,
-              fileUrl: messageWithSender.metadata?.fileId ? `/api/files/${messageWithSender.metadata.fileId}` : null,
+              fileUrl: messageWithSender.metadata?.fileId
+                ? `/api/files/${messageWithSender.metadata.fileId}`
+                : null,
               sender: messageWithSender.sender
                 ? {
                     id: messageWithSender.sender.id,

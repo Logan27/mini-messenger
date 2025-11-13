@@ -19,7 +19,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LazyImage } from './LazyImage';
+import { AuthenticatedImage } from './AuthenticatedImage';
 
 export interface FilePreviewData {
   id: string;
@@ -100,30 +100,38 @@ export const FilePreview = ({
 
       switch (e.key) {
         case 'Escape':
+          e.preventDefault();
+          e.stopPropagation();
           onClose();
           break;
         case 'ArrowLeft':
+          e.preventDefault();
           if (hasPrev) onNavigate?.('prev');
           break;
         case 'ArrowRight':
+          e.preventDefault();
           if (hasNext) onNavigate?.('next');
           break;
         case '+':
         case '=':
+          e.preventDefault();
           setImageScale((prev) => Math.min(3, prev + 0.1));
           break;
         case '-':
+          e.preventDefault();
           setImageScale((prev) => Math.max(0.5, prev - 0.1));
           break;
         case 'r':
         case 'R':
+          e.preventDefault();
           setImageRotation((prev) => prev + 90);
           break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    // Add event listener with capture phase to intercept before Dialog's handler
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [isOpen, hasPrev, hasNext, onNavigate, onClose]);
 
   const handleDownload = async () => {
@@ -158,46 +166,48 @@ export const FilePreview = ({
           isFullscreen ? 'fixed inset-0 z-50' : 'min-h-[500px]'
         )}
       >
-        <img
-          src={file.fileUrl}
-          alt={file.fileName}
-          className="max-w-full max-h-[80vh] object-contain transition-transform duration-200 cursor-zoom-in"
+        <div
+          className="transition-transform duration-200 cursor-zoom-in"
           style={{
             transform: `rotate(${imageRotation}deg) scale(${imageScale})`,
           }}
           onClick={() => setImageScale((prev) => (prev === 1 ? 2 : 1))}
-          loading="eager"
-          decoding="async"
-        />
+        >
+          <AuthenticatedImage
+            src={file.fileUrl}
+            alt={file.fileName}
+            className="max-w-full max-h-[80vh] object-contain"
+          />
+        </div>
 
         {/* Image Controls */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/80 rounded-lg p-2 backdrop-blur">
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex flex-wrap items-center justify-center gap-1 sm:gap-2 bg-black/80 rounded-lg p-1 sm:p-2 backdrop-blur max-w-[calc(100%-1rem)]">
           <Button
             size="sm"
             variant="ghost"
-            className="text-white hover:bg-white/20"
+            className="text-white hover:bg-white/20 h-8 px-2"
             onClick={() => setImageScale((prev) => Math.max(0.5, prev - 0.1))}
             disabled={imageScale <= 0.5}
           >
             <ZoomOut className="h-4 w-4" />
           </Button>
-          <span className="text-white text-sm min-w-[60px] text-center">
+          <span className="text-white text-xs sm:text-sm min-w-[50px] sm:min-w-[60px] text-center">
             {Math.round(imageScale * 100)}%
           </span>
           <Button
             size="sm"
             variant="ghost"
-            className="text-white hover:bg-white/20"
+            className="text-white hover:bg-white/20 h-8 px-2"
             onClick={() => setImageScale((prev) => Math.min(3, prev + 0.1))}
             disabled={imageScale >= 3}
           >
             <ZoomIn className="h-4 w-4" />
           </Button>
-          <div className="w-px h-6 bg-white/20 mx-1" />
+          <div className="hidden sm:block w-px h-6 bg-white/20 mx-1" />
           <Button
             size="sm"
             variant="ghost"
-            className="text-white hover:bg-white/20"
+            className="text-white hover:bg-white/20 h-8 px-2"
             onClick={() => setImageRotation((prev) => prev + 90)}
           >
             <RotateCw className="h-4 w-4" />
@@ -205,16 +215,16 @@ export const FilePreview = ({
           <Button
             size="sm"
             variant="ghost"
-            className="text-white hover:bg-white/20"
+            className="text-white hover:bg-white/20 h-8 px-2 sm:px-3"
             onClick={resetImageTransforms}
           >
-            Reset
+            <span className="text-xs sm:text-sm">Reset</span>
           </Button>
-          <div className="w-px h-6 bg-white/20 mx-1" />
+          <div className="hidden sm:block w-px h-6 bg-white/20 mx-1" />
           <Button
             size="sm"
             variant="ghost"
-            className="text-white hover:bg-white/20"
+            className="text-white hover:bg-white/20 h-8 px-2"
             onClick={() => setIsFullscreen(!isFullscreen)}
           >
             <Maximize2 className="h-4 w-4" />
@@ -355,18 +365,35 @@ export const FilePreview = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden p-0">
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      // Only allow closing via explicit actions (X button, our Esc handler)
+      if (!open) {
+        onClose();
+      }
+    }}>
+      <DialogContent
+        className="max-w-6xl max-h-[95vh] overflow-hidden p-0 w-[95vw]"
+        hideCloseButton
+        style={{ minWidth: 'auto' }}
+        onEscapeKeyDown={(e) => {
+          // Prevent default Dialog Esc behavior - we handle it in useEffect
+          e.preventDefault();
+        }}
+        onPointerDownOutside={(e) => {
+          // Prevent closing when clicking outside
+          e.preventDefault();
+        }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b bg-background">
-          <div className="flex-1 min-w-0 mr-4">
-            <DialogTitle className="text-lg font-semibold truncate">
+        <div className="grid grid-cols-[1fr_auto] gap-2 p-2 sm:p-4 border-b bg-background items-center">
+          <div className="min-w-0">
+            <DialogTitle className="text-sm sm:text-lg font-semibold truncate">
               {file.fileName}
             </DialogTitle>
-            <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+            <div className="hidden sm:flex items-center gap-3 mt-1 text-sm text-muted-foreground">
               <span>{formatFileSize(file.fileSize)}</span>
               <span>•</span>
-              <span>{file.mimeType}</span>
+              <span className="truncate">{file.mimeType}</span>
               <span>•</span>
               <span>{formatDate(file.uploadedAt)}</span>
               {file.sender && (
@@ -376,18 +403,21 @@ export const FilePreview = ({
                 </>
               )}
             </div>
+            <div className="sm:hidden text-xs text-muted-foreground mt-0.5">
+              {formatFileSize(file.fileSize)}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {canNavigate && (
-              <span className="text-sm text-muted-foreground mr-2">
+              <span className="hidden sm:inline text-sm text-muted-foreground mr-2">
                 {currentIndex + 1} / {allFiles.length}
               </span>
             )}
-            <Button variant="outline" size="sm" onClick={handleDownload}>
-              <Download className="h-4 w-4 mr-2" />
-              Download
+            <Button variant="outline" size="sm" onClick={handleDownload} className="h-8 w-8 sm:h-9 sm:w-auto p-0 sm:px-3">
+              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Download</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 sm:h-10 sm:w-10">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -395,11 +425,11 @@ export const FilePreview = ({
 
         {/* Preview Area */}
         <ScrollArea className="h-[calc(95vh-80px)]">
-          <div className="p-6">{getPreviewContent()}</div>
+          <div className="p-2 sm:p-6">{getPreviewContent()}</div>
         </ScrollArea>
 
-        {/* Keyboard shortcuts hint */}
-        <div className="absolute bottom-4 left-4 text-xs text-muted-foreground bg-background/80 backdrop-blur rounded px-2 py-1">
+        {/* Keyboard shortcuts hint - hide on mobile */}
+        <div className="hidden sm:block absolute bottom-4 left-4 text-xs text-muted-foreground bg-background/80 backdrop-blur rounded px-2 py-1">
           <kbd className="px-1 py-0.5 bg-muted rounded">←</kbd>
           <kbd className="px-1 py-0.5 bg-muted rounded ml-1">→</kbd> Navigate •{' '}
           <kbd className="px-1 py-0.5 bg-muted rounded">Esc</kbd> Close

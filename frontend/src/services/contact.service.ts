@@ -70,4 +70,14 @@ export const contactService = {
     const response = await apiClient.delete(`/contacts/${contactId}/mute`);
     return response.data.data;
   },
+
+  async muteGroup(groupId: string) {
+    const response = await apiClient.post(`/groups/${groupId}/mute`);
+    return response.data.data;
+  },
+
+  async unmuteGroup(groupId: string) {
+    const response = await apiClient.delete(`/groups/${groupId}/mute`);
+    return response.data.data;
+  },
 };

@@ -20,9 +20,11 @@ import {
   List,
   Download,
   Calendar,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InlineLoadingFallback } from './LoadingFallback';
+import { AuthenticatedImage } from './AuthenticatedImage';
 import type { FilePreviewData } from './FilePreview';
 
 // Lazy load FilePreview component - only loaded when user clicks on a file
@@ -114,6 +116,9 @@ export const FileGallery = ({
             sender: file.sender,
           }));
 
+          console.log('📁 Fetched files:', fetchedFiles);
+          console.log('📁 First file URL:', fetchedFiles[0]?.fileUrl);
+
           setFiles(fetchedFiles);
           setFilteredFiles(fetchedFiles);
         } catch (error) {
@@ -150,9 +155,50 @@ export const FileGallery = ({
     setFilteredFiles(filtered);
   }, [files, searchQuery, activeTab]);
 
-  const handleFileClick = (file: FilePreviewData, index: number) => {
-    setSelectedFile(file);
-    setSelectedIndex(index);
+  // Handle Esc key to close media screen without closing chat
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+      }
+    };
+
+    // Add event listener with capture phase to intercept before parent handlers
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [isOpen, onClose]);
+
+  const handleFileClick = async (file: FilePreviewData, index: number) => {
+    // For all files - download immediately (no preview modal)
+    try {
+      const token = localStorage.getItem('accessToken');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+      const fileUrl = file.fileUrl.startsWith('http')
+        ? file.fileUrl
+        : `${API_URL}${file.fileUrl.startsWith('/api/') ? file.fileUrl.substring(4) : file.fileUrl}`;
+
+      const response = await fetch(fileUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.fileName;
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
   };
 
   const handleNavigate = (direction: 'prev' | 'next') => {
@@ -177,8 +223,15 @@ export const FileGallery = ({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden">
+      <Dialog open={isOpen && !selectedFile} onOpenChange={onClose}>
+        <DialogContent
+          className="max-w-5xl max-h-[90vh] overflow-hidden w-[95vw]"
+          hideCloseButton
+          onEscapeKeyDown={(e) => {
+            // Prevent default Dialog Esc behavior - we handle it in useEffect
+            e.preventDefault();
+          }}
+        >
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle>Files & Media</DialogTitle>
@@ -194,9 +247,8 @@ export const FileGallery = ({
                     <Grid3x3 className="h-4 w-4" />
                   )}
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleDownloadAll}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download All
+                <Button variant="ghost" size="icon" onClick={onClose}>
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -217,136 +269,159 @@ export const FileGallery = ({
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid grid-cols-5 w-full">
-                <TabsTrigger value="all">
-                  All ({files.length})
+                <TabsTrigger value="all" className="text-xs px-1 sm:px-3 sm:text-sm">
+                  <span className="sm:hidden">All</span>
+                  <span className="hidden sm:inline">All ({files.length})</span>
                 </TabsTrigger>
-                <TabsTrigger value="image">
-                  Images ({imageFiles.length})
+                <TabsTrigger value="image" className="text-xs px-1 sm:px-3 sm:text-sm">
+                  <span className="sm:hidden">Img</span>
+                  <span className="hidden sm:inline">Images ({imageFiles.length})</span>
                 </TabsTrigger>
-                <TabsTrigger value="video">
-                  Videos ({videoFiles.length})
+                <TabsTrigger value="video" className="text-xs px-1 sm:px-3 sm:text-sm">
+                  <span className="sm:hidden">Vid</span>
+                  <span className="hidden sm:inline">Videos ({videoFiles.length})</span>
                 </TabsTrigger>
-                <TabsTrigger value="audio">
-                  Audio ({audioFiles.length})
+                <TabsTrigger value="audio" className="text-xs px-1 sm:px-3 sm:text-sm">
+                  <span className="sm:hidden">Aud</span>
+                  <span className="hidden sm:inline">Audio ({audioFiles.length})</span>
                 </TabsTrigger>
-                <TabsTrigger value="document">
-                  Docs ({documentFiles.length})
+                <TabsTrigger value="document" className="text-xs px-1 sm:px-3 sm:text-sm">
+                  <span className="sm:hidden">Doc</span>
+                  <span className="hidden sm:inline">Docs ({documentFiles.length})</span>
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value={activeTab} className="mt-4">
                 <ScrollArea className="h-[500px]">
-                  {loading ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
-                        <p className="text-sm text-muted-foreground">Loading files...</p>
-                      </div>
-                    </div>
-                  ) : filteredFiles.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full py-12">
-                      <File className="h-16 w-16 text-muted-foreground mb-4" />
-                      <p className="text-lg font-medium">No files found</p>
-                      <p className="text-sm text-muted-foreground">
-                        {searchQuery
-                          ? 'Try a different search query'
-                          : 'No files have been shared in this conversation yet'}
-                      </p>
-                    </div>
-                  ) : viewMode === 'grid' ? (
-                    // Grid View
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-1">
-                      {filteredFiles.map((file, index) => (
-                        <div
-                          key={file.id}
-                          className="group relative aspect-square rounded-lg overflow-hidden border bg-muted cursor-pointer hover:ring-2 hover:ring-primary transition-all"
-                          onClick={() => handleFileClick(file, index)}
-                        >
-                          {file.mimeType.startsWith('image/') ? (
-                            <img
-                              src={file.fileUrl}
-                              alt={file.fileName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : file.mimeType.startsWith('video/') ? (
-                            <div className="relative w-full h-full">
-                              <video
-                                src={file.fileUrl}
-                                className="w-full h-full object-cover"
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                <FileVideo className="h-12 w-12 text-white" />
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col items-center justify-center h-full p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
-                              {getFileIcon(file.mimeType)}
-                              <p className="text-xs font-medium mt-2 text-center line-clamp-2">
-                                {file.fileName}
-                              </p>
-                            </div>
-                          )}
-                          {/* Overlay */}
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end p-2">
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs truncate w-full">
-                              {file.fileName}
-                            </div>
-                          </div>
+                  <div className="pr-4">
+                    {loading ? (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+                          <p className="text-sm text-muted-foreground">Loading files...</p>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    // List View
-                    <div className="space-y-2 p-1">
-                      {filteredFiles.map((file, index) => (
-                        <div
-                          key={file.id}
-                          className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent cursor-pointer transition-colors"
-                          onClick={() => handleFileClick(file, index)}
-                        >
-                          <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-muted flex items-center justify-center">
+                      </div>
+                    ) : filteredFiles.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full py-12">
+                        <File className="h-16 w-16 text-muted-foreground mb-4" />
+                        <p className="text-lg font-medium">No files found</p>
+                        <p className="text-sm text-muted-foreground">
+                          {searchQuery
+                            ? 'Try a different search query'
+                            : 'No files have been shared in this conversation yet'}
+                        </p>
+                      </div>
+                    ) : viewMode === 'grid' ? (
+                      // Grid View
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-1">
+                        {filteredFiles.map((file, index) => (
+                          <div
+                            key={file.id}
+                            className="group relative aspect-square rounded-lg overflow-hidden border bg-muted cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                            onClick={() => handleFileClick(file, index)}
+                          >
                             {file.mimeType.startsWith('image/') ? (
-                              <img
+                              <AuthenticatedImage
                                 src={file.fileUrl}
                                 alt={file.fileName}
                                 className="w-full h-full object-cover"
                               />
+                            ) : file.mimeType.startsWith('video/') ? (
+                              <div className="relative w-full h-full">
+                                <video
+                                  src={file.fileUrl}
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                  <FileVideo className="h-12 w-12 text-white" />
+                                </div>
+                              </div>
                             ) : (
-                              <div className="text-muted-foreground">
+                              <div className="flex flex-col items-center justify-center h-full p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
                                 {getFileIcon(file.mimeType)}
+                                <p className="text-xs font-medium mt-2 text-center line-clamp-2">
+                                  {file.fileName}
+                                </p>
                               </div>
                             )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{file.fileName}</p>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                              <span>{formatFileSize(file.fileSize)}</span>
-                              <span>•</span>
-                              <Calendar className="h-3 w-3" />
-                              <span>{formatDate(file.uploadedAt)}</span>
-                              {file.sender && (
-                                <>
-                                  <span>•</span>
-                                  <span>{file.sender.username}</span>
-                                </>
-                              )}
+                            {/* Overlay */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end p-2">
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs truncate w-full">
+                                {file.fileName}
+                              </div>
                             </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Download individual file
-                              window.open(file.fileUrl, '_blank');
-                            }}
+                        ))}
+                      </div>
+                    ) : (
+                      // List View
+                      <div className="space-y-2">
+                        {filteredFiles.map((file, index) => (
+                          <div
+                            key={file.id}
+                            className="grid grid-cols-[40px_1fr_32px] gap-2 p-2 rounded-lg border bg-card hover:bg-accent cursor-pointer transition-colors items-center"
+                            onClick={() => handleFileClick(file, index)}
                           >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                            <div className="w-10 h-10 rounded overflow-hidden bg-muted flex items-center justify-center">
+                              {file.mimeType.startsWith('image/') ? (
+                                <AuthenticatedImage
+                                  src={file.fileUrl}
+                                  alt={file.fileName}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="text-muted-foreground">
+                                  {getFileIcon(file.mimeType)}
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm truncate">{file.fileName}</p>
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                <span>{formatFileSize(file.fileSize)}</span>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                // Download individual file with authentication
+                                try {
+                                  const token = localStorage.getItem('accessToken');
+                                  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+                                  const imageUrl = file.fileUrl.startsWith('http')
+                                    ? file.fileUrl
+                                    : `${API_URL}${file.fileUrl.startsWith('/api/') ? file.fileUrl.substring(4) : file.fileUrl}`;
+
+                                  const response = await fetch(imageUrl, {
+                                    headers: {
+                                      Authorization: `Bearer ${token}`,
+                                    },
+                                  });
+
+                                  const blob = await response.blob();
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url;
+                                  a.download = file.fileName;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  URL.revokeObjectURL(url);
+                                  document.body.removeChild(a);
+                                } catch (error) {
+                                  console.error('Download failed:', error);
+                                }
+                              }}
+                            >
+                              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </ScrollArea>
               </TabsContent>
             </Tabs>

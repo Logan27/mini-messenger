@@ -2,37 +2,32 @@ import { jest } from '@jest/globals';
 import request from 'supertest';
 import app from '../src/app.js';
 import { User, Call } from '../src/models/index.js';
-import { testHelpers } from './testHelpers.js';
 
 // Note: Mocking is disabled for ES module compatibility
 // These tests focus on API endpoints and database operations
 // WebSocket and FCM service interactions are not tested here
 
 describe('Call API', () => {
-  let user1;
-  let user2;
-  let token1;
-  let token2;
+  const { factory: testFactory } = global.testUtils;
 
-  beforeAll(async () => {
-    await testHelpers.cleanup();
-    user1 = await testHelpers.createTestUser({ username: 'calluser1', email: 'calluser1@example.com' });
-    user2 = await testHelpers.createTestUser({ username: 'calluser2', email: 'calluser2@example.com' });
-    token1 = testHelpers.generateToken(user1);
-    token2 = testHelpers.generateToken(user2);
+  beforeEach(async () => {
+    await testFactory.cleanup();
   });
 
-  afterAll(async () => {
-    await testHelpers.cleanup();
+  afterEach(async () => {
+    await testFactory.cleanup();
   });
 
   describe('POST /api/calls/initiate', () => {
     it('should initiate a call successfully', async () => {
+      const user1Auth = await testFactory.createAuthenticatedUser();
+      const user2Auth = await testFactory.createAuthenticatedUser();
+
       const response = await request(app)
         .post('/api/calls/initiate')
-        .set('Authorization', `Bearer ${token1}`)
+        .set('Authorization', user1Auth.authHeader)
         .send({
-          recipientId: user2.id,
+          recipientId: user2Auth.user.id,
           callType: 'video',
         })
         .expect(201);
@@ -42,18 +37,24 @@ describe('Call API', () => {
 
       const call = await Call.findByPk(response.body.callId);
       expect(call).toBeDefined();
-      expect(call.callerId).toBe(user1.id);
-      expect(call.recipientId).toBe(user2.id);
+      expect(call.callerId).toBe(user1Auth.user.id);
+      expect(call.recipientId).toBe(user2Auth.user.id);
     });
   });
 
   describe('POST /api/calls/:id/accept', () => {
     it('should accept a call successfully', async () => {
-      const call = await Call.create({ callerId: user1.id, recipientId: user2.id, callType: 'video', status: 'calling' });
+      const user1Auth = await testFactory.createAuthenticatedUser();
+      const user2Auth = await testFactory.createAuthenticatedUser();
+
+      const call = await testFactory.createCall(user1Auth.user, user2Auth.user, {
+        callType: 'video',
+        status: 'calling'
+      });
 
       const response = await request(app)
         .post(`/api/calls/accept/${call.id}`)
-        .set('Authorization', `Bearer ${token2}`)
+        .set('Authorization', user2Auth.authHeader)
         .expect(200);
 
       expect(response.body.message).toBe('Call accepted');
@@ -65,11 +66,17 @@ describe('Call API', () => {
 
   describe('POST /api/calls/:id/reject', () => {
     it('should reject a call successfully', async () => {
-      const call = await Call.create({ callerId: user1.id, recipientId: user2.id, callType: 'video', status: 'calling' });
+      const user1Auth = await testFactory.createAuthenticatedUser();
+      const user2Auth = await testFactory.createAuthenticatedUser();
+
+      const call = await testFactory.createCall(user1Auth.user, user2Auth.user, {
+        callType: 'video',
+        status: 'calling'
+      });
 
       const response = await request(app)
         .post(`/api/calls/reject/${call.id}`)
-        .set('Authorization', `Bearer ${token2}`)
+        .set('Authorization', user2Auth.authHeader)
         .expect(200);
 
       expect(response.body.message).toBe('Call rejected');
@@ -81,11 +88,18 @@ describe('Call API', () => {
 
   describe('POST /api/calls/:id/end', () => {
     it('should end a call successfully', async () => {
-      const call = await Call.create({ callerId: user1.id, recipientId: user2.id, callType: 'video', status: 'connected', startedAt: new Date() });
+      const user1Auth = await testFactory.createAuthenticatedUser();
+      const user2Auth = await testFactory.createAuthenticatedUser();
+
+      const call = await testFactory.createCall(user1Auth.user, user2Auth.user, {
+        callType: 'video',
+        status: 'connected',
+        startedAt: new Date()
+      });
 
       const response = await request(app)
         .post(`/api/calls/end/${call.id}`)
-        .set('Authorization', `Bearer ${token1}`)
+        .set('Authorization', user1Auth.authHeader)
         .expect(200);
 
       expect(response.body.message).toBe('Call ended');
@@ -98,9 +112,11 @@ describe('Call API', () => {
 
   describe('GET /api/calls/turn-credentials', () => {
     it('should return TURN credentials successfully', async () => {
+      const user1Auth = await testFactory.createAuthenticatedUser();
+
       const response = await request(app)
         .get('/api/calls/turn-credentials')
-        .set('Authorization', `Bearer ${token1}`)
+        .set('Authorization', user1Auth.authHeader)
         .expect(200);
 
       expect(response.body.username).toBeDefined();
@@ -111,11 +127,17 @@ describe('Call API', () => {
 
   describe('GET /api/calls/history', () => {
     it('should return call history successfully', async () => {
-      await Call.create({ callerId: user1.id, recipientId: user2.id, callType: 'video', status: 'ended' });
+      const user1Auth = await testFactory.createAuthenticatedUser();
+      const user2Auth = await testFactory.createAuthenticatedUser();
+
+      await testFactory.createCall(user1Auth.user, user2Auth.user, {
+        callType: 'video',
+        status: 'ended'
+      });
 
       const response = await request(app)
         .get('/api/calls/history')
-        .set('Authorization', `Bearer ${token1}`)
+        .set('Authorization', user1Auth.authHeader)
         .expect(200);
 
       expect(response.body.calls).toBeDefined();

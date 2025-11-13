@@ -26,7 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Send, MoreVertical, Phone, Video, ArrowDown, ArrowLeft, X, Paperclip, Smile, MessageSquare, FolderOpen, Settings, Users, Info, Loader2, LogOut, Bell, BellOff, UserPlus, UserX, Trash2 } from "lucide-react";
+import { Send, MoreVertical, Phone, Video, ArrowDown, ArrowLeft, X, Paperclip, Smile, MessageSquare, FolderOpen, Settings, Users, Info, Loader2, LogOut, Bell, BellOff, UserPlus, UserX, Trash2, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { getAvatarUrl } from "@/lib/avatar-utils";
@@ -34,12 +34,13 @@ import { useSendMessage, useEditMessage, useDeleteMessage } from "@/hooks/useMes
 import { useAddReaction } from "@/hooks/useReactions";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
-import { useMuteContact, useUnmuteContact, useBlockContact, useRemoveContact, useContacts } from "@/hooks/useContacts";
+import { useMuteContact, useUnmuteContact, useMuteGroup, useUnmuteGroup, useBlockContact, useRemoveContact, useContacts } from "@/hooks/useContacts";
 import { useQueryClient } from "@tanstack/react-query";
 import { socketService } from "@/services/socket.service";
 import { toast as sonnerToast } from "sonner";
 import { getErrorMessage } from "@/lib/error-utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiClient } from "@/lib/api-client";
 
 interface ChatViewProps {
   chatName: string;
@@ -108,6 +109,11 @@ export const ChatView = ({
   } | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false); // Track dropdown state for re-render
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false); // Track mobile search dialog
+  const [mobileSearchQuery, setMobileSearchQuery] = useState('');
+  const [mobileSearchResults, setMobileSearchResults] = useState([]);
+  const [mobileSearchLoading, setMobileSearchLoading] = useState(false);
+  const [shouldRestoreScroll, setShouldRestoreScroll] = useState(true); // Always try to restore scroll position on initial load
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -119,6 +125,8 @@ export const ChatView = ({
   const isInitialLoadRef = useRef<boolean>(true); // Track if this is the initial message load
   const previousMessageCountRef = useRef<number>(0); // Track previous message count
   const wasLoadingMoreRef = useRef<boolean>(false); // Track if we were loading more messages
+  const scrollBeforePaginationRef = useRef<{ messageId: string; offset: number } | null>(null); // Track scroll position before pagination
+  const lastPaginationCompleteRef = useRef<number>(0); // Track when pagination last completed
 
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -127,12 +135,40 @@ export const ChatView = ({
   const deleteMessage = useDeleteMessage();
   const addReaction = useAddReaction();
   const { sendTyping, onTyping, isConnected } = useSocket();
+
   const { toast } = useToast();
   const muteContact = useMuteContact();
   const unmuteContact = useUnmuteContact();
+  const muteGroup = useMuteGroup();
+  const unmuteGroup = useUnmuteGroup();
   const blockContact = useBlockContact();
   const removeContact = useRemoveContact();
   const { data: contacts, refetch: refetchContacts } = useContacts('accepted');
+
+  // Listen for socket mute/unmute events
+  useEffect(() => {
+    const handleContactMuted = (data: { contactId: string; isMuted: boolean; timestamp: string }) => {
+      console.log('🔵 Received contact.muted event:', data);
+      // Refetch contacts to get updated mute status
+      refetchContacts();
+    };
+
+    const handleContactUnmuted = (data: { contactId: string; isMuted: boolean; timestamp: string }) => {
+      console.log('🔵 Received contact.unmuted event:', data);
+      // Refetch contacts to get updated mute status
+      refetchContacts();
+    };
+
+    // Subscribe to socket events
+    socketService.on('contact.muted', handleContactMuted);
+    socketService.on('contact.unmuted', handleContactUnmuted);
+
+    // Cleanup
+    return () => {
+      socketService.off('contact.muted', handleContactMuted);
+      socketService.off('contact.unmuted', handleContactUnmuted);
+    };
+  }, [refetchContacts]);
   const queryClient = useQueryClient();
 
   const scrollToBottom = () => {
@@ -159,13 +195,43 @@ export const ChatView = ({
 
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = container;
-      // Check if scrolled near top (within 100px)
+
+      // Save current scroll position when getting close to top (within 200px)
+      // This happens BEFORE we trigger loading, ensuring we capture the right position
+      if (scrollTop < 200 && !isLoading && !scrollBeforePaginationRef.current) {
+        const viewportTop = scrollTop;
+        let closestMessage = null;
+        let closestDistance = Infinity;
+
+        messageRefs.current.forEach((element, messageId) => {
+          const rect = element.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          const messageTop = rect.top - containerRect.top + scrollTop;
+          const distance = Math.abs(messageTop - viewportTop);
+
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestMessage = { messageId, offset: messageTop - viewportTop };
+          }
+        });
+
+        if (closestMessage) {
+          scrollBeforePaginationRef.current = closestMessage;
+          console.log(`💾 Pre-saved pagination scroll: message ${closestMessage.messageId}, offset ${closestMessage.offset}px`);
+        }
+      }
+
+      // Check if scrolled near top (within 100px) to trigger loading
       const isNearTop = scrollTop < 100;
 
       if (isNearTop && !isLoading) {
         isLoading = true;
         previousScrollHeight = scrollHeight;
         previousScrollTop = scrollTop;
+
+        // Position should already be saved from above
+        console.log(`🔄 Triggering pagination load, saved position: ${scrollBeforePaginationRef.current ? 'YES' : 'NO'}`);
+
         onLoadMore();
       }
     };
@@ -192,16 +258,46 @@ export const ChatView = ({
     // - Didn't just finish loading more messages
     if (!container || isLoadingMore || isInitialLoadRef.current || !justFinishedLoading) return;
 
-    // Give the DOM time to update
+    // Maintain scroll position: restore to the exact position before pagination started
     const timer = setTimeout(() => {
+      const savedPosition = scrollBeforePaginationRef.current;
+
+      if (savedPosition) {
+        const { messageId, offset } = savedPosition;
+        const savedElement = messageRefs.current.get(messageId);
+
+        if (savedElement) {
+          // Get the message's current position
+          const rect = savedElement.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          const currentMessageTop = rect.top - containerRect.top;
+
+          // Calculate how much to scroll to restore the exact position
+          const scrollAdjustment = currentMessageTop - offset;
+          container.scrollTop += scrollAdjustment;
+
+          console.log(`📍 Restored scroll after loading history: message ${messageId} at offset ${offset}px`);
+
+          // Clear the saved position and mark pagination as just completed
+          scrollBeforePaginationRef.current = null;
+          lastPaginationCompleteRef.current = Date.now();
+          return;
+        }
+      }
+
+      // Fallback: keep first message at top (if no saved position)
       const firstMessage = container.querySelector('[data-message-id]');
       if (firstMessage) {
-        firstMessage.scrollIntoView({ block: 'start' });
+        firstMessage.scrollIntoView({ block: 'start', behavior: 'auto' });
+        console.log('📍 Kept scroll at top after loading history (no saved position)');
       }
-    }, 50);
+
+      // Mark pagination as just completed
+      lastPaginationCompleteRef.current = Date.now();
+    }, 100);
 
     return () => clearTimeout(timer);
-  }, [isLoadingMore]);
+  }, [isLoadingMore, recipientId, groupId]);
 
   // Focus input when chat opens or recipient changes
   useEffect(() => {
@@ -239,9 +335,116 @@ export const ChatView = ({
 
   // Reset initial load flag when conversation changes
   useEffect(() => {
-    isInitialLoadRef.current = true;
-    previousMessageCountRef.current = 0;
+    // Only reset if conversation actually changed (not just component re-render)
+    const conversationId = recipientId || groupId;
+    const previousConversationId = localStorage.getItem('lastConversationId');
+
+    if (conversationId !== previousConversationId) {
+      isInitialLoadRef.current = true;
+      previousMessageCountRef.current = 0;
+      setShouldRestoreScroll(true); // We want to restore scroll position for new conversations
+      localStorage.setItem('lastConversationId', conversationId || '');
+    }
   }, [recipientId, groupId]);
+
+  // Save scroll position when user scrolls (message-based)
+  useEffect(() => {
+    let scrollTimeout: NodeJS.Timeout;
+
+    const handleScroll = () => {
+      if (!messagesContainerRef.current) return;
+
+      const { scrollTop, clientHeight, scrollHeight } = messagesContainerRef.current;
+
+      // Debounce the scroll position saving
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        const conversationId = recipientId || groupId;
+        if (!conversationId) return;
+
+        const savedScrollKey = `chat_scroll_${conversationId}`;
+
+        // Check if we're at the very bottom (within 10px)
+        const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+        const isAtBottom = distanceFromBottom < 10;
+
+        if (isAtBottom) {
+          // At bottom - clear saved position (will default to bottom on reload)
+          localStorage.removeItem(savedScrollKey);
+          console.log(`💾 Cleared scroll position (at bottom)`);
+          return;
+        }
+
+        // Not at bottom - save the bottom-most (newest) visible message
+        // This is the last message user was viewing
+        const viewportBottom = scrollTop + clientHeight;
+        let bottomMostVisibleMessage = null;
+        let bottomMostPosition = -Infinity;
+
+        messageRefs.current.forEach((element, messageId) => {
+          const rect = element.getBoundingClientRect();
+          const containerRect = messagesContainerRef.current!.getBoundingClientRect();
+          const messageTop = rect.top - containerRect.top + scrollTop;
+          const messageBottom = messageTop + rect.height;
+
+          // Check if message is visible in viewport
+          const isVisible = messageTop < viewportBottom && messageBottom > scrollTop;
+
+          if (isVisible && messageBottom > bottomMostPosition) {
+            bottomMostPosition = messageBottom;
+            bottomMostVisibleMessage = messageId;
+          }
+        });
+
+        if (bottomMostVisibleMessage) {
+          localStorage.setItem(savedScrollKey, bottomMostVisibleMessage);
+          console.log(`💾 Saved scroll position: message ${bottomMostVisibleMessage} (bottom-most visible)`);
+        }
+      }, 200); // Wait 200ms after scrolling stops
+    };
+
+    const container = messagesContainerRef.current;
+    container?.addEventListener('scroll', handleScroll);
+    return () => {
+      container?.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollTimeout);
+    };
+  }, [recipientId, groupId, messages]);
+
+  // Mobile search functionality
+  useEffect(() => {
+    const searchTimer = setTimeout(async () => {
+      if (mobileSearchQuery.length >= 2) {
+        setMobileSearchLoading(true);
+        try {
+          const params = new URLSearchParams({
+            q: mobileSearchQuery,
+            limit: '20',
+            page: '1',
+          });
+
+          // Filter by current conversation if recipientId provided
+          if (recipientId) {
+            params.append('conversationWith', recipientId);
+          } else if (groupId) {
+            params.append('groupId', groupId);
+          }
+
+          const response = await apiClient.get(`/messages/search?${params}`);
+          setMobileSearchResults(response.data.data || response.data.results || []);
+        } catch (error) {
+          console.error('Search error:', error);
+          setMobileSearchResults([]);
+        } finally {
+          setMobileSearchLoading(false);
+        }
+      } else {
+        setMobileSearchResults([]);
+      }
+    }, 300); // Debounce search
+
+    return () => clearTimeout(searchTimer);
+  }, [mobileSearchQuery, recipientId, groupId]);
 
   // Smart scroll: only scroll to bottom for new messages, not on initial load or when loading history
   useEffect(() => {
@@ -251,42 +454,216 @@ export const ChatView = ({
     const currentMessageCount = messages.length;
     const previousMessageCount = previousMessageCountRef.current;
 
-    // First load: always scroll to bottom (don't restore scroll position)
-    if (isInitialLoadRef.current && currentMessageCount > 0) {
-      // Use requestAnimationFrame to ensure DOM is painted
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
+    // First load: restore scroll position or scroll to bottom if no saved position
+    if (isInitialLoadRef.current && currentMessageCount > 0 && !isLoadingMessages && !isLoadingMore) {
+      // Use setTimeout to ensure DOM is fully rendered (more reliable than requestAnimationFrame)
+      const timer = setTimeout(() => {
+        const conversationId = recipientId || groupId || 'global';
+        const savedMessageId = localStorage.getItem(`chat_scroll_${conversationId}`);
+
+        if (shouldRestoreScroll && savedMessageId) {
+          // Try to restore saved message position
+          const savedElement = messageRefs.current.get(savedMessageId);
+          if (savedElement && messagesContainerRef.current) {
+            savedElement.scrollIntoView({ behavior: 'auto', block: 'center' });
+            console.log(`📍 Restored scroll to message: ${savedMessageId}`);
+            isInitialLoadRef.current = false;
+            setShouldRestoreScroll(false); // Only restore once per conversation change
+          } else if (hasMoreMessages && onLoadMore && !isLoadingMore) {
+            // Saved message not in current page, load more pages to find it
+            console.log(`🔍 Saved message ${savedMessageId} not found in current page (${messages.length} messages loaded), loading more...`);
+            onLoadMore();
+            // Don't set isInitialLoadRef to false yet - we'll retry when more messages load
+          } else if (!hasMoreMessages) {
+            // No more messages to load, saved message doesn't exist (might be deleted)
+            scrollToBottom();
+            console.log('📍 Saved message not found and no more pages available, scrolled to bottom');
+            isInitialLoadRef.current = false;
+            setShouldRestoreScroll(false);
+          }
+          // else: isLoadingMore is true, wait for it to complete
+        } else {
+          // Scroll to bottom for new chats or when no saved position
           scrollToBottom();
+          console.log('📍 Scrolled to bottom (no saved position)');
           isInitialLoadRef.current = false;
-        });
-      });
+          setShouldRestoreScroll(false); // Only restore once per conversation change
+        }
+      }, 100); // 100ms delay to ensure DOM is fully painted
 
       previousMessageCountRef.current = currentMessageCount;
-      return;
+      return () => clearTimeout(timer);
     }
 
     // New message arrived (count increased)
     if (currentMessageCount > previousMessageCount && !isInitialLoadRef.current) {
+      console.log(`📬 Message count increased: ${previousMessageCount} → ${currentMessageCount}`);
+
+      // Skip if we're currently loading more messages (pagination)
+      // The separate pagination effect will handle scroll restoration
+      if (isLoadingMore || wasLoadingMoreRef.current) {
+        console.log('⏸️ Skipping auto-scroll - loading more messages (pagination)');
+        previousMessageCountRef.current = currentMessageCount;
+        return;
+      }
+
+      // Skip if pagination just completed (within 500ms)
+      // This handles the race condition where messages increase right after pagination
+      const timeSincePagination = Date.now() - lastPaginationCompleteRef.current;
+      if (timeSincePagination < 500) {
+        console.log(`⏸️ Skipping auto-scroll - pagination just completed ${timeSincePagination}ms ago`);
+        previousMessageCountRef.current = currentMessageCount;
+        return;
+      }
+
       // Get the latest message to check if it's from the current user
-      const latestMessage = messages[messages.length - 1];
-      const isOwnMessage = latestMessage?.isOwn;
+      // Scan from the end to find the actual newest message (in case of timing issues)
+      let latestMessage = messages[messages.length - 1];
+      let isOwnMessage = latestMessage?.isOwn;
 
-      // Use requestAnimationFrame to ensure DOM has updated before checking scroll position
-      requestAnimationFrame(() => {
-        const { scrollTop, scrollHeight, clientHeight } = container;
-        const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
-
-        // Always scroll for own messages, or scroll if user was already near bottom
-        if (isOwnMessage || isNearBottom) {
-          requestAnimationFrame(() => {
-            scrollToBottom();
-          });
+      // Also check the last few messages in case the newest isn't at the very end yet
+      for (let i = messages.length - 1; i >= Math.max(0, messages.length - 5); i--) {
+        if (messages[i] && new Date(messages[i].timestamp) > new Date(latestMessage.timestamp)) {
+          latestMessage = messages[i];
+          isOwnMessage = messages[i].isOwn;
         }
-      });
+      }
+
+      console.log(`📬 Latest message: id=${latestMessage?.id}, isOwn=${isOwnMessage}, text="${latestMessage?.text?.substring(0, 20)}..."}`);
+
+
+      // Skip auto-scroll for optimistic (temp) messages - wait for server confirmation
+      // This prevents scrolling before the message is actually sent
+      const isTempMessage = latestMessage?.id?.startsWith('temp-');
+
+      if (isTempMessage) {
+        console.log('⏳ Skipping auto-scroll for optimistic message, waiting for server confirmation');
+        previousMessageCountRef.current = currentMessageCount;
+        return;
+      }
+
+      // Check scroll position BEFORE DOM updates
+      // We need to check if user was at bottom BEFORE the new message was added
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+
+      // More generous threshold: if within 1.5 screens of bottom, consider it "at bottom"
+      // This ensures users who are reading recent messages get auto-scrolled
+      const isNearBottom = distanceFromBottom < (clientHeight * 1.5);
+
+      // Check if this is a RECENT own message (sent within last 5 seconds)
+      // This prevents auto-scrolling for old own messages loaded via pagination
+      const messageAge = Date.now() - new Date(latestMessage.timestamp).getTime();
+      const isRecentOwnMessage = isOwnMessage && messageAge < 5000;
+
+      console.log(`📊 Scroll check: scrollTop=${scrollTop}, scrollHeight=${scrollHeight}, clientHeight=${clientHeight}, distanceFromBottom=${distanceFromBottom}, threshold=${clientHeight * 1.5}, isNearBottom=${isNearBottom}, isOwnMessage=${isOwnMessage}, messageAge=${messageAge}ms, isRecentOwnMessage=${isRecentOwnMessage}`);
+
+      // Auto-scroll rules:
+      // - ALWAYS scroll for RECENT own messages (sent within 5 seconds)
+      // - For incoming messages OR old own messages, only scroll if already near bottom
+      const shouldScroll = isRecentOwnMessage || isNearBottom;
+
+      if (shouldScroll) {
+        const container = messagesContainerRef.current;
+        if (!container) return;
+
+        const hasFileMessage = latestMessage?.messageType === 'file';
+        const oldScrollHeight = container.scrollHeight;
+
+        console.log(`📍 Setting up scroll observer: oldHeight=${oldScrollHeight}, hasFile=${hasFileMessage}`);
+
+        // Use MutationObserver to detect when DOM actually changes
+        let hasScrolled = false;
+        let mutationTimer: NodeJS.Timeout | null = null;
+
+        const observer = new MutationObserver((mutations) => {
+          // Skip if we already scrolled
+          if (hasScrolled) return;
+
+          const newScrollHeight = container.scrollHeight;
+          const heightDiff = newScrollHeight - oldScrollHeight;
+
+          console.log(`📍 DOM mutation detected: old=${oldScrollHeight}, new=${newScrollHeight}, diff=${heightDiff}`);
+
+          // Clear previous timer - wait for mutations to stabilize
+          if (mutationTimer) {
+            clearTimeout(mutationTimer);
+          }
+
+          // Debounce: wait for mutations to stop for 50ms before scrolling
+          mutationTimer = setTimeout(() => {
+            // Double-check with RAF to ensure layout is 100% complete
+            requestAnimationFrame(() => {
+              const finalHeight = container.scrollHeight;
+              console.log(`📍 Mutations stabilized, scrolling: height=${finalHeight}`);
+
+              container.scrollTo({
+                top: finalHeight,
+                behavior: "smooth"
+              });
+
+              console.log(`📍 Auto-scrolled after DOM update (own: ${isOwnMessage}, hasFile: ${hasFileMessage})`);
+              hasScrolled = true;
+
+              // Disconnect observer after successful scroll
+              observer.disconnect();
+            });
+          }, 50); // Wait 50ms after last mutation
+        });
+
+        // Observe the messages container for DOM changes
+        observer.observe(container, {
+          childList: true,      // Watch for added/removed children
+          subtree: true,        // Watch all descendants
+          characterData: true,  // Watch for text changes
+          attributes: true,     // Watch for attribute changes (e.g., class changes)
+        });
+
+        // Fallback timeout in case observer doesn't fire (e.g., message already rendered)
+        // Use longer timeout for files to allow images to load
+        const fallbackTimeout = hasFileMessage ? 1000 : 500;
+        setTimeout(() => {
+          const finalScrollHeight = container.scrollHeight;
+          const finalHeightDiff = finalScrollHeight - oldScrollHeight;
+
+          console.log(`⏱️ Fallback timeout: old=${oldScrollHeight}, new=${finalScrollHeight}, diff=${finalHeightDiff}`);
+
+          // If height changed but observer didn't fire, scroll now
+          if (finalHeightDiff > 0 || finalScrollHeight !== oldScrollHeight) {
+            console.log(`📍 Fallback scroll triggered`);
+            container.scrollTo({
+              top: finalScrollHeight,
+              behavior: "smooth"
+            });
+          } else {
+            console.log(`⚠️ No height change detected - message may already be visible`);
+          }
+
+          // Clean up observer and timer
+          if (mutationTimer) {
+            clearTimeout(mutationTimer);
+          }
+          observer.disconnect();
+        }, fallbackTimeout);
+      } else {
+        console.log(`⏸️ Skipping auto-scroll (own message: ${isOwnMessage}, near bottom: ${isNearBottom}) - user is reading history`);
+      }
     }
 
     previousMessageCountRef.current = currentMessageCount;
-  }, [messages, recipientId, groupId]);
+  }, [messages, recipientId, groupId, shouldRestoreScroll, isLoadingMore, isLoadingMessages, hasMoreMessages, onLoadMore]);
+
+  // Periodic sync for contact status (including mute state)
+  useEffect(() => {
+    if (!contacts || contacts.length === 0) return;
+
+    // Refetch contacts periodically to sync with backend state
+    const syncInterval = setInterval(() => {
+      refetchContacts();
+    }, 30000); // Sync every 30 seconds
+
+    return () => clearInterval(syncInterval);
+  }, [contacts, recipientId, groupId, refetchContacts]);
 
   // Auto-scroll when typing indicator appears/disappears
   useEffect(() => {
@@ -414,14 +791,19 @@ export const ChatView = ({
       // Filter out temporary optimistic messages (IDs starting with "temp-")
       // AND filter out messages we've already marked as read
       const unreadMessages = messages.filter(
-        msg => !msg.isOwn && 
-               msg.status !== 'read' && 
+        msg => !msg.isOwn &&
+               msg.status !== 'read' &&
                !msg.id.startsWith('temp-') &&
                !markedAsReadRef.current.has(msg.id)
       );
 
       if (unreadMessages.length > 0) {
-        console.log(`📖 Marking ${unreadMessages.length} messages as read after 1s delay`);
+        console.log(`📖 Marking ${unreadMessages.length} messages as read after 1s delay`, unreadMessages.map(m => ({
+          id: m.id.substring(0, 8),
+          isOwn: m.isOwn,
+          senderId: m.senderId?.substring(0, 8),
+          status: m.status
+        })));
         // Mark each message as read via WebSocket
         unreadMessages.forEach(msg => {
           socketService.markAsRead(msg.id);
@@ -478,15 +860,14 @@ export const ChatView = ({
           : { recipientId, content: inputValue.trim(), replyToId: replyingTo?.id };
 
         console.log('📤 Sending NEW message:', messageData);
+
         await sendMessage.mutateAsync(messageData);
         console.log('✅ Message sent successfully');
 
         setReplyingTo(null);
 
-        // Multiple scroll attempts to handle DOM updates
-        setTimeout(() => scrollToBottom(), 50);
-        setTimeout(() => scrollToBottom(), 150);
-        setTimeout(() => scrollToBottom(), 300);
+        // Don't manually scroll - let the auto-scroll effect handle it
+        // The effect will detect it's our own message and scroll automatically
       }
 
       setInputValue("");
@@ -620,6 +1001,10 @@ export const ChatView = ({
         },
       });
 
+      // Note: Auto-scroll is now handled by the messages.length effect
+      // No need to manually scroll here - the effect will detect the new message
+      // and scroll after appropriate delay based on message type
+
       toast({
         title: "File sent",
         description: "File has been sent successfully",
@@ -691,21 +1076,25 @@ export const ChatView = ({
         </div>
         
         <div className="flex items-center gap-2">
-          <MessageSearch 
-            recipientId={recipientId}
-            onSelectResult={(result) => {
-              // Scroll to and highlight the found message
-              handleReplyClick(result.id);
-            }} 
-          />
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => setShowFileGallery(true)}
-            title="View files & media"
-          >
-            <FolderOpen className="h-5 w-5" />
-          </Button>
+
+          {/* Desktop search and files buttons - hidden on mobile */}
+          <div className="hidden md:flex items-center gap-2">
+            <MessageSearch
+              recipientId={recipientId}
+              onSelectResult={(result) => {
+                // Scroll to and highlight the found message
+                handleReplyClick(result.id);
+              }}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowFileGallery(true)}
+              title="View files & media"
+            >
+              <FolderOpen className="h-5 w-5" />
+            </Button>
+          </div>
           {!isGroup && recipientId && (
             <>
               <Button 
@@ -727,10 +1116,10 @@ export const ChatView = ({
             </>
           )}
           
-          {/* Group-specific menu */}
+          {/* Group-specific menu - desktop only */}
           {isGroup && groupId && (
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <DropdownMenuTrigger asChild className="hidden md:flex">
                 <Button variant="ghost" size="icon">
                   <MoreVertical className="h-5 w-5" />
                 </Button>
@@ -740,29 +1129,21 @@ export const ChatView = ({
                   <Users className="mr-2 h-4 w-4" />
                   Group Info
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => {
-                    const mutedChats = JSON.parse(localStorage.getItem('mutedChats') || '[]');
-                    const isMuted = mutedChats.includes(groupId);
-                    
-                    if (isMuted) {
-                      // Unmute
-                      const updated = mutedChats.filter((id: string) => id !== groupId);
-                      localStorage.setItem('mutedChats', JSON.stringify(updated));
-                      sonnerToast.success('Notifications enabled');
-                    } else {
-                      // Mute
-                      mutedChats.push(groupId);
-                      localStorage.setItem('mutedChats', JSON.stringify(mutedChats));
+                <DropdownMenuItem
+                  onClick={async () => {
+                    try {
+                      // This would need to check current group mute state from backend
+                      // For now, we'll just toggle (backend handles the logic)
+                      await muteGroup.mutateAsync(groupId);
                       sonnerToast.success('Notifications muted');
+                    } catch (error) {
+                      console.error('❌ Group mute error:', error);
+                      sonnerToast.error(getErrorMessage(error));
                     }
-                    
-                    // Force re-render
-                    forceUpdate();
                   }}
                 >
                   <BellOff className="mr-2 h-4 w-4" />
-                  {JSON.parse(localStorage.getItem('mutedChats') || '[]').includes(groupId) ? 'Unmute' : 'Mute'} Notifications
+                  Mute Notifications
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => {
@@ -779,10 +1160,10 @@ export const ChatView = ({
             </DropdownMenu>
           )}
           
-          {/* Direct chat menu */}
+          {/* Direct chat menu - desktop only */}
           {!isGroup && recipientId && (
             <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-              <DropdownMenuTrigger asChild>
+              <DropdownMenuTrigger asChild className="hidden md:flex">
                 <Button variant="ghost" size="icon">
                   <MoreVertical className="h-5 w-5" />
                 </Button>
@@ -927,6 +1308,225 @@ export const ChatView = ({
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+
+          {/* Mobile 3-dot menu - comprehensive with all options */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {/* Search option - enabled with mobile dialog */}
+              <DropdownMenuItem onClick={() => setMobileSearchOpen(true)}>
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Search Messages
+              </DropdownMenuItem>
+
+              {/* Files & Media */}
+              <DropdownMenuItem onClick={() => setShowFileGallery(true)}>
+                <FolderOpen className="mr-2 h-4 w-4" />
+                View Files & Media
+              </DropdownMenuItem>
+
+              {/* Group-specific options */}
+              {isGroup && groupId && (
+                <>
+                  <DropdownMenuItem onClick={() => setShowGroupInfo(true)}>
+                    <Users className="mr-2 h-4 w-4" />
+                    Group Info
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      try {
+                        // Try to mute - backend will handle if already muted
+                        await muteGroup.mutateAsync(groupId);
+                        sonnerToast.success('Notifications muted');
+                      } catch (error: unknown) {
+                        // If already muted, try to unmute
+                        const err = error as { response?: { status?: number } };
+                        if (err?.response?.status === 400) {
+                          try {
+                            await unmuteGroup.mutateAsync(groupId);
+                            sonnerToast.success('Notifications enabled');
+                          } catch (unmuteError) {
+                            console.error('❌ Group unmute error:', unmuteError);
+                            sonnerToast.error(getErrorMessage(unmuteError));
+                          }
+                        } else {
+                          console.error('❌ Group mute error:', error);
+                          sonnerToast.error(getErrorMessage(error));
+                        }
+                      }
+                    }}
+                  >
+                    <BellOff className="mr-2 h-4 w-4" />
+                    Mute/Unmute Notifications
+                  </DropdownMenuItem>
+                </>
+              )}
+
+              {/* Direct chat options */}
+              {!isGroup && recipientId && (
+                (() => {
+                  // Find contact once at render time
+                  const contact = contacts?.find((c: unknown) => {
+                    // Contact can be stored with either userId or contactUserId depending on who initiated
+                    return c.contactUserId === recipientId || c.userId === recipientId;
+                  });
+
+                  return (
+                    <>
+                      <DropdownMenuItem
+                        onClick={async (e) => {
+                          e.preventDefault();
+
+                          if (!contact) {
+                            toast({
+                              title: "Error",
+                              description: "Contact not found. Please add this user as a contact first.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+
+                          try {
+                            if (contact.isMuted) {
+                              console.log('🔇 Unmuting contact:', contact.id);
+                              await unmuteContact.mutateAsync(contact.id);
+                              toast({
+                                title: "Success",
+                                description: "Notifications enabled",
+                              });
+                            } else {
+                              console.log('🔕 Muting contact:', contact.id);
+                              await muteContact.mutateAsync(contact.id);
+                              toast({
+                                title: "Success",
+                                description: "Notifications muted",
+                              });
+                            }
+                            // Refetch contacts to get updated mute status
+                            const result = await refetchContacts();
+                            console.log('🔄 Refetched contacts:', result.data);
+                          } catch (error) {
+                            console.error('❌ Mute/unmute error:', error);
+                            toast({
+                              title: "Error",
+                              description: getErrorMessage(error),
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                      >
+                        {contact.isMuted ? (
+                          <>
+                            <Bell className="mr-2 h-4 w-4" />
+                            Unmute Notifications
+                          </>
+                        ) : (
+                          <>
+                            <BellOff className="mr-2 h-4 w-4" />
+                            Mute Notifications
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={async () => {
+                          if (!contact) {
+                            toast({
+                              title: "Error",
+                              description: "Contact not found",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+
+                          if (confirm('Are you sure you want to block this user?')) {
+                            try {
+                              await blockContact.mutateAsync(contact.id);
+                              toast({
+                                title: "Success",
+                                description: "User blocked",
+                              });
+                            } catch (error) {
+                              toast({
+                                title: "Error",
+                                description: "Failed to block user",
+                                variant: "destructive",
+                              });
+                            }
+                          }
+                        }}
+                      >
+                        <UserX className="mr-2 h-4 w-4" />
+                        Block User
+                      </DropdownMenuItem>
+                    </>
+                  );
+                })()
+              )}
+
+  
+              {/* Leave/Delete chat option */}
+              {isGroup && groupId && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (confirm('Are you sure you want to leave this group?')) {
+                      onGroupLeft?.();
+                    }
+                  }}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Leave Group
+                </DropdownMenuItem>
+              )}
+              {!isGroup && recipientId && (
+                (() => {
+                  // Find contact once at render time for delete functionality
+                  const contact = contacts?.find((c: unknown) => {
+                    return c.contactUserId === recipientId || c.userId === recipientId;
+                  });
+
+                  return (
+                    <DropdownMenuItem
+                      onClick={async () => {
+                        if (!contact) {
+                          toast({
+                            title: "Error",
+                            description: "Contact not found",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+
+                        if (confirm('Are you sure you want to delete this chat? This will remove the contact and all messages.')) {
+                          try {
+                            await removeContact.mutateAsync(contact.id);
+                            toast({
+                              title: "Success",
+                              description: "Chat deleted",
+                            });
+                          } catch (error) {
+                            toast({
+                              title: "Error",
+                              description: "Failed to delete chat",
+                              variant: "destructive",
+                            });
+                          }
+                        }
+                      }}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Chat
+                    </DropdownMenuItem>
+                  );
+                })()
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -957,52 +1557,85 @@ export const ChatView = ({
               </div>
             )}
 
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                data-message-id={message.id}
-                ref={(el) => {
-                  if (el) {
-                    messageRefs.current.set(message.id, el);
-                  } else {
-                    messageRefs.current.delete(message.id);
-                  }
-                }}
-                className={cn(
-                  "transition-colors duration-300",
-                  highlightedMessageId === message.id && "bg-primary/10 rounded-lg"
-                )}
-              >
-                {message.messageType === 'call' ? (
-                  <CallMessage
-                    callId={message.callId || message.id}
-                    callType={message.callType || 'voice'}
-                    callStatus={message.callStatus || 'completed'}
-                    callDuration={message.callDuration}
-                    timestamp={message.timestamp}
-                    isOwn={message.isOwn}
-                    onCallBack={() => {
-                      if (message.callType === 'video') {
-                        handleStartCall('video');
-                      } else {
-                        handleStartCall('voice');
+            {(() => {
+              // Filter all file messages for navigation ONCE (not on every message render)
+              const allFileMessages = messages.filter(
+                msg => msg.messageType === 'file' && msg.fileId
+              );
+
+              return messages.map((message, index) => {
+                const isLastMessage = index === messages.length - 1;
+
+                return (
+                <div
+                  key={message.id}
+                  data-message-id={message.id}
+                  ref={(el) => {
+                    if (el) {
+                      messageRefs.current.set(message.id, el);
+
+                      // Auto-scroll when last message element mounts/updates
+                      if (isLastMessage && message.isOwn) {
+                        const messageAge = Date.now() - message.timestamp.getTime();
+                        const isRecentOwnMessage = messageAge < 5000; // 5 seconds
+
+                        if (isRecentOwnMessage) {
+                          console.log(`📍 Last message ref callback: scrolling for recent own message (age=${messageAge}ms)`);
+
+                          // Use RAF to ensure layout is complete
+                          requestAnimationFrame(() => {
+                            const container = messagesContainerRef.current;
+                            if (container) {
+                              container.scrollTo({
+                                top: container.scrollHeight,
+                                behavior: "smooth"
+                              });
+                            }
+                          });
+                        }
                       }
-                    }}
-                  />
-                ) : (
-                  <MessageBubble
-                    message={message}
-                    currentUserId={user?.id || ''}
-                    onReply={handleReply}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onReplyClick={handleReplyClick}
-                    onReaction={handleReaction}
-                    isGroupMessage={!!groupId}
-                  />
-                )}
-              </div>
-            ))}
+                    } else {
+                      messageRefs.current.delete(message.id);
+                    }
+                  }}
+                  className={cn(
+                    "transition-colors duration-300",
+                    highlightedMessageId === message.id && "bg-primary/10 rounded-lg"
+                  )}
+                >
+                  {message.messageType === 'call' ? (
+                    <CallMessage
+                      callId={message.callId || message.id}
+                      callType={message.callType || 'voice'}
+                      callStatus={message.callStatus || 'completed'}
+                      callDuration={message.callDuration}
+                      timestamp={message.timestamp}
+                      isOwn={message.isOwn}
+                      onCallBack={() => {
+                        if (message.callType === 'video') {
+                          handleStartCall('video');
+                        } else {
+                          handleStartCall('voice');
+                        }
+                      }}
+                    />
+                  ) : (
+                    <MessageBubble
+                      message={message}
+                      currentUserId={user?.id || ''}
+                      onReply={handleReply}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onReplyClick={handleReplyClick}
+                      onReaction={handleReaction}
+                      isGroupMessage={!!groupId}
+                      allImages={allFileMessages}
+                    />
+                  )}
+                </div>
+              );
+              });
+            })()}
           </>
         )}
         {isTyping && (
@@ -1132,6 +1765,7 @@ export const ChatView = ({
         groupId={groupId || undefined}
       />
 
+  
       {isGroup && groupId && (
         <>
           <GroupSettings
@@ -1278,6 +1912,118 @@ export const ChatView = ({
           isInitiator={activeCallData.isInitiator}
           />
         </Suspense>
+      )}
+      {/* Mobile Search Dialog */}
+      {mobileSearchOpen && (
+        <div className="md:hidden fixed inset-0 z-50 bg-black/50 flex"
+             onClick={() => setMobileSearchOpen(false)}>
+          <div className="m-4 bg-background rounded-lg shadow-lg w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b flex items-center justify-between">
+              <h3 className="font-semibold">Search Messages</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileSearchOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="p-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={recipientId ? "Search in this chat..." : "Search messages..."}
+                  className="pl-10 pr-10"
+                  autoFocus
+                  value={mobileSearchQuery}
+                  onChange={(e) => setMobileSearchQuery(e.target.value)}
+                />
+                {mobileSearchLoading && (
+                  <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
+
+              {/* Search Results */}
+              {mobileSearchQuery.length >= 2 && (
+                <div className="mt-4 max-h-96 overflow-y-auto">
+                  {mobileSearchResults.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Found {mobileSearchResults.length} result{mobileSearchResults.length !== 1 ? 's' : ''}
+                      </p>
+                      {mobileSearchResults.map((result: Record<string, unknown>) => (
+                        <div
+                          key={result.id as string}
+                          onClick={() => {
+                            const messageId = result.id as string;
+                            console.log('🔍 Clicking search result:', messageId);
+                            console.log('📋 Available message refs:', Array.from(messageRefs.current.keys()));
+
+                            // Check if the message exists in the current loaded messages
+                            const messageExists = messages.some(msg => msg.id === messageId);
+                            console.log('✅ Message exists in current messages:', messageExists);
+
+                            if (messageExists) {
+                              handleReplyClick(messageId);
+                              setMobileSearchOpen(false);
+                              setMobileSearchQuery('');
+                            } else {
+                              // Message not found, show user-friendly error
+                              toast({
+                                title: "Message not available",
+                                description: "This message is not in the currently loaded conversation. Try loading more messages.",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          className="p-3 border rounded-lg hover:bg-muted cursor-pointer"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center text-xs font-medium">
+                              {((result.sender as Record<string, unknown>)?.firstName as string)?.[0]?.toUpperCase() ||
+                               ((result.sender as Record<string, unknown>)?.username as string)?.[0]?.toUpperCase() ||
+                               '?'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">
+                                  {((result.sender as Record<string, unknown>)?.firstName as string) ||
+                                   ((result.sender as Record<string, unknown>)?.username as string)}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(result.createdAt as string).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground truncate">
+                                {result.content as string}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : !mobileSearchLoading ? (
+                    <div className="text-center py-8">
+                      <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        No messages found matching "{mobileSearchQuery}"
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+
+              {mobileSearchQuery.length < 2 && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Type at least 2 characters to search
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

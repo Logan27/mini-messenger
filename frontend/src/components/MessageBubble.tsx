@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { InlineLoadingFallback } from "./LoadingFallback";
 import type { FilePreviewData } from "./FilePreview";
-import { LazyImage } from "./LazyImage";
+import { AuthenticatedImage } from "./AuthenticatedImage";
 
 // Lazy load FilePreview component - only loaded when user clicks on a file
 const FilePreview = lazy(() => import("./FilePreview").then(module => ({ default: module.FilePreview })));
@@ -28,6 +28,7 @@ interface MessageBubbleProps {
   onReplyClick?: (messageId: string) => void;
   onReaction?: (messageId: string, emoji: string) => void;
   isGroupMessage?: boolean;
+  allImages?: Message[]; // All image messages in chat for navigation
 }
 
 const formatMessageTime = (date: Date) => {
@@ -38,9 +39,18 @@ const formatMessageTime = (date: Date) => {
   });
 };
 
-export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelete, onReplyClick, onReaction, isGroupMessage = false }: MessageBubbleProps) => {
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelete, onReplyClick, onReaction, isGroupMessage = false, allImages = [] }: MessageBubbleProps) => {
   const [showActions, setShowActions] = useState(false);
   const [showFilePreview, setShowFilePreview] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const handleCopy = () => {
     if (message.text) {
@@ -75,22 +85,37 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
   };
 
   const handleFileClick = () => {
-    if (message.fileUrl && message.fileName) {
+    if (message.fileUrl && message.fileName && message.mimeType?.startsWith('image/')) {
+      // Find index of current image in all images
+      const index = allImages.findIndex(img => img.id === message.id);
+      setCurrentImageIndex(index !== -1 ? index : 0);
       setShowFilePreview(true);
     }
   };
 
-  const filePreviewData: FilePreviewData | null = 
-    message.fileId && message.fileName && message.fileUrl
-      ? {
-          id: message.fileId,
-          fileName: message.fileName,
-          fileUrl: message.fileUrl,
-          mimeType: message.mimeType || 'application/octet-stream',
-          fileSize: message.fileSize || 0,
-          uploadedAt: message.timestamp,
-        }
-      : null;
+  const handleNavigate = (direction: 'prev' | 'next') => {
+    if (direction === 'prev' && currentImageIndex > 0) {
+      setCurrentImageIndex(currentImageIndex - 1);
+    } else if (direction === 'next' && currentImageIndex < allImages.length - 1) {
+      setCurrentImageIndex(currentImageIndex + 1);
+    }
+  };
+
+  // Get all file preview data for navigation (images, PDFs, videos, audio)
+  const allFileMessages = allImages.filter(msg =>
+    msg.fileId && msg.fileName && msg.fileUrl && msg.mimeType
+  );
+
+  const allImageFiles: FilePreviewData[] = allFileMessages.map(msg => ({
+    id: msg.fileId!,
+    fileName: msg.fileName!,
+    fileUrl: msg.fileUrl!,
+    mimeType: msg.mimeType!,
+    fileSize: msg.fileSize || 0,
+    uploadedAt: msg.timestamp,
+  }));
+
+  const currentFilePreviewData = allImageFiles[currentImageIndex] || null;
 
   return (
     <>
@@ -128,45 +153,60 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
               {/* File Attachment */}
               {message.messageType === 'file' && message.fileName && (
                 <>
-                  {/* Image preview for image files */}
+                  {/* Image preview for image files - click to open in preview */}
                   {message.mimeType?.startsWith('image/') && message.fileUrl && (
-                    <LazyImage
-                      src={message.fileUrl}
-                      alt={message.fileName}
-                      className="rounded-lg mb-2 max-w-full cursor-pointer"
-                      objectFit="contain"
-                      loading="lazy"
-                      onClick={handleFileClick}
-                    />
+                    <div className="cursor-pointer" onClick={handleFileClick}>
+                      <AuthenticatedImage
+                        src={message.fileUrl}
+                        alt={message.fileName}
+                        className="rounded-lg max-w-full max-h-80 object-contain"
+                      />
+                    </div>
                   )}
 
-                  {/* File card for non-image files or as fallback */}
+                  {/* Document card for non-image files */}
                   {!message.mimeType?.startsWith('image/') && (
                     <div
-                      className="mb-2 p-3 bg-background/10 rounded-lg border border-border/20 cursor-pointer hover:bg-background/20 transition-colors"
-                      onClick={handleFileClick}
+                      className="flex items-center gap-3 p-3 bg-background/10 rounded-lg border border-border/20 cursor-pointer hover:bg-background/20 transition-colors max-w-sm"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        // Download file immediately with authentication
+                        try {
+                          const token = localStorage.getItem('accessToken');
+                          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+                          const fileUrl = message.fileUrl.startsWith('http')
+                            ? message.fileUrl
+                            : `${API_URL}${message.fileUrl.startsWith('/api/') ? message.fileUrl.substring(4) : message.fileUrl}`;
+
+                          const response = await fetch(fileUrl, {
+                            headers: {
+                              Authorization: `Bearer ${token}`,
+                            },
+                          });
+
+                          const blob = await response.blob();
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = message.fileName;
+                          document.body.appendChild(a);
+                          a.click();
+                          URL.revokeObjectURL(url);
+                          document.body.removeChild(a);
+                        } catch (error) {
+                          console.error('Download failed:', error);
+                        }
+                      }}
+                      title={`Download ${message.fileName}`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="flex-shrink-0">
-                          {getFileIcon()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{message.fileName}</p>
-                          {message.fileSize && (
-                            <p className="text-xs opacity-70">{formatFileSize(message.fileSize)}</p>
-                          )}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(message.fileUrl, '_blank');
-                          }}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
+                      <div className="flex-shrink-0">
+                        {getFileIcon()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{message.fileName}</p>
+                        {message.fileSize && (
+                          <p className="text-xs opacity-70">{formatFileSize(message.fileSize)}</p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -187,8 +227,9 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
                   }}
                 />
               )}
-              
-              {message.text && (
+
+              {/* Message text - hide filenames for file attachments */}
+              {message.text && message.messageType !== 'file' && (
                 <p className="text-sm break-words">{message.text}</p>
               )}
               
@@ -296,13 +337,16 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
         </div>
       </div>
 
-      {/* File Preview Modal */}
-      {filePreviewData && showFilePreview && (
+      {/* File Preview Modal with navigation */}
+      {currentFilePreviewData && showFilePreview && (
         <Suspense fallback={<InlineLoadingFallback />}>
           <FilePreview
             isOpen={showFilePreview}
             onClose={() => setShowFilePreview(false)}
-            file={filePreviewData}
+            file={currentFilePreviewData}
+            allFiles={allImageFiles}
+            currentIndex={currentImageIndex}
+            onNavigate={handleNavigate}
           />
         </Suspense>
       )}

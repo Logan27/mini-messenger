@@ -1,10 +1,11 @@
+import { resolve } from 'path';
+import { fileURLToPath } from 'url';
+
 import { createServer } from './app.js';
 import { initializeDatabase, closeDatabase } from './config/database.js';
 import { config } from './config/index.js';
 import { initializeRedis, closeRedis } from './config/redis.js';
 import { initializeLogger } from './utils/logger.js';
-import { fileURLToPath } from 'url';
-import { resolve } from 'path';
 
 const startServer = async () => {
   let server; // Declare server in outer scope for graceful shutdown

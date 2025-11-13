@@ -1,7 +1,9 @@
 import { jest } from '@jest/globals';
 import { config } from '../src/config/index.js';
+import { sequelize } from '../src/config/database.js';
 import { testDatabaseSeeder } from './testDatabaseSeeder.js';
 import { messagingTestHelpers } from './messagingTestHelpers.js';
+import { testFactory } from './testFactory.js';
 
 // Set test environment
 process.env.NODE_ENV = 'test';
@@ -10,26 +12,46 @@ process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-jwt-secret-key';
 process.env.JWT_REFRESH_SECRET = 'test-jwt-refresh-secret-key';
 process.env.SESSION_SECRET = 'test-session-secret';
-process.env.DATABASE_URL = 'sqlite::memory:';
 process.env.REDIS_URL = 'redis://localhost:6379';
 process.env.FILE_UPLOAD_PATH = './temp/test_uploads';
 
-// Configure test database
-config.database.url = 'sqlite::memory:';
-config.database.dialect = 'sqlite';
+// Configure test settings
 config.jwt.secret = 'test-jwt-secret-key';
 config.jwt.refreshSecret = 'test-jwt-refresh-secret-key';
 config.session.secret = 'test-session-secret';
 
+// Initialize database connection
+let dbInitialized = false;
+async function initializeTestDatabase() {
+  if (dbInitialized) return;
+
+  try {
+    // Test database connection
+    await sequelize.authenticate();
+    console.log('✅ Test database connected');
+
+    // Note: Tables should already exist from migrations
+    // We don't call sync() to avoid conflicts with migration-created schema
+
+    dbInitialized = true;
+  } catch (error) {
+    console.error('❌ Test database initialization failed:', error.message);
+    throw error;
+  }
+}
+
 // Global test utilities
 global.testUtils = {
+  // Test factory (recommended for new tests)
+  factory: testFactory,
+
   // Database seeder
   seeder: testDatabaseSeeder,
 
   // Messaging test helpers
   messaging: messagingTestHelpers,
 
-  // Generate test user data
+  // Generate test user data (legacy - use factory instead)
   createTestUser: (overrides = {}) => ({
     username: `testuser${Date.now()}`,
     email: `test${Date.now()}@example.com`,
@@ -86,37 +108,44 @@ global.testUtils = {
   // Cleanup all test data
   cleanupTestData: async () => {
     try {
+      await testFactory.cleanup();
       await testDatabaseSeeder.cleanup();
       await messagingTestHelpers.cleanup();
     } catch (error) {
       console.error('Error cleaning up test data:', error);
     }
   },
+
+  // Initialize test database
+  initDatabase: initializeTestDatabase,
+
+  // Clear all database tables (for resetting between tests)
+  async clearDatabase() {
+    try {
+      const models = Object.values(sequelize.models);
+
+      // Disable foreign key checks temporarily
+      await sequelize.query('SET CONSTRAINTS ALL DEFERRED');
+
+      // Delete all data from tables
+      for (const model of models) {
+        await model.destroy({ where: {}, force: true, truncate: true });
+      }
+
+      // Re-enable foreign key checks
+      await sequelize.query('SET CONSTRAINTS ALL IMMEDIATE');
+    } catch (error) {
+      console.error('Error clearing database:', error);
+    }
+  },
 };
 
-// Enhanced Jest configuration for integration tests
-// Note: jest.setTimeout should be set in individual test files in ESM mode
-// jest.setTimeout(30000); // Increased timeout for integration tests
-
-// Global test hooks for integration tests
-// Note: Global hooks should be set in individual test files in ESM mode
-// global.beforeAll(async () => {
-//   // Database is already initialized by models/index.js
-//   console.log('🧪 Integration tests starting...');
-// });
-
-// global.afterAll(async () => {
-//   // Cleanup test data after all tests
-//   await global.testUtils.cleanupTestData();
-//   console.log('✅ Integration tests completed');
-// });
-
-global.beforeEach(async () => {
-  // Clean slate for each test
-  // jest.clearAllMocks(); // Commented out for ESM compatibility
+// Initialize database before any tests run
+beforeAll(async () => {
+  await initializeTestDatabase();
 });
 
-global.afterEach(async () => {
-  // Cleanup after each test
+// Clean up after each test to prevent data pollution
+afterEach(async () => {
   await global.testUtils.cleanupTestData();
 });

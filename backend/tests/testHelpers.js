@@ -54,10 +54,12 @@ export class TestHelpers {
    * Create a test session for a user
    */
   async createTestSession(user) {
+    const timestamp = Date.now();
     const session = await Session.create({
       userId: user.id,
-      token: `test-token-${Date.now()}`,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      token: `test-token-${timestamp}`,
+      refreshToken: `test-refresh-token-${timestamp}`,
+      expiresAt: new Date(timestamp + 24 * 60 * 60 * 1000), // 24 hours
       ipAddress: '127.0.0.1',
       userAgent: 'test-agent',
     });

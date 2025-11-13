@@ -343,7 +343,7 @@ class NotificationController {
         title,
         content,
         data = {},
-        priority = 'medium',
+        priority = 'normal',
         category,
         expiresAt,
       } = req.body;
@@ -360,9 +360,9 @@ class NotificationController {
       }
 
       // Validate enums
-      const validTypes = ['message', 'call', 'mention', 'admin', 'system'];
-      const validPriorities = ['low', 'medium', 'high', 'urgent'];
-      const validCategories = ['message', 'call', 'mention', 'admin', 'system'];
+      const validTypes = ['message', 'call', 'admin', 'system'];
+      const validPriorities = ['low', 'normal', 'high', 'urgent'];
+      const validCategories = ['general', 'message', 'group', 'call', 'system', 'admin'];
 
       if (!validTypes.includes(type)) {
         return res.status(400).json({

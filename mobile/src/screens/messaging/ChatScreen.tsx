@@ -46,7 +46,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const { conversationId } = route.params;
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
-  const { privacy } = useSettingsStore();
+  const { privacy, theme } = useSettingsStore();
   const {
     conversations,
     messages,
@@ -63,6 +63,22 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     addReaction,
     removeReaction,
   } = useMessagingStore();
+
+  // Theme colors
+  const isDark = theme === 'dark';
+  const colors = {
+    background: isDark ? '#000000' : '#ffffff',
+    card: isDark ? '#1a1a1a' : '#ffffff',
+    text: isDark ? '#ffffff' : '#000000',
+    textSecondary: isDark ? '#9ca3af' : '#6b7280',
+    border: isDark ? '#374151' : '#e5e7eb',
+    primary: '#2563eb',
+    accent: isDark ? '#1f2937' : '#f3f4f6',
+    messageBg: isDark ? '#1f2937' : '#f1f5f9',
+    searchBg: isDark ? '#1f2937' : '#f9fafb',
+    inputBg: isDark ? '#374151' : '#ffffff',
+    placeholder: isDark ? '#6b7280' : '#9ca3af',
+  };
 
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -522,7 +538,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         {showAvatar && (
           <View style={styles.avatarContainer}>
             <View style={styles.avatarPlaceholder}>
-              <Ionicons name="person" size={16} color="#666" />
+              <Ionicons name="person" size={16} color={colors.textSecondary} />
             </View>
           </View>
         )}
@@ -698,12 +714,12 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
       <View style={[styles.messageContainer, styles.otherMessage]}>
         <View style={styles.avatarContainer}>
           <View style={styles.avatarPlaceholder}>
-            <Ionicons name="person" size={16} color="#666" />
+            <Ionicons name="person" size={16} color={colors.textSecondary} />
           </View>
         </View>
         <View style={[styles.messageBubble, styles.otherBubble, styles.typingBubble]}>
           <Text style={styles.typingText}>{typingText}</Text>
-          <TypingIndicator color="#666" dotSize={6} />
+          <TypingIndicator color={colors.textSecondary} dotSize={6} />
         </View>
       </View>
     );
@@ -713,7 +729,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     if (isLoadingMore) {
       return (
         <View style={styles.loadMoreContainer}>
-          <ActivityIndicator size="small" color="#2563eb" />
+          <ActivityIndicator size="small" color={colors.primary} />
         </View>
       );
     }
@@ -730,17 +746,17 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top }]}
+      style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#2563eb" />
+          <Ionicons name="arrow-back" size={24} color={colors.primary} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -753,11 +769,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           disabled={conversation.type !== 'group'}
         >
           <View style={styles.headerTitleRow}>
-            <Text style={styles.headerTitle} numberOfLines={1}>
+            <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
               {conversation.name || 'Chat'}
             </Text>
             {conversation.type === 'group' && (
-              <Ionicons name="people" size={16} color="#666" style={styles.groupIcon} />
+              <Ionicons name="people" size={16} color={colors.textSecondary} style={styles.groupIcon} />
             )}
             {conversation.type === 'direct' && (() => {
               const otherUser = conversation.participants?.find(p => p.id !== user?.id);
@@ -766,7 +782,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
               );
             })()}
           </View>
-          <Text style={styles.headerSubtitle}>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
             {(() => {
               const typingUserIds = typingUsers[conversationId] || [];
               const otherTypingUsers = typingUserIds.filter(id => id !== user?.id);
@@ -786,15 +802,15 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.headerButton} onPress={handleSearchToggle}>
-          <Ionicons name="search" size={24} color="#2563eb" />
+          <Ionicons name="search" size={24} color={colors.primary} />
         </TouchableOpacity>
         {conversation.type === 'direct' && (
           <>
             <TouchableOpacity style={styles.headerButton} onPress={handleVoiceCall}>
-              <Ionicons name="call" size={24} color="#2563eb" />
+              <Ionicons name="call" size={24} color={colors.primary} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerButton} onPress={handleVideoCall}>
-              <Ionicons name="videocam" size={24} color="#2563eb" />
+              <Ionicons name="videocam" size={24} color={colors.primary} />
             </TouchableOpacity>
           </>
         )}
@@ -802,10 +818,10 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
 
       {/* Search Bar */}
       {showSearch && (
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+        <View style={[styles.searchBar, { backgroundColor: colors.searchBg, borderBottomColor: colors.border }]}>
+          <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
             placeholder="Search messages..."
             value={searchQuery}
             onChangeText={handleSearchChange}
@@ -835,7 +851,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
             </>
           )}
           <TouchableOpacity style={styles.searchCloseButton} onPress={handleSearchToggle}>
-            <Ionicons name="close" size={20} color="#666" />
+            <Ionicons name="close" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
       )}
@@ -876,11 +892,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
       {editingMessage && (
         <View style={styles.editBar}>
           <View style={styles.editBarContent}>
-            <Ionicons name="create-outline" size={20} color="#2563eb" />
+            <Ionicons name="create-outline" size={20} color={colors.primary} />
             <Text style={styles.editBarText}>Editing message</Text>
           </View>
           <TouchableOpacity onPress={handleCancelEdit}>
-            <Ionicons name="close" size={24} color="#2563eb" />
+            <Ionicons name="close" size={24} color={colors.primary} />
           </TouchableOpacity>
         </View>
       )}
@@ -891,7 +907,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           style={styles.attachButton}
           onPress={() => setShowAttachmentPicker(true)}
         >
-          <Ionicons name="add" size={24} color="#666" />
+          <Ionicons name="add" size={24} color={colors.textSecondary} />
         </TouchableOpacity>
 
         <TextInput
@@ -917,7 +933,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.micButton}>
-            <Ionicons name="mic" size={24} color="#666" />
+            <Ionicons name="mic" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -970,7 +986,6 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   centerContainer: {
     flex: 1,
@@ -983,7 +998,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   backButton: {
     marginRight: 15,
@@ -998,7 +1012,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
   },
   groupIcon: {
     marginLeft: 6,
@@ -1008,7 +1021,6 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#666',
   },
   headerButton: {
     marginLeft: 15,
@@ -1018,9 +1030,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 15,
     paddingVertical: 10,
-    backgroundColor: '#f9fafb',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
   },
   searchIcon: {
     marginRight: 10,
@@ -1030,14 +1040,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#fff',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
   },
   searchCount: {
     fontSize: 13,
-    color: '#666',
     marginLeft: 10,
     minWidth: 50,
     textAlign: 'center',
@@ -1076,7 +1083,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1087,17 +1093,14 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   myBubble: {
-    backgroundColor: '#2563eb',
     borderBottomRightRadius: 4,
   },
   otherBubble: {
-    backgroundColor: '#f1f5f9',
     borderBottomLeftRadius: 4,
   },
   senderName: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#007AFF',
     marginBottom: 4,
   },
   replyContainer: {

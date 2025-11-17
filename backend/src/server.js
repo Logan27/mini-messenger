@@ -35,6 +35,12 @@ const startServer = async () => {
     await initializeServices();
     console.log('✅ Services initialized');
 
+    // Initialize queue schedules
+    console.log('📋 Initializing background job queues...');
+    const { scheduleMessageCleanup } = await import('./services/queueService.js');
+    await scheduleMessageCleanup();
+    console.log('✅ Background job queues scheduled');
+
     // Start the server
     console.log('🚀 Creating server...');
     server = createServer();
@@ -106,6 +112,10 @@ const startServer = async () => {
       // Close Redis connections
       const { closeRedis } = await import('./config/redis.js');
       await closeRedis();
+
+      // Close queue connections
+      const { closeQueues } = await import('./services/queueService.js');
+      await closeQueues();
 
       clearTimeout(shutdownTimer);
       console.log('✅ Graceful shutdown completed');

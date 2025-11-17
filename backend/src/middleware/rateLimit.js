@@ -7,10 +7,11 @@ import logger from '../utils/logger.js';
 /**
  * General API rate limiting
  * Applies to most API endpoints
+ * Increased limits for testing/development
  */
 export const apiRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per window per IP
+  max: 1000, // 1000 requests per window per IP (increased for testing)
   message: {
     success: false,
     error: {
@@ -45,10 +46,11 @@ export const apiRateLimit = rateLimit({
 /**
  * Strict authentication rate limiting for login attempts
  * More restrictive for login endpoints to prevent brute force
+ * Increased limits for testing/development
  */
 export const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 login attempts per window per IP
+  max: 50, // 50 login attempts per window per IP (increased for testing)
   message: {
     success: false,
     error: {
@@ -84,10 +86,11 @@ export const authRateLimit = rateLimit({
 /**
  * Registration rate limiting
  * Prevents mass registration abuse
+ * Increased limits for testing/development
  */
 export const registerRateLimit = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // 3 registration attempts per hour per IP
+  max: 30, // 30 registration attempts per hour per IP (increased for testing)
   message: {
     success: false,
     error: {
@@ -124,7 +127,7 @@ export const registerRateLimit = rateLimit({
  */
 export const passwordResetRateLimit = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // 3 password reset requests per hour per IP
+  max: 30, // 30 password reset requests per hour per IP (increased for testing)
   message: {
     success: false,
     error: {

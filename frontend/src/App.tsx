@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +15,7 @@ import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import PWAUpdatePrompt from "./components/PWAUpdatePrompt";
 import { PageLoadingFallback } from "./components/LoadingFallback";
 import { registerRoutePreload } from "./utils/routePreload";
+import { csrfService } from "./services/csrf.service";
 
 // Critical routes - loaded immediately for initial render
 import Login from "./pages/Login";
@@ -55,21 +56,37 @@ const AdminSettings = lazy(() => import("./pages/admin/Settings"));
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" storageKey="messenger-ui-theme">
-        <TooltipProvider>
-          <OfflineBanner />
-          <PWAUpdatePrompt />
-          <PWAInstallPrompt />
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
-              <NotificationManager />
-              <Suspense fallback={<PageLoadingFallback />}>
-                <Routes>
+const App = () => {
+  // Initialize CSRF token on app mount
+  useEffect(() => {
+    const initializeCsrf = async () => {
+      try {
+        await csrfService.getToken();
+        console.log('CSRF token initialized');
+      } catch (error) {
+        console.error('Failed to initialize CSRF token:', error);
+        // Non-fatal error - token will be fetched on first state-changing request
+      }
+    };
+
+    initializeCsrf();
+  }, []);
+
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="system" storageKey="messenger-ui-theme">
+          <TooltipProvider>
+            <OfflineBanner />
+            <PWAUpdatePrompt />
+            <PWAInstallPrompt />
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AuthProvider>
+                <NotificationManager />
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -127,6 +144,7 @@ const App = () => (
       </ThemeProvider>
     </QueryClientProvider>
   </ErrorBoundary>
-);
+  );
+};
 
 export default App;

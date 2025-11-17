@@ -1,6 +1,7 @@
 import path from 'path';
 
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
@@ -78,12 +79,15 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Cookie parser middleware (required for CSRF)
+app.use(cookieParser());
+
 // Input sanitization middleware (XSS protection)
 import sanitizeInput from './middleware/sanitize.js';
 app.use(sanitizeInput);
 
 // CSRF protection middleware
-import { conditionalCsrfProtection, csrfErrorHandler } from './middleware/csrf.js';
+import { conditionalCsrfProtection, csrfErrorHandler, generateToken } from './middleware/csrf.js';
 app.use(conditionalCsrfProtection);
 
 // Response time tracking
@@ -146,7 +150,8 @@ app.use('/health', healthRoutes);
 
 // CSRF token endpoint (must be after CSRF middleware)
 app.get('/api/csrf-token', (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
+  const token = generateToken(req, res);
+  res.json({ csrfToken: token });
 });
 
 // CSRF error handler (must be after routes that use CSRF)

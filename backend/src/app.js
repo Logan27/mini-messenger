@@ -78,6 +78,14 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Input sanitization middleware (XSS protection)
+import sanitizeInput from './middleware/sanitize.js';
+app.use(sanitizeInput);
+
+// CSRF protection middleware
+import { conditionalCsrfProtection, csrfErrorHandler } from './middleware/csrf.js';
+app.use(conditionalCsrfProtection);
+
 // Response time tracking
 app.use(responseTime());
 
@@ -135,6 +143,20 @@ app.use('/api/notification-settings', notificationSettingsRoutes);
 app.use('/api/push', pushNotificationRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/health', healthRoutes);
+
+// CSRF token endpoint (must be after CSRF middleware)
+app.get('/api/csrf-token', (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+});
+
+// CSRF error handler (must be after routes that use CSRF)
+app.use(csrfErrorHandler);
+
+// 404 handler
+app.use(notFoundHandler);
+
+// Global error handler (must be last)
+app.use(errorHandler);
 
 // API Documentation (Swagger)
 if (config.swagger.enabled) {

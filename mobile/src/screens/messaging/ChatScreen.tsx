@@ -564,23 +564,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           )}
 
           {/* Message content */}
-          {message.type === 'text' ? (
-            <>
-              <Text style={[
-                styles.messageText,
-                isMyMessage ? styles.myMessageText : styles.otherMessageText,
-              ]}>
-                {message.content}
-              </Text>
-              {/* Link Preview */}
-              {message.linkPreview && (
-                <LinkPreview
-                  metadata={message.linkPreview}
-                  isLoading={linkPreviewsLoading.has(message.id)}
-                />
-              )}
-            </>
-          ) : message.type === 'image' ? (
+          {message.type === 'image' ? (
             <TouchableOpacity
               style={styles.imageContainer}
               onPress={() => message.file?.url && handleImagePress(message.file.url)}
@@ -603,13 +587,44 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
                 <Ionicons name="play-circle" size={48} color="#fff" />
               </View>
             </TouchableOpacity>
-          ) : (
+          ) : message.type === 'file' ? (
             <Text style={[
               styles.messageText,
               isMyMessage ? styles.myMessageText : styles.otherMessageText,
             ]}>
-              {message.type === 'file' ? '📎 File' : '🎵 Voice message'}
+              📎 {message.content || 'File'}
             </Text>
+          ) : message.type === 'voice' ? (
+            <Text style={[
+              styles.messageText,
+              isMyMessage ? styles.myMessageText : styles.otherMessageText,
+            ]}>
+              🎵 Voice message
+            </Text>
+          ) : message.type === 'system' ? (
+            <Text style={[
+              styles.messageText,
+              isMyMessage ? styles.myMessageText : styles.otherMessageText,
+              { fontStyle: 'italic', opacity: 0.7 }
+            ]}>
+              {message.content}
+            </Text>
+          ) : (
+            <>
+              <Text style={[
+                styles.messageText,
+                isMyMessage ? styles.myMessageText : styles.otherMessageText,
+              ]}>
+                {message.content}
+              </Text>
+              {/* Link Preview */}
+              {message.linkPreview && (
+                <LinkPreview
+                  metadata={message.linkPreview}
+                  isLoading={linkPreviewsLoading.has(message.id)}
+                />
+              )}
+            </>
           )}
 
           {/* Message footer */}
@@ -639,11 +654,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           {/* Reactions */}
           {message.reactions && message.reactions.length > 0 && (
             <View style={styles.reactionsContainer}>
-              {message.reactions.map((reaction, index) => {
+              {message.reactions.map((reaction) => {
                 const userHasReacted = reaction.users.includes(user!.id);
                 return (
                   <TouchableOpacity
-                    key={index}
+                    key={`${message.id}-${reaction.emoji}`}
                     style={[
                       styles.reactionBubble,
                       userHasReacted && styles.reactionBubbleActive,
@@ -688,7 +703,9 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   };
 
   const formatMessageTime = (timestamp: string) => {
+    if (!timestamp) return '';
     const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return '';
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
@@ -710,7 +727,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
       : `${typingUserNames.length} people are typing`;
 
     return (
-      <View style={[styles.messageContainer, styles.otherMessage]}>
+      <View key="typing-indicator-footer" style={[styles.messageContainer, styles.otherMessage]}>
         <View style={styles.avatarContainer}>
           <View style={styles.avatarPlaceholder}>
             <Ionicons name="person" size={16} color={colors.textSecondary} />
@@ -727,7 +744,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const renderHeader = () => {
     if (isLoadingMore) {
       return (
-        <View style={styles.loadMoreContainer}>
+        <View key="load-more-header" style={styles.loadMoreContainer}>
           <ActivityIndicator size="small" color={colors.primary} />
         </View>
       );
@@ -748,7 +765,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {/* Header */}
@@ -918,6 +935,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           onChangeText={handleTextChange}
           multiline
           maxLength={1000}
+          textAlignVertical="top"
+          scrollEnabled
         />
 
         {messageText.trim() ? (
@@ -1098,9 +1117,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   myBubble: {
+    backgroundColor: '#2563eb',
     borderBottomRightRadius: 4,
   },
   otherBubble: {
+    backgroundColor: '#e5e7eb',
     borderBottomLeftRadius: 4,
   },
   senderName: {

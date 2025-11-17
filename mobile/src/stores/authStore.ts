@@ -161,19 +161,21 @@ export const useAuthStore = create<AuthStore>()(
           if (token && userString) {
             const user = JSON.parse(userString);
 
-            // Try to refresh token if needed
-            const refreshSuccess = await get().refreshToken();
+            // Set authenticated state immediately if we have a token
+            set({
+              user,
+              token,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+            });
 
-            if (refreshSuccess) {
-              set({
-                user,
-                isAuthenticated: true,
-                isLoading: false,
-                error: null,
-              });
-            } else {
-              throw new Error('Token refresh failed');
-            }
+            // Optionally refresh token in background (don't block auth)
+            // This will update the token if needed without logging out the user
+            get().refreshToken().catch((error) => {
+              console.log('Background token refresh failed:', error);
+              // Don't log out user - let them continue with existing token
+            });
           } else {
             set({
               user: null,

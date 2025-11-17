@@ -98,8 +98,7 @@ const MainNavigator = () => {
         name="Chat"
         component={ChatScreen}
         options={{
-          headerShown: true,
-          headerTitle: 'Chat',
+          headerShown: false,
         }}
       />
       <Stack.Screen

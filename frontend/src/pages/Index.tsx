@@ -210,7 +210,7 @@ const Index = () => {
   });
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
+    <div className="flex mobile-vh-100 w-full overflow-hidden bg-background">
       <ReconnectingIndicator isConnected={isConnected} isReconnecting={isReconnecting} />
 
       {/* ChatList - hidden on mobile when a chat is active */}

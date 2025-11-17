@@ -69,18 +69,19 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
 
               return {
                 id: conv.user.id, // Use user ID as conversation ID for direct messages
-                type: 'direct',
+                type: 'direct' as const,
                 participants: [user],
                 lastMessage: conv.lastMessage,
                 unreadCount: conv.unreadCount || 0,
                 createdAt: conv.lastMessageAt || new Date().toISOString(),
                 updatedAt: conv.lastMessageAt || new Date().toISOString(),
+                createdBy: conv.user.id, // Add required createdBy field
               };
             } else if (conv.type === 'group' && conv.group) {
               // Transform group conversation format
               return {
                 id: conv.group.id,
-                type: 'group',
+                type: 'group' as const,
                 name: conv.group.name,
                 description: conv.group.description,
                 avatar: conv.group.avatar,
@@ -89,9 +90,17 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
                 unreadCount: conv.unreadCount || 0,
                 createdAt: conv.lastMessageAt || new Date().toISOString(),
                 updatedAt: conv.lastMessageAt || new Date().toISOString(),
+                createdBy: conv.group.createdBy || conv.group.id, // Add required createdBy field
               };
             }
-            return conv;
+            // Fallback: ensure all required fields exist
+            return {
+              ...conv,
+              type: conv.type || 'direct',
+              participants: conv.participants || [],
+              unreadCount: conv.unreadCount || 0,
+              createdBy: conv.createdBy || conv.id,
+            };
           })
         : [];
 

@@ -949,9 +949,9 @@ export const ChatView = ({
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col mobile-vh-100">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-background">
+      <div className="flex items-center justify-between p-4 border-b border-border bg-background safe-top">
         <div className="flex items-center gap-3">
           {/* Back button for mobile */}
           <Button
@@ -1617,8 +1617,8 @@ export const ChatView = ({
             </div>
           </div>
         )}
-        
-        <div className="p-4">
+
+        <div className="p-4 safe-bottom">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"

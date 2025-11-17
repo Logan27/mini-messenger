@@ -126,4 +126,27 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Mobile viewport height fix - handles keyboard and browser chrome */
+  @supports (height: 100dvh) {
+    .mobile-vh-100 {
+      height: 100dvh;
+    }
+  }
+
+  @supports not (height: 100dvh) {
+    .mobile-vh-100 {
+      height: 100vh;
+    }
+  }
+
+  /* Safe area insets for mobile browsers */
+  @supports (padding: env(safe-area-inset-bottom)) {
+    .safe-bottom {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .safe-top {
+      padding-top: env(safe-area-inset-top);
+    }
+  }
 }

@@ -292,11 +292,12 @@ class RedisStore {
   }
 }
 
-// Login rate limiting - 5 attempts per 15 minutes
+// Login rate limiting - 50 attempts per 15 minutes (increased for testing)
+// Production: reduce to 5 attempts
 export const loginRateLimit = rateLimit({
   store: new RedisStore({ prefix: 'rl:login:' }),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,
+  max: process.env.NODE_ENV === 'production' ? 5 : 50,
   message: {
     success: false,
     error: {
@@ -309,11 +310,12 @@ export const loginRateLimit = rateLimit({
   skipSuccessfulRequests: false,
 });
 
-// Register rate limiting - 3 attempts per hour
+// Register rate limiting - 30 attempts per hour (increased for testing)
+// Production: reduce to 3 attempts
 export const registerRateLimit = rateLimit({
   store: new RedisStore({ prefix: 'rl:register:' }),
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3,
+  max: process.env.NODE_ENV === 'production' ? 3 : 30,
   message: {
     success: false,
     error: {
@@ -325,11 +327,12 @@ export const registerRateLimit = rateLimit({
   legacyHeaders: false,
 });
 
-// Password reset rate limiting - 3 attempts per hour
+// Password reset rate limiting - 30 attempts per hour (increased for testing)
+// Production: reduce to 3 attempts
 export const passwordResetRateLimit = rateLimit({
   store: new RedisStore({ prefix: 'rl:reset:' }),
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3,
+  max: process.env.NODE_ENV === 'production' ? 3 : 30,
   message: {
     success: false,
     error: {
@@ -341,11 +344,12 @@ export const passwordResetRateLimit = rateLimit({
   legacyHeaders: false,
 });
 
-// General API rate limiting - 100 requests per 15 minutes
+// General API rate limiting - 1000 requests per 15 minutes (increased for testing)
+// Production: reduce to 100 requests
 export const apiRateLimit = rateLimit({
   store: new RedisStore({ prefix: 'rl:api:' }),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000,
   message: {
     success: false,
     error: {

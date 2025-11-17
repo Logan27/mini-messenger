@@ -609,7 +609,6 @@ export const ChatView = ({
               top: finalScrollHeight,
               behavior: "smooth"
             });
-          } else {
           }
 
           // Clean up observer and timer
@@ -618,7 +617,6 @@ export const ChatView = ({
           }
           observer.disconnect();
         }, fallbackTimeout);
-      } else {
       }
     }
 

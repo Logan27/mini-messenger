@@ -76,43 +76,47 @@ const Index = () => {
     ]) || []
   );
 
-  // Build chats from direct contacts
-  const directChats: Chat[] = (contactsData?.map((contact: unknown) => {
-    const userId = contact.user.id;
-    const conversation = conversationMap.get(userId);
+  // OPTIMIZATION: Memoize directChats to prevent recalculation on every render
+  const directChats: Chat[] = useMemo(() => {
+    return (contactsData?.map((contact: unknown) => {
+      const userId = contact.user.id;
+      const conversation = conversationMap.get(userId);
 
-    return {
-      id: userId,
-      name: contact.nickname || contact.user.username,
-      avatar: getAvatarUrl(contact.user.profilePicture || contact.user.avatar),
-      lastMessage: conversation?.lastMessage?.content || "",
-      timestamp: safeParseDate(conversation?.lastMessageAt) || new Date(0),
-      unreadCount: conversation?.unreadCount || 0,
-      isOnline: contact.user.onlineStatus === 'online',
-      lastSeen: safeParseDate(contact.user.lastSeen) || undefined,
-      isTyping: typingUsers[userId] || false,
-      isMuted: conversation?.isMuted || false,
-    };
-  }) || []);
-
-  // Build chats from group conversations
-  const groupChats: Chat[] = (conversationsData
-    ?.filter((conv) => conv.type === 'group' && conv.group)
-    .map((conv) => {
-      const group = conv.group!;
       return {
-        id: group.id,
-        name: group.name,
-        avatar: getAvatarUrl(group.avatar),
-        lastMessage: conv.lastMessage?.content || "",
-        timestamp: safeParseDate(conv.lastMessageAt) || new Date(0),
-        unreadCount: conv.unreadCount || 0,
-        isOnline: false, // Groups don't have online status
-        lastSeen: undefined,
-        isTyping: false, // TODO: Add group typing indicators
-        isMuted: conv.isMuted || false,
+        id: userId,
+        name: contact.nickname || contact.user.username,
+        avatar: getAvatarUrl(contact.user.profilePicture || contact.user.avatar),
+        lastMessage: conversation?.lastMessage?.content || "",
+        timestamp: safeParseDate(conversation?.lastMessageAt) || new Date(0),
+        unreadCount: conversation?.unreadCount || 0,
+        isOnline: contact.user.onlineStatus === 'online',
+        lastSeen: safeParseDate(contact.user.lastSeen) || undefined,
+        isTyping: typingUsers[userId] || false,
+        isMuted: conversation?.isMuted || false,
       };
     }) || []);
+  }, [contactsData, conversationMap, typingUsers]);
+
+  // OPTIMIZATION: Memoize groupChats to prevent recalculation on every render
+  const groupChats: Chat[] = useMemo(() => {
+    return (conversationsData
+      ?.filter((conv) => conv.type === 'group' && conv.group)
+      .map((conv) => {
+        const group = conv.group!;
+        return {
+          id: group.id,
+          name: group.name,
+          avatar: getAvatarUrl(group.avatar),
+          lastMessage: conv.lastMessage?.content || "",
+          timestamp: safeParseDate(conv.lastMessageAt) || new Date(0),
+          unreadCount: conv.unreadCount || 0,
+          isOnline: false, // Groups don't have online status
+          lastSeen: undefined,
+          isTyping: false, // TODO: Add group typing indicators
+          isMuted: conv.isMuted || false,
+        };
+      }) || []);
+  }, [conversationsData]);
 
   // OPTIMIZATION: Memoize chat list sorting to avoid recalculating on every render
   const chats: Chat[] = useMemo(() => {

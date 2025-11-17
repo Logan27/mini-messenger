@@ -510,30 +510,25 @@ Message.findUnreadMessages = function (userId) {
 };
 
 Message.getRecentConversations = function (userId, limit = 20) {
-  return this.findAll({
-    where: {
-      [Op.or]: [{ senderId: userId }, { recipientId: userId }],
-      deletedAt: null,
-    },
-    attributes: [
-      [
-        sequelize.fn(
-          'CASE',
-          sequelize.literal(`WHEN "senderId" = '${userId}' THEN "recipientId" ELSE "senderId"`),
-          'conversationWith'
-        ),
-      ],
-      [sequelize.fn('MAX', sequelize.col('createdAt')), 'lastMessageAt'],
-    ],
-    group: [
-      sequelize.literal(
-        `CASE WHEN "senderId" = '${userId}' THEN "recipientId" ELSE "senderId" END`
-      ),
-    ],
-    order: [[sequelize.fn('MAX', sequelize.col('createdAt')), 'DESC']],
-    limit,
-    raw: true,
-  });
+  // OPTIMIZATION & SECURITY FIX: Use parameterized query to prevent SQL injection
+  // Simplified query that's both safer and more efficient
+  return sequelize.query(
+    `
+    SELECT
+      CASE WHEN "senderId" = :userId THEN "recipientId" ELSE "senderId" END as "conversationWith",
+      MAX("createdAt") as "lastMessageAt"
+    FROM messages
+    WHERE ("senderId" = :userId OR "recipientId" = :userId)
+      AND "deletedAt" IS NULL
+    GROUP BY CASE WHEN "senderId" = :userId THEN "recipientId" ELSE "senderId" END
+    ORDER BY MAX("createdAt") DESC
+    LIMIT :limit
+    `,
+    {
+      replacements: { userId, limit },
+      type: sequelize.QueryTypes.SELECT,
+    }
+  );
 };
 
 // Hooks

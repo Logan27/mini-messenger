@@ -10,8 +10,9 @@ import {
   TextInput,
   Alert,
   Image,
-  SafeAreaView,
+  StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useMessagingStore } from '../stores/messagingStore';
 import { useContactStore } from '../stores/contactStore';
@@ -201,7 +202,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           ) : (
             <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary }]}>
               <Text style={styles.avatarPlaceholderText}>
-                {displayName.charAt(0).toUpperCase()}
+                {displayName ? displayName.charAt(0).toUpperCase() : '?'}
               </Text>
             </View>
           )}
@@ -275,7 +276,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           ) : (
             <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary }]}>
               <Text style={styles.avatarPlaceholderText}>
-                {displayName.charAt(0).toUpperCase()}
+                {displayName ? displayName.charAt(0).toUpperCase() : '?'}
               </Text>
             </View>
           )}
@@ -321,7 +322,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const pendingRequestsCount = contactRequests?.length || 0;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <View style={styles.headerTop}>

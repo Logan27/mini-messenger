@@ -127,6 +127,7 @@ export const ChatView = ({
   const wasLoadingMoreRef = useRef<boolean>(false); // Track if we were loading more messages
   const scrollBeforePaginationRef = useRef<{ messageId: string; offset: number } | null>(null); // Track scroll position before pagination
   const lastPaginationCompleteRef = useRef<number>(0); // Track when pagination last completed
+  const lastScrolledMessageIdRef = useRef<string>(''); // Track which message we last scrolled for (to prevent duplicate scrolls on status updates)
 
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -148,13 +149,11 @@ export const ChatView = ({
   // Listen for socket mute/unmute events
   useEffect(() => {
     const handleContactMuted = (data: { contactId: string; isMuted: boolean; timestamp: string }) => {
-      console.log('🔵 Received contact.muted event:', data);
       // Refetch contacts to get updated mute status
       refetchContacts();
     };
 
     const handleContactUnmuted = (data: { contactId: string; isMuted: boolean; timestamp: string }) => {
-      console.log('🔵 Received contact.unmuted event:', data);
       // Refetch contacts to get updated mute status
       refetchContacts();
     };
@@ -217,7 +216,6 @@ export const ChatView = ({
 
         if (closestMessage) {
           scrollBeforePaginationRef.current = closestMessage;
-          console.log(`💾 Pre-saved pagination scroll: message ${closestMessage.messageId}, offset ${closestMessage.offset}px`);
         }
       }
 
@@ -230,7 +228,6 @@ export const ChatView = ({
         previousScrollTop = scrollTop;
 
         // Position should already be saved from above
-        console.log(`🔄 Triggering pagination load, saved position: ${scrollBeforePaginationRef.current ? 'YES' : 'NO'}`);
 
         onLoadMore();
       }
@@ -276,7 +273,6 @@ export const ChatView = ({
           const scrollAdjustment = currentMessageTop - offset;
           container.scrollTop += scrollAdjustment;
 
-          console.log(`📍 Restored scroll after loading history: message ${messageId} at offset ${offset}px`);
 
           // Clear the saved position and mark pagination as just completed
           scrollBeforePaginationRef.current = null;
@@ -289,7 +285,6 @@ export const ChatView = ({
       const firstMessage = container.querySelector('[data-message-id]');
       if (firstMessage) {
         firstMessage.scrollIntoView({ block: 'start', behavior: 'auto' });
-        console.log('📍 Kept scroll at top after loading history (no saved position)');
       }
 
       // Mark pagination as just completed
@@ -321,7 +316,6 @@ export const ChatView = ({
             // Clear the pending call
             sessionStorage.removeItem('pendingCall');
             // Initiate the call
-            console.log('📞 Initiating pending call:', pendingCall.callType);
             setCallType(pendingCall.callType);
             setShowOutgoingCall(true);
           }
@@ -371,7 +365,6 @@ export const ChatView = ({
         if (isAtBottom) {
           // At bottom - clear saved position (will default to bottom on reload)
           localStorage.removeItem(savedScrollKey);
-          console.log(`💾 Cleared scroll position (at bottom)`);
           return;
         }
 
@@ -398,7 +391,6 @@ export const ChatView = ({
 
         if (bottomMostVisibleMessage) {
           localStorage.setItem(savedScrollKey, bottomMostVisibleMessage);
-          console.log(`💾 Saved scroll position: message ${bottomMostVisibleMessage} (bottom-most visible)`);
         }
       }, 200); // Wait 200ms after scrolling stops
     };
@@ -466,18 +458,15 @@ export const ChatView = ({
           const savedElement = messageRefs.current.get(savedMessageId);
           if (savedElement && messagesContainerRef.current) {
             savedElement.scrollIntoView({ behavior: 'auto', block: 'center' });
-            console.log(`📍 Restored scroll to message: ${savedMessageId}`);
             isInitialLoadRef.current = false;
             setShouldRestoreScroll(false); // Only restore once per conversation change
           } else if (hasMoreMessages && onLoadMore && !isLoadingMore) {
             // Saved message not in current page, load more pages to find it
-            console.log(`🔍 Saved message ${savedMessageId} not found in current page (${messages.length} messages loaded), loading more...`);
             onLoadMore();
             // Don't set isInitialLoadRef to false yet - we'll retry when more messages load
           } else if (!hasMoreMessages) {
             // No more messages to load, saved message doesn't exist (might be deleted)
             scrollToBottom();
-            console.log('📍 Saved message not found and no more pages available, scrolled to bottom');
             isInitialLoadRef.current = false;
             setShouldRestoreScroll(false);
           }
@@ -485,7 +474,6 @@ export const ChatView = ({
         } else {
           // Scroll to bottom for new chats or when no saved position
           scrollToBottom();
-          console.log('📍 Scrolled to bottom (no saved position)');
           isInitialLoadRef.current = false;
           setShouldRestoreScroll(false); // Only restore once per conversation change
         }
@@ -497,12 +485,10 @@ export const ChatView = ({
 
     // New message arrived (count increased)
     if (currentMessageCount > previousMessageCount && !isInitialLoadRef.current) {
-      console.log(`📬 Message count increased: ${previousMessageCount} → ${currentMessageCount}`);
 
       // Skip if we're currently loading more messages (pagination)
       // The separate pagination effect will handle scroll restoration
       if (isLoadingMore || wasLoadingMoreRef.current) {
-        console.log('⏸️ Skipping auto-scroll - loading more messages (pagination)');
         previousMessageCountRef.current = currentMessageCount;
         return;
       }
@@ -511,7 +497,6 @@ export const ChatView = ({
       // This handles the race condition where messages increase right after pagination
       const timeSincePagination = Date.now() - lastPaginationCompleteRef.current;
       if (timeSincePagination < 500) {
-        console.log(`⏸️ Skipping auto-scroll - pagination just completed ${timeSincePagination}ms ago`);
         previousMessageCountRef.current = currentMessageCount;
         return;
       }
@@ -529,7 +514,6 @@ export const ChatView = ({
         }
       }
 
-      console.log(`📬 Latest message: id=${latestMessage?.id}, isOwn=${isOwnMessage}, text="${latestMessage?.text?.substring(0, 20)}..."}`);
 
 
       // Skip auto-scroll for optimistic (temp) messages - wait for server confirmation
@@ -537,7 +521,6 @@ export const ChatView = ({
       const isTempMessage = latestMessage?.id?.startsWith('temp-');
 
       if (isTempMessage) {
-        console.log('⏳ Skipping auto-scroll for optimistic message, waiting for server confirmation');
         previousMessageCountRef.current = currentMessageCount;
         return;
       }
@@ -552,11 +535,8 @@ export const ChatView = ({
       const isNearBottom = distanceFromBottom < (clientHeight * 1.5);
 
       // Check if this is a RECENT own message (sent within last 5 seconds)
-      // This prevents auto-scrolling for old own messages loaded via pagination
       const messageAge = Date.now() - new Date(latestMessage.timestamp).getTime();
       const isRecentOwnMessage = isOwnMessage && messageAge < 5000;
-
-      console.log(`📊 Scroll check: scrollTop=${scrollTop}, scrollHeight=${scrollHeight}, clientHeight=${clientHeight}, distanceFromBottom=${distanceFromBottom}, threshold=${clientHeight * 1.5}, isNearBottom=${isNearBottom}, isOwnMessage=${isOwnMessage}, messageAge=${messageAge}ms, isRecentOwnMessage=${isRecentOwnMessage}`);
 
       // Auto-scroll rules:
       // - ALWAYS scroll for RECENT own messages (sent within 5 seconds)
@@ -570,7 +550,6 @@ export const ChatView = ({
         const hasFileMessage = latestMessage?.messageType === 'file';
         const oldScrollHeight = container.scrollHeight;
 
-        console.log(`📍 Setting up scroll observer: oldHeight=${oldScrollHeight}, hasFile=${hasFileMessage}`);
 
         // Use MutationObserver to detect when DOM actually changes
         let hasScrolled = false;
@@ -583,7 +562,6 @@ export const ChatView = ({
           const newScrollHeight = container.scrollHeight;
           const heightDiff = newScrollHeight - oldScrollHeight;
 
-          console.log(`📍 DOM mutation detected: old=${oldScrollHeight}, new=${newScrollHeight}, diff=${heightDiff}`);
 
           // Clear previous timer - wait for mutations to stabilize
           if (mutationTimer) {
@@ -595,14 +573,12 @@ export const ChatView = ({
             // Double-check with RAF to ensure layout is 100% complete
             requestAnimationFrame(() => {
               const finalHeight = container.scrollHeight;
-              console.log(`📍 Mutations stabilized, scrolling: height=${finalHeight}`);
 
               container.scrollTo({
                 top: finalHeight,
                 behavior: "smooth"
               });
 
-              console.log(`📍 Auto-scrolled after DOM update (own: ${isOwnMessage}, hasFile: ${hasFileMessage})`);
               hasScrolled = true;
 
               // Disconnect observer after successful scroll
@@ -626,17 +602,14 @@ export const ChatView = ({
           const finalScrollHeight = container.scrollHeight;
           const finalHeightDiff = finalScrollHeight - oldScrollHeight;
 
-          console.log(`⏱️ Fallback timeout: old=${oldScrollHeight}, new=${finalScrollHeight}, diff=${finalHeightDiff}`);
 
           // If height changed but observer didn't fire, scroll now
           if (finalHeightDiff > 0 || finalScrollHeight !== oldScrollHeight) {
-            console.log(`📍 Fallback scroll triggered`);
             container.scrollTo({
               top: finalScrollHeight,
               behavior: "smooth"
             });
           } else {
-            console.log(`⚠️ No height change detected - message may already be visible`);
           }
 
           // Clean up observer and timer
@@ -646,7 +619,6 @@ export const ChatView = ({
           observer.disconnect();
         }, fallbackTimeout);
       } else {
-        console.log(`⏸️ Skipping auto-scroll (own message: ${isOwnMessage}, near bottom: ${isNearBottom}) - user is reading history`);
       }
     }
 
@@ -738,7 +710,6 @@ export const ChatView = ({
   // Listen for incoming calls
   useEffect(() => {
     const handleIncomingCall = (data: unknown) => {
-      console.log('📞 Incoming call received:', data);
       
       const call = data.call;
       if (!call) return;
@@ -762,34 +733,14 @@ export const ChatView = ({
   }, []);
 
   // Mark messages as read when they're displayed
-  // Add delay to ensure user actually sees the messages
   useEffect(() => {
     if (!messages || messages.length === 0) return;
+    if (!isMountedRef.current) return;
+    if (!isConnected) return;
 
-    // Only mark as read if component is actually mounted and visible
-    if (!isMountedRef.current) {
-      console.log('⏸️ Skipping mark as read - component not visible');
-      return;
-    }
-
-    // Only mark as read if WebSocket is connected
-    if (!isConnected) {
-      console.log('⏳ Skipping mark as read - socket not connected yet');
-      return;
-    }
-
-    // Delay marking as read to ensure messages are actually visible
-    // This prevents immediate marking when switching chats
     const markAsReadTimer = setTimeout(() => {
-      // Double-check component is still mounted before marking
-      if (!isMountedRef.current) {
-        console.log('⏸️ Aborting mark as read - component unmounted during delay');
-        return;
-      }
+      if (!isMountedRef.current) return;
 
-      // Mark all unread messages from the other person as read
-      // Filter out temporary optimistic messages (IDs starting with "temp-")
-      // AND filter out messages we've already marked as read
       const unreadMessages = messages.filter(
         msg => !msg.isOwn &&
                msg.status !== 'read' &&
@@ -798,51 +749,25 @@ export const ChatView = ({
       );
 
       if (unreadMessages.length > 0) {
-        console.log(`📖 Marking ${unreadMessages.length} messages as read after 1s delay`, unreadMessages.map(m => ({
-          id: m.id.substring(0, 8),
-          isOwn: m.isOwn,
-          senderId: m.senderId?.substring(0, 8),
-          status: m.status
-        })));
-        // Mark each message as read via WebSocket
         unreadMessages.forEach(msg => {
           socketService.markAsRead(msg.id);
-          // Track that we've marked this message
           markedAsReadRef.current.add(msg.id);
         });
-        
-        // Invalidate conversations to update unread count in sidebar
+
         setTimeout(() => {
-          console.log('📖 Refetching conversations after marking messages as read');
           queryClient.refetchQueries({ queryKey: ['conversations'] });
-        }, 500); // Small delay to ensure backend has processed
+        }, 500);
       }
-    }, 1000); // Wait 1 second before marking as read
+    }, 100);
 
     return () => clearTimeout(markAsReadTimer);
   }, [messages, isConnected, queryClient]);
 
   const handleSend = async () => {
-    console.log('🔵 handleSend called', {
-      inputValue,
-      trimmed: inputValue.trim(),
-      recipientId,
-      groupId,
-      isGroup,
-      hasInput: !!inputValue.trim(),
-      hasRecipient: !!recipientId,
-      hasGroupId: !!groupId
-    });
-
-    if (!inputValue.trim() || (!recipientId && !groupId)) {
-      console.log('⚠️ Early return - missing input or chat target');
-      return;
-    }
+    if (!inputValue.trim() || (!recipientId && !groupId)) return;
 
     try {
       if (editingMessage) {
-        // Edit existing message
-        console.log('✏️ Editing message:', editingMessage.id);
         await editMessage.mutateAsync({
           messageId: editingMessage.id,
           content: inputValue.trim(),
@@ -854,20 +779,12 @@ export const ChatView = ({
           description: "Your message has been updated",
         });
       } else {
-        // Send new message
         const messageData = isGroup
           ? { groupId, content: inputValue.trim(), replyToId: replyingTo?.id }
           : { recipientId, content: inputValue.trim(), replyToId: replyingTo?.id };
 
-        console.log('📤 Sending NEW message:', messageData);
-
         await sendMessage.mutateAsync(messageData);
-        console.log('✅ Message sent successfully');
-
         setReplyingTo(null);
-
-        // Don't manually scroll - let the auto-scroll effect handle it
-        // The effect will detect it's our own message and scroll automatically
       }
 
       setInputValue("");
@@ -1181,7 +1098,6 @@ export const ChatView = ({
                       onClick={async (e) => {
                         e.preventDefault();
                         
-                        console.log('🔍 Contact before mute/unmute:', contact);
                         
                         if (!contact) {
                           toast({
@@ -1194,14 +1110,12 @@ export const ChatView = ({
                         
                         try {
                           if (contact.isMuted) {
-                            console.log('🔇 Unmuting contact:', contact.id);
                             await unmuteContact.mutateAsync(contact.id);
                             toast({
                               title: "Success",
                               description: "Notifications enabled",
                             });
                           } else {
-                            console.log('🔕 Muting contact:', contact.id);
                             await muteContact.mutateAsync(contact.id);
                             toast({
                               title: "Success",
@@ -1210,7 +1124,6 @@ export const ChatView = ({
                           }
                           // Refetch contacts to get updated mute status
                           const result = await refetchContacts();
-                          console.log('🔄 Refetched contacts:', result.data);
                           const updatedContact = result.data?.find((c: unknown) => (c as Record<string, unknown>).id === contact.id);
                           console.log('✅ Updated contact after refetch:', updatedContact);
                           
@@ -1392,14 +1305,12 @@ export const ChatView = ({
 
                           try {
                             if (contact.isMuted) {
-                              console.log('🔇 Unmuting contact:', contact.id);
                               await unmuteContact.mutateAsync(contact.id);
                               toast({
                                 title: "Success",
                                 description: "Notifications enabled",
                               });
                             } else {
-                              console.log('🔕 Muting contact:', contact.id);
                               await muteContact.mutateAsync(contact.id);
                               toast({
                                 title: "Success",
@@ -1408,7 +1319,6 @@ export const ChatView = ({
                             }
                             // Refetch contacts to get updated mute status
                             const result = await refetchContacts();
-                            console.log('🔄 Refetched contacts:', result.data);
                           } catch (error) {
                             console.error('❌ Mute/unmute error:', error);
                             toast({
@@ -1579,8 +1489,10 @@ export const ChatView = ({
                         const messageAge = Date.now() - message.timestamp.getTime();
                         const isRecentOwnMessage = messageAge < 5000; // 5 seconds
 
-                        if (isRecentOwnMessage) {
-                          console.log(`📍 Last message ref callback: scrolling for recent own message (age=${messageAge}ms)`);
+                        // Only scroll if this is a different message than last time
+                        // This prevents scrolling on status updates (read receipts)
+                        if (isRecentOwnMessage && lastScrolledMessageIdRef.current !== message.id) {
+                          lastScrolledMessageIdRef.current = message.id;
 
                           // Use RAF to ensure layout is complete
                           requestAnimationFrame(() => {
@@ -1806,7 +1718,6 @@ export const ChatView = ({
             setShowOutgoingCall(open);
             // When outgoing call is dismissed (rejected, missed, etc.), refresh messages
             if (!open) {
-              console.log('📞 Outgoing call dismissed, refreshing messages');
               queryClient.invalidateQueries({ 
                 queryKey: recipientId ? ['messages', recipientId] : ['groupMessages', groupId] 
               });
@@ -1844,7 +1755,6 @@ export const ChatView = ({
             setShowIncomingCall(open);
             // When incoming call is dismissed, refresh messages
             if (!open) {
-              console.log('📞 Incoming call dismissed, refreshing messages');
               queryClient.invalidateQueries({ 
                 queryKey: recipientId ? ['messages', recipientId] : ['groupMessages', groupId] 
               });
@@ -1890,11 +1800,9 @@ export const ChatView = ({
           <ActiveCall
             open={showActiveCall}
             onOpenChange={(open) => {
-              console.log(`🔔 ChatView: ActiveCall onOpenChange called with open=${open}`);
               console.trace('Stack trace for onOpenChange');
               setShowActiveCall(open);
               if (!open) {
-                console.log('🔔 ChatView: Clearing activeCallData and refreshing messages');
                 setActiveCallData(null);
                 // Refresh messages to show the call record
                 queryClient.invalidateQueries({
@@ -1956,8 +1864,6 @@ export const ChatView = ({
                           key={result.id as string}
                           onClick={() => {
                             const messageId = result.id as string;
-                            console.log('🔍 Clicking search result:', messageId);
-                            console.log('📋 Available message refs:', Array.from(messageRefs.current.keys()));
 
                             // Check if the message exists in the current loaded messages
                             const messageExists = messages.some(msg => msg.id === messageId);

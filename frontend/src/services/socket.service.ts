@@ -15,24 +15,20 @@ class SocketService {
   connect(token: string) {
     // Prevent multiple connections - check if already connected or connecting
     if (this.socket?.connected) {
-      console.log('🔵 Socket already connected, skipping...');
       return;
     }
 
     if (this.isConnecting) {
-      console.log('🔵 Socket connection in progress, skipping...');
       return;
     }
 
     // If same token and connection attempt is in progress, wait for it
     if (this.connectionPromise && this.lastConnectionToken === token) {
-      console.log('🔵 Reusing existing connection attempt...');
       return this.connectionPromise;
     }
 
     // If socket exists but is disconnected, disconnect it first
     if (this.socket) {
-      console.log('🔵 Cleaning up existing disconnected socket...');
       this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
@@ -40,7 +36,6 @@ class SocketService {
 
     this.isConnecting = true;
     this.lastConnectionToken = token;
-    console.log('🔵 Connecting to WebSocket:', SOCKET_URL);
 
     this.socket = io(SOCKET_URL, {
       auth: {
@@ -55,7 +50,6 @@ class SocketService {
 
     this.socket.on('connect', () => {
       console.log('✅ WebSocket connected, socket ID:', this.socket?.id);
-      console.log('📋 Current listeners registered:', Array.from(this.listeners.keys()).map(key => `${key} (${this.listeners.get(key)?.size} listeners)`));
       this.isConnecting = false;
       this.connectionPromise = null;
       this.reconnecting = false;
@@ -71,7 +65,6 @@ class SocketService {
     });
 
     this.socket.on('reconnect_attempt', () => {
-      console.log('🔄 WebSocket reconnecting...');
       this.reconnecting = true;
       this.emit('connection.status', { connected: false, reconnecting: true });
     });
@@ -90,18 +83,15 @@ class SocketService {
       return;
     }
 
-    console.log('🎧 Setting up message listeners on socket:', this.socket.id);
 
     // New message received - backend sends 'message.new'
     this.socket.on('message.new', (message) => {
-      console.log('🔵 Socket.IO received: message.new', message);
       // Emit to registered listeners
       this.emit('message.new', message);
     });
 
     // Legacy support for message_sent event
     this.socket.on('message_sent', (message) => {
-      console.log('🔵 Socket.IO received: message_sent (legacy)', message);
       // Emit as 'message.new' to maintain compatibility
       this.emit('message.new', message);
     });
@@ -109,140 +99,114 @@ class SocketService {
     // Message read receipt
     // Backend sends 'message_read' (underscore), not 'message.read' (dot)
     this.socket.on('message_read', (data) => {
-      console.log('🔵 Socket.IO received: message_read', data);
       this.emit('message_read', data);
     });
 
     // Message deleted (soft delete - only for sender)
     this.socket.on('message_soft_deleted', (data) => {
-      console.log('🔵 Socket.IO received: message_soft_deleted', data);
       this.emit('message_soft_deleted', data);
     });
 
     // Message deleted (hard delete - for everyone)
     this.socket.on('message_hard_deleted', (data) => {
-      console.log('🔵 Socket.IO received: message_hard_deleted', data);
       this.emit('message_hard_deleted', data);
     });
 
     // Typing indicator
     this.socket.on('message.typing', (data) => {
-      console.log('🔵 Socket.IO received: message.typing', data);
       this.emit('message.typing', data);
     });
 
     // User online status
     this.socket.on('user.status', (data) => {
-      console.log('🔵 Socket.IO received: user.status', data);
       this.emit('user.status', data);
     });
 
     // Call events
     this.socket.on('call.incoming', (data) => {
-      console.log('🔵 Socket.IO received: call.incoming', data);
       this.emit('call.incoming', data);
     });
 
     this.socket.on('call.response', (data) => {
-      console.log('🔵 Socket.IO received: call.response', data);
       this.emit('call.response', data);
     });
 
     this.socket.on('call.accepted', (data) => {
-      console.log('🔵 Socket.IO received: call.accepted', data);
       this.emit('call.accepted', data);
     });
 
     this.socket.on('call.rejected', (data) => {
-      console.log('🔵 Socket.IO received: call.rejected', data);
       this.emit('call.rejected', data);
     });
 
     this.socket.on('call.ended', (data) => {
-      console.log('🔵 Socket.IO received: call.ended', data);
       this.emit('call.ended', data);
     });
 
     // WebRTC signaling events
     this.socket.on('webrtc_offer', (data) => {
-      console.log('🔵 Socket.IO received: webrtc_offer from', data.from);
       this.emit('webrtc_offer', data);
     });
 
     this.socket.on('webrtc_answer', (data) => {
-      console.log('🔵 Socket.IO received: webrtc_answer from', data.from);
       this.emit('webrtc_answer', data);
     });
 
     this.socket.on('webrtc_ice_candidate', (data) => {
-      console.log('🔵 Socket.IO received: webrtc_ice_candidate from', data.from);
       this.emit('webrtc_ice_candidate', data);
     });
 
     // Contact events
     this.socket.on('contact.request', (data) => {
-      console.log('🔵 Socket.IO received: contact.request', data);
       this.emit('contact.request', data);
     });
 
     this.socket.on('contact.accepted', (data) => {
-      console.log('🔵 Socket.IO received: contact.accepted', data);
       this.emit('contact.accepted', data);
     });
 
     this.socket.on('contact.rejected', (data) => {
-      console.log('🔵 Socket.IO received: contact.rejected', data);
       this.emit('contact.rejected', data);
     });
 
     this.socket.on('contact.removed', (data) => {
-      console.log('🔵 Socket.IO received: contact.removed', data);
       this.emit('contact.removed', data);
     });
 
     this.socket.on('contact.blocked', (data) => {
-      console.log('🔵 Socket.IO received: contact.blocked', data);
       this.emit('contact.blocked', data);
     });
 
     this.socket.on('contact.unblocked', (data) => {
-      console.log('🔵 Socket.IO received: contact.unblocked', data);
       this.emit('contact.unblocked', data);
     });
 
     this.socket.on('contact.muted', (data) => {
-      console.log('🔵 Socket.IO received: contact.muted', data);
       this.emit('contact.muted', data);
     });
 
     this.socket.on('contact.unmuted', (data) => {
-      console.log('🔵 Socket.IO received: contact.unmuted', data);
       this.emit('contact.unmuted', data);
     });
 
     // Group events
     this.socket.on('group_updated', (data) => {
-      console.log('🔵 Socket.IO received: group_updated', data);
       this.emit('group_updated', data);
     });
 
     this.socket.on('group_deleted', (data) => {
-      console.log('🔵 Socket.IO received: group_deleted', data);
       this.emit('group_deleted', data);
     });
 
     this.socket.on('group_member_joined', (data) => {
-      console.log('🔵 Socket.IO received: group_member_joined', data);
       this.emit('group_member_joined', data);
     });
 
     this.socket.on('group_member_left', (data) => {
-      console.log('🔵 Socket.IO received: group_member_left', data);
       this.emit('group_member_left', data);
     });
 
     this.socket.on('group_member_role_updated', (data) => {
-      console.log('🔵 Socket.IO received: group_member_role_updated', data);
       this.emit('group_member_role_updated', data);
     });
 
@@ -251,7 +215,6 @@ class SocketService {
 
   disconnect() {
     if (this.socket) {
-      console.log('🔴 Disconnecting WebSocket...');
       this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
@@ -266,7 +229,6 @@ class SocketService {
   // Emit events to server
   send(event: string, data: unknown) {
     if (this.socket?.connected) {
-      console.log(`📤 Socket.emit: ${event}`, { targetUserId: data.targetUserId, socketId: this.socket.id });
       this.socket.emit(event, data);
     } else {
       console.warn('❌ Socket not connected, cannot send event:', event);
@@ -280,23 +242,11 @@ class SocketService {
 
   // Send typing indicator
   sendTyping(recipientId: string, isTyping: boolean) {
-    console.log(`📝 Sending typing indicator:`, {
-      recipientId,
-      isTyping,
-      connected: this.socket?.connected,
-      socketId: this.socket?.id,
-      expectedRoom: `user:${recipientId}`
-    });
     this.send('message.typing', { recipientId, isTyping });
   }
 
   // Mark message as read
   markAsRead(messageId: string) {
-    console.log('📤 Sending message_read event to backend:', {
-      messageId,
-      connected: this.socket?.connected,
-      timestamp: new Date().toISOString()
-    });
     this.send('message_read', { messageId, timestamp: new Date().toISOString() });
   }
 
@@ -345,7 +295,6 @@ class SocketService {
 
   // Public method to manually trigger local listeners (e.g., after updating settings)
   triggerLocalEvent(event: string, data: unknown) {
-    console.log(`🔄 Manually triggering local event: ${event}`);
     this.emit(event, data);
   }
 
@@ -359,7 +308,6 @@ class SocketService {
 
   // Diagnostic method - call from console to debug
   diagnose() {
-    console.log('🔍 Socket Service Diagnostics:');
     console.log('  Connected:', this.socket?.connected);
     console.log('  Socket ID:', this.socket?.id);
     console.log('  Is Connecting:', this.isConnecting);
@@ -404,7 +352,6 @@ class SocketService {
 
     this.socket.onAny((eventName, ...args) => {
       receivedEvents.push(eventName);
-      console.log(`🎯 Backend sent event: ${eventName}`, args);
     });
 
     setTimeout(() => {

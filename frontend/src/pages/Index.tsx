@@ -133,8 +133,9 @@ const Index = () => {
     page.map((msg: unknown) => {
       const transformed = {
         id: msg.id,
-        text: msg.content,
-        timestamp: new Date(msg.createdAt),
+        senderId: msg.senderId, // IMPORTANT: Store senderId so isOwn filter works correctly
+        text: msg.text || msg.content, // Handle both formats (optimistic has content, transformed has text)
+        timestamp: msg.timestamp || new Date(msg.createdAt),
         isOwn: msg.senderId === user?.id,
         status: msg.status, // 'sent', 'delivered', 'read', 'failed'
         imageUrl: msg.messageType === 'image' ? msg.fileName : undefined,

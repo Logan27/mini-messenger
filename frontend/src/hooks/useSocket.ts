@@ -34,7 +34,6 @@ export function useSocket() {
 
   const onTyping = useCallback((callback: (data: unknown) => void) => {
     return socketService.on('message.typing', (data: unknown) => {
-      console.log('📬 Received typing indicator:', data);
       callback(data);
     });
   }, []);
@@ -64,20 +63,11 @@ export function useMessageListener(activeChat?: string) {
 
   useEffect(() => {
     const unsubscribeNew = socketService.on('message.new', (message: unknown) => {
-      console.log('📨 Global message.new listener received:', {
-        messageId: message.id,
-        senderId: message.senderId,
-        recipientId: message.recipientId,
-        groupId: message.groupId,
-        activeChat: activeChat
-      });
-
       // Determine which chat this message belongs to
       // For direct messages: the other user's ID
       // For group messages: the group ID
       const messageChatId = message.groupId || message.senderId || message.recipientId;
       
-      console.log('📨 Message chat ID:', messageChatId, 'Active chat:', activeChat);
 
       // If this message is for the currently active chat, invalidate its messages
       if (activeChat && messageChatId === activeChat) {
@@ -95,9 +85,7 @@ export function useMessageListener(activeChat?: string) {
 
       // Always invalidate conversations to update unread counts and last message
       // Small delay to ensure backend has committed the message to database
-      console.log('📨 Scheduling conversations invalidation');
       setTimeout(() => {
-        console.log('📨 Invalidating conversations and contacts');
         // Use refetchQueries to force immediate refetch
         queryClient.refetchQueries({ queryKey: ['conversations'] });
         queryClient.refetchQueries({ queryKey: ['contacts'] });
@@ -106,7 +94,6 @@ export function useMessageListener(activeChat?: string) {
 
     // Listen for soft deleted messages
     const unsubscribeSoftDeleted = socketService.on('message_soft_deleted', (data: unknown) => {
-      console.log('🗑️ Message soft deleted, updating UI:', data);
 
       // Invalidate messages query to refetch and remove deleted message
       queryClient.invalidateQueries({ queryKey: ['messages'] });
@@ -115,7 +102,6 @@ export function useMessageListener(activeChat?: string) {
 
     // Listen for hard deleted messages
     const unsubscribeHardDeleted = socketService.on('message_hard_deleted', (data: unknown) => {
-      console.log('🗑️ Message hard deleted, updating UI:', data);
 
       // Invalidate messages query to refetch and remove deleted message
       queryClient.invalidateQueries({ queryKey: ['messages'] });
@@ -137,7 +123,6 @@ export function useReadReceiptListener() {
   useEffect(() => {
     // Backend sends 'message_read' (underscore), not 'message.read' (dot)
     const unsubscribe = socketService.on('message_read', (data: { messageId: string }) => {
-      console.log('📖 Read receipt received, refetching caches:', data);
       queryClient.refetchQueries({ queryKey: ['messages'] });
       // Refetch conversations to update unread counts
       queryClient.refetchQueries({ queryKey: ['conversations'] });
@@ -153,7 +138,6 @@ export function useUserStatusListener() {
 
   useEffect(() => {
     const unsubscribe = socketService.on('user.status', (data: { userId: string; status: string; onlineStatus?: string }) => {
-      console.log('👤 User status update received:', data);
 
       // Use onlineStatus if provided, otherwise fallback to status
       const newStatus = data.onlineStatus || data.status;
@@ -164,7 +148,6 @@ export function useUserStatusListener() {
 
         const updated = old.map((contact: unknown) => {
           if (contact.user?.id === data.userId) {
-            console.log(`  📝 Updating contact ${contact.user.username} status: ${contact.user.onlineStatus} -> ${newStatus}`);
             return {
               ...contact,
               user: {
@@ -186,7 +169,6 @@ export function useUserStatusListener() {
 
         const updated = old.map((conversation: unknown) => {
           if (conversation.type === 'direct' && conversation.user?.id === data.userId) {
-            console.log(`  📝 Updating conversation with ${conversation.user?.username || 'unknown'} status: ${conversation.user?.onlineStatus} -> ${newStatus}`);
             return {
               ...conversation,
               user: {
@@ -217,7 +199,6 @@ export function useGroupListener() {
   useEffect(() => {
     // Listen for group deletion
     const unsubscribeDeleted = socketService.on('group_deleted', (data: { groupId: string }) => {
-      console.log('🗑️ Group deleted event received:', data);
 
       // Remove from conversations cache
       queryClient.setQueryData(['conversations'], (old: unknown) => {
@@ -254,7 +235,6 @@ export function useGroupListener() {
           return conv;
         });
 
-        console.log('📝 Updated conversations cache with new group data');
         return updated;
       });
 
@@ -265,7 +245,6 @@ export function useGroupListener() {
 
     // Listen for member left
     const unsubscribeMemberLeft = socketService.on('group_member_left', (data: { groupId: string; userId: string }) => {
-      console.log('👋 Group member left event received:', data);
 
       // Invalidate conversations to refetch
       queryClient.invalidateQueries({ queryKey: ['conversations'] });

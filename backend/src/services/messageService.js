@@ -301,6 +301,12 @@ class MessageService {
         return;
       }
 
+      // Don't send read receipt if user is reading their own message
+      if (message.senderId === userId) {
+        logger.debug(`📖 Skipping read receipt - user ${userId} is reading their own message`);
+        return;
+      }
+
       // Notify sender about read
       const wsService = getWebSocketService();
       logger.debug(`📖 Broadcasting read receipt to sender: ${message.senderId}`);

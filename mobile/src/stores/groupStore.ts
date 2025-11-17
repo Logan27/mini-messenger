@@ -49,6 +49,9 @@ interface GroupState {
   // Utility
   setSelectedGroup: (group: Group | null) => void;
   clearError: () => void;
+
+  // Alias for backward compatibility
+  loadGroups: () => Promise<void>;
 }
 
 export const useGroupStore = create<GroupState>((set, get) => ({
@@ -385,5 +388,10 @@ export const useGroupStore = create<GroupState>((set, get) => ({
 
   clearError: () => {
     set({ error: null });
+  },
+
+  // Alias for backward compatibility - calls loadUserGroups with default params
+  loadGroups: async () => {
+    await get().loadUserGroups();
   },
 }));

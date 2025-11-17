@@ -133,9 +133,7 @@ export const useAuthStore = create<AuthStore>()(
 
       logoutAll: async () => {
         try {
-          // Import api at runtime to avoid circular dependency
-          const { default: api } = await import('../services/api');
-          await api.post('/api/auth/logout-all');
+          await authAPI.logoutAll();
         } catch (error) {
           console.error('Logout all error:', error);
         } finally {
@@ -238,11 +236,7 @@ export const useAuthStore = create<AuthStore>()(
 
       checkAccountStatus: async (email: string): Promise<AccountStatus> => {
         try {
-          const { default: api } = await import('../services/api');
-          const response = await api.get('/api/auth/account-status', {
-            params: { email },
-          });
-
+          const response = await authAPI.checkAccountStatus(email);
           const status: AccountStatus = response.data.status;
           set({ accountStatus: status });
           return status;

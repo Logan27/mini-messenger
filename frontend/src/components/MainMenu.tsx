@@ -91,9 +91,9 @@ export const MainMenu = () => {
           <Separator />
 
           <div className="flex flex-col py-2">
-            <Button
-              variant="ghost"
-              className="justify-between gap-3 px-6 py-3 h-auto text-base font-normal"
+            <button
+              type="button"
+              className="flex items-center justify-between gap-3 px-6 py-3 text-base font-normal cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors bg-transparent border-0 w-full"
               onClick={toggleTheme}
             >
               <div className="flex items-center gap-3">
@@ -101,7 +101,7 @@ export const MainMenu = () => {
                 <span>Night Mode</span>
               </div>
               <Switch checked={isDark} className="pointer-events-none" />
-            </Button>
+            </button>
           </div>
 
           <Separator />

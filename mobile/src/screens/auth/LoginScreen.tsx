@@ -10,7 +10,9 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -151,13 +153,15 @@ const LoginScreen = ({ testMode = false }: { testMode?: boolean } = {}) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      testID="screen-container"
-    >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.screen} testID="screen-container">
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        testID="keyboard-avoiding-view"
+      >
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.screen} testID="screen-container">
         <View style={styles.header}>
           <Text style={styles.title}>Welcome Back</Text>
           <Text style={styles.subtitle}>Sign in to your account</Text>
@@ -230,6 +234,7 @@ const LoginScreen = ({ testMode = false }: { testMode?: boolean } = {}) => {
                   value={value}
                   onChangeText={onChange}
                   secureTextEntry={!showPassword}
+                  textContentType="password"
                   autoCapitalize="none"
                   autoCorrect={false}
                   testID="password-input"
@@ -280,10 +285,11 @@ const LoginScreen = ({ testMode = false }: { testMode?: boolean } = {}) => {
               <Text style={styles.registerLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>
-        </View>
+          </View>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
@@ -291,6 +297,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  flex: {
+    flex: 1,
   },
   screen: {
     flex: 1,

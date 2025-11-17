@@ -57,11 +57,9 @@ export const messageService = {
     replyToId?: string;
     metadata?: Record<string, unknown>;
   }) {
-    console.log('🌐 messageService.sendMessage called with:', data);
 
     // Check if user is offline
     if (!navigator.onLine) {
-      console.log('📴 User is offline, adding message to queue');
 
       // Add to offline queue
       await offlineQueueService.addToQueue({
@@ -88,9 +86,7 @@ export const messageService = {
       };
     }
 
-    console.log('🌐 About to POST to:', '/messages');
     const response = await apiClient.post('/messages', data);
-    console.log('🌐 POST response received:', response.data);
     return response.data.data;
   },
 

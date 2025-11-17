@@ -45,8 +45,8 @@ All colors MUST be HSL.
     --radius: 0.75rem;
 
     /* Messenger specific tokens - better contrast for all message types */
-    --message-sent: 199 89% 42%; /* Darker blue for better contrast on light bg */
-    --message-sent-foreground: 0 0% 100%;
+    --message-sent: 210 65% 88%; /* Soft muted blue-gray for gentle appearance */
+    --message-sent-foreground: 215 30% 20%;
     --message-received: 215 25% 90%; /* Darker gray for better contrast */
     --message-received-foreground: 215 30% 20%; /* Darker text for better readability */
     --chat-hover: 210 30% 94%;
@@ -100,8 +100,8 @@ All colors MUST be HSL.
     --ring: 199 89% 52%;
 
     /* Messenger specific tokens - dark mode with better contrast */
-    --message-sent: 199 89% 52%;
-    --message-sent-foreground: 0 0% 100%;
+    --message-sent: 210 40% 35%; /* Muted blue-gray for dark mode */
+    --message-sent-foreground: 210 20% 98%;
     --message-received: 215 25% 25%; /* Increased from 20% to 25% for better contrast */
     --message-received-foreground: 210 20% 98%; /* Brighter white for better readability */
     --chat-hover: 215 25% 16%;

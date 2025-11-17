@@ -260,6 +260,12 @@ export const authAPI = {
   logout: () =>
     api.post('/api/auth/logout'),
 
+  logoutAll: () =>
+    api.post('/api/auth/logout-all'),
+
+  checkAccountStatus: (email: string) =>
+    api.get('/api/auth/account-status', { params: { email } }),
+
   forgotPassword: (email: string) =>
     api.post('/api/auth/forgot-password', { email }),
 

@@ -17,26 +17,16 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
   // Listen for new messages via WebSocket
   useEffect(() => {
     const unsubscribe = socketService.on('message.new', (newMessage: unknown) => {
-      console.log('📨 New message received via WebSocket:', {
-        messageId: newMessage.id,
-        senderId: newMessage.senderId,
-        recipientId: newMessage.recipientId,
-        currentRecipientId: recipientId,
-        currentGroupId: groupId,
-        content: newMessage.content?.substring(0, 50),
-      });
-      
       // Only update if the message is for the current chat
       const isForCurrentChat =
         (recipientId && (newMessage.senderId === recipientId || newMessage.recipientId === recipientId)) ||
         (groupId && newMessage.groupId === groupId);
 
-      console.log('📨 Message is for current chat:', isForCurrentChat);
-
       if (isForCurrentChat) {
         // Transform backend message format to frontend format
         const transformedMessage = {
           id: newMessage.id,
+          senderId: newMessage.senderId,
           text: newMessage.content,
           timestamp: new Date(newMessage.createdAt),
           isOwn: newMessage.senderId === user?.id,
@@ -44,7 +34,7 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
           messageType: newMessage.messageType,
           imageUrl: newMessage.messageType === 'image' ? newMessage.fileName : undefined,
           reactions: newMessage.reactions || {},
-          // File attachment fields - use backend-provided values directly
+          // File attachment fields
           fileId: newMessage.fileId || newMessage.metadata?.fileId,
           fileName: newMessage.fileName || newMessage.metadata?.fileName,
           fileUrl: newMessage.fileUrl || newMessage.metadata?.fileUrl,
@@ -63,48 +53,38 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
           } : undefined,
         };
 
-        console.log('📨 Adding/updating message in cache:', transformedMessage.id);
-        
         const queryKey = ['messages', recipientId, groupId];
         queryClient.setQueryData(queryKey, (old) => {
           if (!old) {
-            console.log('📨 No existing cache, creating new');
             return { pages: [[transformedMessage]], pageParams: [undefined] };
           }
 
           const newPages = [...old.pages];
-          const lastPageIndex = newPages.length - 1;
-          const lastPage = newPages[lastPageIndex];
-          
+          const firstPage = [...newPages[0]];
+
           // Check if message already exists (replace temp or duplicate)
-          const existingIndex = lastPage.findIndex((msg: unknown) => 
-            msg.id === transformedMessage.id || 
-            (msg.id.startsWith('temp-') && msg.text === transformedMessage.text)
+          const existingIndex = firstPage.findIndex((msg: unknown) =>
+            msg.id === transformedMessage.id ||
+            (msg.id.startsWith('temp-') && msg.content === newMessage.content)
           );
-          
+
           if (existingIndex !== -1) {
-            console.log('📨 Replacing existing message at index:', existingIndex);
-            lastPage[existingIndex] = transformedMessage;
+            firstPage[existingIndex] = transformedMessage;
           } else {
-            console.log('📨 Adding new message to cache');
-            lastPage.push(transformedMessage);
+            firstPage.unshift(transformedMessage);
           }
-          
-          newPages[lastPageIndex] = lastPage;
-          console.log('📨 Cache updated, last page length:', newPages[lastPageIndex].length);
+
+          newPages[0] = firstPage;
           return { ...old, pages: newPages };
         });
 
+        // Invalidate conversations to update last message and counters
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+
         // Send delivery confirmation to backend
-        // This happens immediately when message is received, regardless of which chat is open
-        // Skip temporary messages (IDs starting with "temp-")
         if (newMessage.id && !newMessage.id.startsWith('temp-')) {
-          console.log('📨 Sending delivery confirmation for:', newMessage.id);
           socketService.markAsDelivered(newMessage.id, newMessage.senderId);
         }
-
-        // Note: Notifications are handled globally by NotificationManager
-        // No need to show notifications here to avoid duplicates
       }
     });
 
@@ -130,32 +110,18 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
 
     // Listen for message read receipts (backend sends message_read with underscore)
     const unsubscribeRead = socketService.on('message_read', (data: unknown) => {
-      console.log('📖 Read receipt received:', data);
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
 
-      console.log('📖 Updating query cache for key:', queryKey, 'messageId:', messageId);
-
       queryClient.setQueryData(queryKey, (old) => {
-        if (!old) {
-          console.log('⚠️ No existing messages data in cache');
-          return old;
-        }
+        if (!old) return old;
 
-        console.log('📖 Current cache pages:', old.pages.length);
+        const newPages = old.pages.map((page: unknown[]) =>
+          page.map((msg: unknown) =>
+            msg.id === messageId ? { ...msg, status: 'read' } : msg
+          )
+        );
 
-        const newPages = old.pages.map((page: unknown[], pageIndex: number) => {
-          console.log(`📖 Processing page ${pageIndex} with ${page.length} messages`);
-          return page.map((msg: unknown) => {
-            if (msg.id === messageId) {
-              console.log('✅ Found message to mark as read:', msg.id);
-              return { ...msg, status: 'read' };
-            }
-            return msg;
-          });
-        });
-
-        console.log('📖 Cache updated, triggering re-render');
         return { ...old, pages: newPages };
       });
     });
@@ -246,6 +212,7 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
 
 export function useSendMessage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: messageService.sendMessage,
@@ -260,40 +227,40 @@ export function useSendMessage() {
       // Optimistically add message with 'sending' status
       const tempMessage = {
         id: `temp-${Date.now()}`,
-        text: variables.content,
-        timestamp: new Date(),
-        isOwn: true,
+        senderId: user?.id,
+        content: variables.content,
+        createdAt: new Date().toISOString(),
         status: 'sending' as const,
+        messageType: 'text',
       };
 
       queryClient.setQueryData(queryKey, (old) => {
         if (!old) return { pages: [[tempMessage]], pageParams: [undefined] };
 
-        const newPages = [...old.pages];
-        // Add to last page (newest messages, since we reversed DESC to ASC)
-        const lastPageIndex = newPages.length - 1;
-        newPages[lastPageIndex] = [...newPages[lastPageIndex], tempMessage];
+        const newPages = old.pages.map((page, index) => {
+          if (index === 0) {
+            return [tempMessage, ...page];
+          }
+          return page;
+        });
         return { ...old, pages: newPages };
       });
 
       return { previousMessages, tempMessage };
     },
     onSuccess: (newMessage, variables, context) => {
-      console.log('✅ Message sent successfully, server returned:', newMessage.id);
-      
-      // Replace temp message with real one from server
       const queryKey = ['messages', variables.recipientId, variables.groupId];
-      
-      // Transform backend message format to frontend format
+
+      // Transform backend message to frontend format
       const transformedMessage = {
         id: newMessage.id,
+        senderId: newMessage.senderId,
         text: newMessage.content,
         timestamp: new Date(newMessage.createdAt),
-        isOwn: true, // Message sent by current user
+        isOwn: true,
         status: newMessage.status || 'sent',
         messageType: newMessage.messageType,
         imageUrl: newMessage.messageType === 'image' ? newMessage.fileName : undefined,
-        // File attachment fields - use backend-provided values directly
         fileId: newMessage.fileId || newMessage.metadata?.fileId,
         fileName: newMessage.fileName || newMessage.metadata?.fileName,
         fileUrl: newMessage.fileUrl || newMessage.metadata?.fileUrl,
@@ -305,27 +272,18 @@ export function useSendMessage() {
           senderName: newMessage.replyTo.sender?.username || 'Unknown',
         } : undefined,
       };
-      
+
       queryClient.setQueryData(queryKey, (old) => {
         if (!old) return { pages: [[transformedMessage]], pageParams: [undefined] };
 
-        // Replace the temp message with the real one
         const newPages = old.pages.map((page: unknown[]) =>
           page.map((msg: unknown) =>
-            msg.id === context?.tempMessage.id
-              ? transformedMessage
-              : msg
+            msg.id === context?.tempMessage.id ? transformedMessage : msg
           )
         );
 
         return { ...old, pages: newPages };
       });
-
-      console.log('✅ Optimistic message replaced with server message');
-      console.log('🔄 Invalidating conversations to update counters and last message');
-      
-      // Invalidate conversations to update last message and counters
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
     onError: (error, variables, context) => {
       // Revert to previous state on error

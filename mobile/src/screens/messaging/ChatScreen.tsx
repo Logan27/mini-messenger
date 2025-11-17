@@ -12,15 +12,16 @@ import {
   Alert,
   Image,
   Clipboard,
+  StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMessagingStore } from '../../stores/messagingStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useCallStore } from '../../stores/callStore';
 import { Message, Conversation } from '../../types';
-import { wsService } from '../../services/api';
+import { wsService, fileAPI } from '../../services/api';
 import MessageActionsSheet from '../../components/messaging/MessageActionsSheet';
 import MessageStatusIndicator, { MessageStatus } from '../../components/messaging/MessageStatusIndicator';
 import FileAttachmentPicker from '../../components/messaging/FileAttachmentPicker';
@@ -44,7 +45,6 @@ interface ChatScreenProps {
 
 const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const { conversationId } = route.params;
-  const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const { privacy, theme } = useSettingsStore();
   const {
@@ -323,7 +323,6 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
       setShowAttachmentPicker(false);
 
       // Upload file to server
-      const { fileAPI } = await import('../../services/api');
       const uploadResponse = await fileAPI.uploadFile(file, conversationId);
       const uploadedFile = uploadResponse.data.data;
 
@@ -745,14 +744,16 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-    >
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <TouchableOpacity
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        {/* Header */}
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
@@ -901,9 +902,9 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         </View>
       )}
 
-      {/* Message Input */}
-      <View style={[styles.inputContainer, { paddingBottom: insets.bottom }]}>
-        <TouchableOpacity
+        {/* Message Input */}
+        <View style={styles.inputContainer}>
+          <TouchableOpacity
           style={styles.attachButton}
           onPress={() => setShowAttachmentPicker(true)}
         >
@@ -936,7 +937,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
             <Ionicons name="mic" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
         )}
-      </View>
+        </View>
+      </KeyboardAvoidingView>
 
       {/* Message Actions Sheet */}
       <MessageActionsSheet
@@ -979,12 +981,15 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         reactions={whoReactedMessage?.reactions || []}
         getUserName={getUserName}
       />
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  flex: {
     flex: 1,
   },
   centerContainer: {

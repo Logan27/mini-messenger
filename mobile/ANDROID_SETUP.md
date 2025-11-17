@@ -101,6 +101,26 @@ npm run android
 
 ## Troubleshooting
 
+### Windows: Path Length Build Errors
+
+**CRITICAL FOR WINDOWS USERS**: If you see errors like:
+```
+CMake Warning: The object file directory has 182 characters
+ninja: error: mkdir(...): No such file or directory
+```
+
+**Solution**: Move the project to a shorter path. See [FIX_LONG_PATH_WARNING.md](FIX_LONG_PATH_WARNING.md) for:
+- Automated move script (`move-to-shorter-path.ps1`)
+- Manual move instructions
+- Windows long path registry fix
+
+**Quick Fix**:
+```powershell
+# Run from mobile/ directory
+.\move-to-shorter-path.ps1
+# Then rebuild from new location (e.g., C:\msg\mobile)
+```
+
 ### App not launching / Java exceptions
 
 If you still see Java exceptions:

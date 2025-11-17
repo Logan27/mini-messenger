@@ -14,7 +14,6 @@ export function useGlobalNotifications() {
 
   // Track when notificationSettings state changes
   useEffect(() => {
-    console.log('🔄 notificationSettings STATE CHANGED TO:', notificationSettings);
   }, [notificationSettings]);
 
   // Load notification settings and muted conversations
@@ -23,12 +22,9 @@ export function useGlobalNotifications() {
 
     const loadSettings = async () => {
       try {
-        console.log('🔄 loadSettings() called - fetching from API...');
         const response = await apiClient.get('/notification-settings');
         if (response.data?.data?.settings) {
           const newSettings = response.data.data.settings;
-          console.log('🔔 Loaded notification settings from API:', newSettings);
-          console.log('🔔 Setting state with new settings...');
           setNotificationSettings(newSettings);
           console.log('✅ State update called with:', newSettings);
         }
@@ -64,14 +60,11 @@ export function useGlobalNotifications() {
 
     // Listen for notification settings updates
     const unsubscribeSettings = socketService.on('notification-settings:updated', (data: unknown) => {
-      console.log('🔔 WebSocket event received: notification-settings:updated', data);
-      console.log('🔔 Reloading notification settings from API...');
       loadSettings();
     });
 
     // Listen for contact updates (mute/unmute)
     const unsubscribeContactUpdated = socketService.on('contact.updated', () => {
-      console.log('🔔 Contact updated, reloading muted conversations...');
       loadMutedConversations();
     });
 
@@ -84,35 +77,23 @@ export function useGlobalNotifications() {
   useEffect(() => {
     if (!user) return;
 
-    console.log('🔔 Global notifications handler initialized');
-    console.log('🔔 Current notification settings in effect:', notificationSettings);
-    console.log('🔔 Notification API status:', {
-      supported: 'Notification' in window,
-      permission: typeof Notification !== 'undefined' ? Notification.permission : 'undefined',
-      maxActions: typeof Notification !== 'undefined' && (Notification as unknown as { maxActions?: number }).maxActions !== undefined ? (Notification as unknown as { maxActions?: number }).maxActions : 'N/A'
-    });
-
     // Listen for contact requests
     const unsubscribeContactRequest = socketService.on('contact.request', (data: unknown) => {
-      console.log('📇 Received contact request via socket:', data);
 
       // Check notification settings
       if (notificationSettings) {
         // Check global notifications toggle (master switch)
         if (notificationSettings.inAppEnabled === false) {
-          console.log('🔇 Global in-app notifications disabled');
           return;
         }
 
         // Check Do Not Disturb
         if (notificationSettings.doNotDisturb === true) {
-          console.log('🔇 Do Not Disturb enabled');
           return;
         }
 
         // Check if push notifications are disabled (only affects browser/desktop notifications)
         if (notificationSettings.pushEnabled === false) {
-          console.log('🔇 Push notifications disabled in settings');
           return;
         }
       }
@@ -140,7 +121,6 @@ export function useGlobalNotifications() {
 
           // Handle notification click
           notification.onclick = () => {
-            console.log('🖱️ Contact request notification clicked');
             window.focus();
             notification.close();
             // Navigate to contacts page
@@ -161,15 +141,12 @@ export function useGlobalNotifications() {
       // Check notification settings
       if (notificationSettings) {
         if (notificationSettings.inAppEnabled === false) {
-          console.log('🔇 Global in-app notifications disabled');
           return;
         }
         if (notificationSettings.doNotDisturb === true) {
-          console.log('🔇 Do Not Disturb enabled');
           return;
         }
         if (notificationSettings.pushEnabled === false) {
-          console.log('🔇 Push notifications disabled in settings');
           return;
         }
       }
@@ -195,24 +172,19 @@ export function useGlobalNotifications() {
 
     // Listen for incoming calls
     const unsubscribeCall = socketService.on('call.incoming', (data: unknown) => {
-      console.log('📞 Received incoming call via socket:', data);
 
       // Check notification settings
       if (notificationSettings) {
         if (notificationSettings.inAppEnabled === false) {
-          console.log('🔇 Global in-app notifications disabled');
           return;
         }
         if (notificationSettings.doNotDisturb === true) {
-          console.log('🔇 Do Not Disturb enabled');
           return;
         }
         if (notificationSettings.pushEnabled === false) {
-          console.log('🔇 Push notifications disabled in settings');
           return;
         }
         if (notificationSettings.callNotifications === false) {
-          console.log('🔇 Call notifications explicitly disabled in settings');
           return;
         }
       }
@@ -236,7 +208,6 @@ export function useGlobalNotifications() {
 
           // Handle notification click - navigate to chat view to accept/reject call
           notification.onclick = () => {
-            console.log('🖱️ Call notification clicked');
             window.focus();
             notification.close();
             // Navigate to the conversation
@@ -252,52 +223,37 @@ export function useGlobalNotifications() {
 
     // Listen for ALL incoming messages
     const unsubscribe = socketService.on('message.new', (newMessage: unknown) => {
-      console.log('💬 Received message via socket:', {
-        id: newMessage.id,
-        senderId: newMessage.senderId,
-        currentUserId: user.id,
-        isOwnMessage: newMessage.senderId === user.id
-      });
-
       // Don't notify for messages we sent
       if (newMessage.senderId === user.id) {
-        console.log('💬 Skipping notification for own message');
         return;
       }
 
       // Check if conversation is muted
       const conversationId = newMessage.groupId || newMessage.senderId;
       if (conversationId && mutedConversations.has(conversationId)) {
-        console.log('🔇 Conversation is muted, skipping notification');
         return;
       }
 
       // Check notification settings
       if (notificationSettings) {
-        console.log('🔔 Checking notification settings:', notificationSettings);
-        console.log('🔔 messageNotifications value:', notificationSettings.messageNotifications, 'type:', typeof notificationSettings.messageNotifications);
 
         // Check global notifications toggle first (master switch)
         if (notificationSettings.inAppEnabled === false) {
-          console.log('🔇 Global in-app notifications disabled');
           return;
         }
 
         // Check Do Not Disturb (highest priority after global toggle)
         if (notificationSettings.doNotDisturb === true) {
-          console.log('🔇 Do Not Disturb enabled');
           return;
         }
 
         // Check if push notifications are disabled (desktop/browser notifications)
         if (notificationSettings.pushEnabled === false) {
-          console.log('🔇 Push notifications disabled in settings');
           return;
         }
 
         // Check if message notifications are disabled
         if (notificationSettings.messageNotifications === false) {
-          console.log('🔇 Message notifications explicitly disabled in settings');
           return;
         }
 
@@ -311,32 +267,18 @@ export function useGlobalNotifications() {
           const quietHoursStart = normalizeTime(notificationSettings.quietHoursStart);
           const quietHoursEnd = normalizeTime(notificationSettings.quietHoursEnd);
 
-          console.log('🔔 Quiet hours check:', {
-            current: currentTime,
-            start: quietHoursStart,
-            end: quietHoursEnd
-          });
-
           // Handle overnight periods (e.g., 22:00 to 08:00)
           const isQuietTime = quietHoursStart > quietHoursEnd
             ? (currentTime >= quietHoursStart || currentTime <= quietHoursEnd)
             : (currentTime >= quietHoursStart && currentTime <= quietHoursEnd);
 
           if (isQuietTime) {
-            console.log('🔇 In quiet hours period - blocking notification');
             return;
           } else {
             console.log('✅ Not in quiet hours - notification allowed');
           }
         }
       }
-
-      console.log('💬 New message from another user:', {
-        from: newMessage.senderUsername || newMessage.sender?.username,
-        content: newMessage.content?.substring(0, 50),
-        permission: typeof Notification !== 'undefined' ? Notification.permission : 'undefined',
-        supported: 'Notification' in window
-      });
 
       // Check if notifications are supported
       if (!('Notification' in window)) {
@@ -354,7 +296,6 @@ export function useGlobalNotifications() {
       if (Notification.permission === 'default') {
         console.warn('⚠️ Notification permission not requested yet. Asking now...');
         Notification.requestPermission().then(permission => {
-          console.log('🔔 Permission request result:', permission);
           if (permission === 'granted') {
             console.log('✅ Permission granted! Notifications will work for next message.');
           }
@@ -367,12 +308,6 @@ export function useGlobalNotifications() {
         try {
           const senderName = newMessage.senderUsername || newMessage.sender?.username || 'Someone';
           const notificationBody = newMessage.content || 'You have a new message';
-
-          console.log('🔔 Creating notification:', {
-            senderName,
-            body: notificationBody,
-            icon: newMessage.senderAvatar || newMessage.sender?.avatar
-          });
 
           const notification = new Notification(`New message from ${senderName}`, {
             body: notificationBody,
@@ -393,7 +328,6 @@ export function useGlobalNotifications() {
 
           // Handle notification click
           notification.onclick = () => {
-            console.log('🖱️ Notification clicked');
             window.focus();
             notification.close();
             // Could navigate to the conversation here
@@ -401,7 +335,6 @@ export function useGlobalNotifications() {
 
           // Handle notification close
           notification.onclose = () => {
-            console.log('🔒 Notification closed');
           };
 
           // Handle notification error
@@ -422,7 +355,6 @@ export function useGlobalNotifications() {
     });
 
     return () => {
-      console.log('🔔 Global notifications handler cleaned up');
       unsubscribe();
       unsubscribeContactRequest();
       unsubscribeContactAccepted();

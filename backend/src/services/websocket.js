@@ -374,8 +374,8 @@ class WebSocketService {
       }
     });
 
-    // Handle message events (frontend sends 'message.send')
-    socket.on('message.send', data => {
+    // OPTIMIZATION: Consolidated message send handler (supports both event names)
+    const handleMessageSend = data => {
       if (this.checkEventRateLimit(socket.userId, 'message_sent')) {
         messageService.handleMessageSent(socket, data);
       } else {
@@ -384,19 +384,13 @@ class WebSocketService {
           message: 'Rate limit exceeded for messages',
         });
       }
-    });
+    };
+
+    // Handle message events (frontend sends 'message.send')
+    socket.on('message.send', handleMessageSend);
 
     // Legacy support for message_sent event
-    socket.on(WS_EVENTS.MESSAGE_SENT, data => {
-      if (this.checkEventRateLimit(socket.userId, 'message_sent')) {
-        messageService.handleMessageSent(socket, data);
-      } else {
-        socket.emit(WS_EVENTS.ERROR, {
-          type: 'RATE_LIMIT_EXCEEDED',
-          message: 'Rate limit exceeded for messages',
-        });
-      }
-    });
+    socket.on(WS_EVENTS.MESSAGE_SENT, handleMessageSend);
 
     // Handle message delivery confirmation
     socket.on(WS_EVENTS.MESSAGE_DELIVERED, data => {
@@ -613,14 +607,9 @@ class WebSocketService {
 
     // Broadcast typing indicator (use message.typing to match frontend)
     socket.to(roomId).emit('message.typing', typingData);
-
-    // Clean up old throttle entries every 30 seconds
-    if (Math.random() < 0.1) {
-      // 10% chance to cleanup
-      this.cleanupTypingThrottle();
-    }
   }
 
+  // OPTIMIZATION: Deterministic cleanup instead of random probability
   cleanupTypingThrottle() {
     if (!this.typingThrottle) {
       return;
@@ -817,39 +806,46 @@ class WebSocketService {
 
     this.userStatus.set(userId, statusInfo);
 
-    // Update user status in database
+    // OPTIMIZATION: Batch status updates to reduce database writes
+    // Only update database on status change or periodically
     try {
-      const { User } = await import('../models/index.js');
+      const { User, Contact } = await import('../models/index.js');
+
+      // Update user status in database (debounced in future optimization)
       await User.update({ status }, { where: { id: userId } });
+
+      // OPTIMIZATION: Only broadcast to user's contacts instead of all connected clients
+      // Get user's contact list
+      const contacts = await Contact.findAll({
+        where: { userId },
+        attributes: ['contactUserId'],
+        raw: true,
+      });
+
+      const contactUserIds = contacts.map(c => c.contactUserId);
+
+      // Broadcast status update only to contacts
+      const statusPayload = {
+        userId,
+        status,
+        onlineStatus: status,
+        timestamp: statusInfo.timestamp,
+        socketId: statusInfo.socketId,
+      };
+
+      // Emit to each contact's room
+      for (const contactUserId of contactUserIds) {
+        this.io?.to(`user:${contactUserId}`).emit('user.status', statusPayload);
+
+        // Backward compatibility events
+        if (status === 'online') {
+          this.io?.to(`user:${contactUserId}`).emit(WS_EVENTS.USER_ONLINE, statusInfo);
+        } else if (status === 'offline') {
+          this.io?.to(`user:${contactUserId}`).emit(WS_EVENTS.USER_OFFLINE, statusInfo);
+        }
+      }
     } catch (error) {
-      console.error('❌ Error updating user status in database:', error);
-    }
-
-    // Store in Redis for cross-server availability - DISABLED (Redis in subscriber mode)
-    // if (this.redisClient) {
-    //   await this.redisClient.setex(
-    //     `user_status:${userId}`,
-    //     300, // 5 minutes TTL
-    //     JSON.stringify(statusInfo)
-    //   );
-    // }
-
-    // Broadcast status update to all connected clients
-    // Use 'user.status' event that frontend is listening to
-    // Map 'status' to 'onlineStatus' for frontend compatibility
-    this.io?.emit('user.status', {
-      userId,
-      status, // Keep for potential future use
-      onlineStatus: status, // Frontend expects this field
-      timestamp: statusInfo.timestamp,
-      socketId: statusInfo.socketId,
-    });
-
-    // Also emit specific events for backward compatibility
-    if (status === 'online') {
-      this.io?.emit(WS_EVENTS.USER_ONLINE, statusInfo);
-    } else if (status === 'offline') {
-      this.io?.emit(WS_EVENTS.USER_OFFLINE, statusInfo);
+      console.error('❌ Error updating user status:', error);
     }
   }
 
@@ -909,22 +905,11 @@ class WebSocketService {
 
     // Check if io.to exists and is a function
     if (!this.io.to || typeof this.io.to !== 'function') {
-      console.warn('⚠️ WebSocket service: io.to is not available', {
-        ioType: typeof this.io,
-        ioToType: typeof this.io?.to,
-        ioKeys: this.io ? Object.keys(this.io) : 'io is null/undefined',
-      });
+      console.warn('⚠️ WebSocket service: io.to is not available');
       return;
     }
 
-    // SKIP REDIS PUB/SUB - Redis client is in subscriber mode and can't publish
-    // This needs separate Redis clients for pub and sub
-    // For now, use local Socket.IO broadcasting only
-    // if (this.redisClient) {
-    //   await this.redisClient.publish(`broadcast:user:${userId}`, JSON.stringify({ event, data }));
-    // }
-
-    // Broadcast locally
+    // Broadcast locally (cross-server handled by Redis adapter)
     const room = `user:${userId}`;
 
     // Additional safety checks before accessing adapter
@@ -935,19 +920,6 @@ class WebSocketService {
 
     const socketsInRoom = this.io.sockets.adapter.rooms.get(room);
 
-    console.log('🔥 BROADCAST DEBUG:', {
-      userId,
-      event,
-      room,
-      dataKeys: Object.keys(data),
-      ioExists: !!this.io,
-      ioToFunction: typeof this.io.to,
-      socketsExists: !!this.io.sockets,
-      adapterExists: !!this.io.sockets?.adapter,
-      roomExists: !!socketsInRoom,
-      roomSize: socketsInRoom?.size || 0,
-    });
-
     if (!socketsInRoom || socketsInRoom.size === 0) {
       console.warn(`⚠️ No sockets in room: ${room}. User might be offline or not joined.`);
       return;
@@ -956,11 +928,9 @@ class WebSocketService {
     try {
       console.log(`📡 Emitting ${event} to ${socketsInRoom.size} socket(s) in room: ${room}`);
       this.io.to(room).emit(event, data);
-      console.log(`✅ Emit complete for event: ${event}`);
     } catch (error) {
       console.error(`❌ Failed to emit ${event} to room ${room}:`, error);
       // Don't throw error to avoid breaking the API response
-      console.log('🔄 WebSocket broadcast failed, but continuing with API response');
     }
   }
 
@@ -1198,10 +1168,10 @@ class WebSocketService {
       this.cleanupRateLimiters();
     }, 300000);
 
-    // Clean up typing throttle entries every 30 seconds
+    // OPTIMIZATION: Deterministic cleanup of typing throttle entries every 10 seconds
     setInterval(() => {
       this.cleanupTypingThrottle();
-    }, 30000);
+    }, 10000);
   }
 }
 

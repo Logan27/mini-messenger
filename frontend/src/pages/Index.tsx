@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChatList } from "@/components/ChatList";
 import { ChatView } from "@/components/ChatView";
@@ -114,24 +114,28 @@ const Index = () => {
       };
     }) || []);
 
-  // Combine and sort all chats
-  const chats: Chat[] = [...directChats, ...groupChats].sort((a, b) => {
-    // If both have messages, sort by timestamp (newest first)
-    if (a.timestamp.getTime() !== 0 && b.timestamp.getTime() !== 0) {
-      return b.timestamp.getTime() - a.timestamp.getTime();
-    }
-    // If only one has messages, put it first
-    if (a.timestamp.getTime() !== 0) return -1;
-    if (b.timestamp.getTime() !== 0) return 1;
-    // If neither has messages, sort alphabetically by name
-    return a.name.localeCompare(b.name);
-  });
+  // OPTIMIZATION: Memoize chat list sorting to avoid recalculating on every render
+  const chats: Chat[] = useMemo(() => {
+    return [...directChats, ...groupChats].sort((a, b) => {
+      // If both have messages, sort by timestamp (newest first)
+      if (a.timestamp.getTime() !== 0 && b.timestamp.getTime() !== 0) {
+        return b.timestamp.getTime() - a.timestamp.getTime();
+      }
+      // If only one has messages, put it first
+      if (a.timestamp.getTime() !== 0) return -1;
+      if (b.timestamp.getTime() !== 0) return 1;
+      // If neither has messages, sort alphabetically by name
+      return a.name.localeCompare(b.name);
+    });
+  }, [directChats, groupChats]);
 
-  // Transform messages to component format
-  // Backend returns newest first (DESC), reverse to show oldest-to-newest in chat
-  const messages = (messagesData?.pages.flatMap(page =>
-    page.map((msg: unknown) => {
-      const transformed = {
+  // OPTIMIZATION: Memoize message transformation and reversal to avoid recalculating on every render
+  const messages = useMemo(() => {
+    if (!messagesData?.pages) return [];
+
+    // Backend returns newest first (DESC), reverse to show oldest-to-newest in chat
+    return messagesData.pages.flatMap(page =>
+      page.map((msg: unknown) => ({
         id: msg.id,
         senderId: msg.senderId, // IMPORTANT: Store senderId so isOwn filter works correctly
         text: msg.text || msg.content, // Handle both formats (optimistic has content, transformed has text)
@@ -159,11 +163,9 @@ const Index = () => {
             ? `${msg.replyTo.sender.firstName || ''} ${msg.replyTo.sender.lastName || ''}`.trim() || msg.replyTo.sender.username
             : 'Unknown',
         } : undefined,
-      };
-
-      return transformed;
-    })
-  ) || []).reverse();
+      }))
+    ).reverse();
+  }, [messagesData?.pages, user?.id]);
 
   const activeChatData = chats.find((chat) => chat.id === activeChat);
 

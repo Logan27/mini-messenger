@@ -18,6 +18,8 @@ class MessageService {
     this.messageSequences = new Map(); // userId -> current sequence number
     this.pendingDeliveries = new Map(); // messageId -> delivery info
     this.deliveryTimeouts = new Map(); // messageId -> timeout handle
+    this.sequenceBatch = new Map(); // userId -> sequence number (pending Redis write)
+    this.sequenceBatchTimeout = null;
   }
 
   async initialize() {
@@ -62,7 +64,7 @@ class MessageService {
 
   // Handle incoming message from client
   async handleMessageSent(socket, messageData) {
-    console.log('🔵 Backend: handleMessageSent called', {
+    logger.debug('handleMessageSent called', {
       senderId: socket.userId,
       recipientId: messageData.recipientId,
       groupId: messageData.groupId,
@@ -107,13 +109,12 @@ class MessageService {
 
       // Broadcast to recipient(s)
       if (recipientId) {
-        console.log('🔵 Backend: Broadcasting message.new to recipientId:', recipientId);
+        logger.debug('Broadcasting message.new to recipient', { recipientId });
         await this.broadcastToUser(recipientId, 'message.new', {
           ...enhancedMessage,
           delivered: false,
           read: false,
         });
-        console.log('✅ Backend: Broadcast completed');
 
         // Send push notification if user is offline
         const wsService = getWebSocketService();
@@ -150,21 +151,21 @@ class MessageService {
           ],
         });
 
-        // Create group message status records for all members (except sender)
-        const statusPromises = groupMembers
+        // OPTIMIZATION: Use bulkCreate instead of findOrCreate for better performance
+        // Create group message status records for all members (except sender) in a single query
+        const statusRecords = groupMembers
           .filter(member => member.userId !== senderId)
-          .map(member =>
-            GroupMessageStatus.findOrCreate({
-              where: { messageId, userId: member.userId },
-              defaults: {
-                messageId,
-                userId: member.userId,
-                status: 'sent',
-              },
-            })
-          );
+          .map(member => ({
+            messageId,
+            userId: member.userId,
+            status: 'sent',
+          }));
 
-        await Promise.all(statusPromises);
+        if (statusRecords.length > 0) {
+          await GroupMessageStatus.bulkCreate(statusRecords, {
+            ignoreDuplicates: true,
+          });
+        }
 
         // Get group details for notification
         const group = await Group.findByPk(groupId, {
@@ -186,18 +187,41 @@ class MessageService {
             read: false,
           });
 
-        // Send push notifications to offline group members
+        // OPTIMIZATION: Batch push notifications to avoid N+1 queries
+        // Collect offline user IDs first
         const wsService = getWebSocketService();
-        for (const member of groupMembers) {
-          if (member.userId !== senderId) {
+        const offlineUserIds = groupMembers
+          .filter(member => member.userId !== senderId)
+          .filter(member => {
             const userSockets = wsService.getUserSockets(member.userId);
-            if (!userSockets || userSockets.size === 0) {
-              // User is offline, send push notification
-              const devices = await Device.findAll({ where: { userId: member.userId } });
-              const groupName = group?.name || 'Group';
+            return !userSockets || userSockets.size === 0;
+          })
+          .map(member => member.userId);
 
-              for (const device of devices) {
-                await fcmService.sendPushNotification(
+        // Query all devices for offline users in a single query
+        if (offlineUserIds.length > 0) {
+          const devices = await Device.findAll({
+            where: { userId: offlineUserIds },
+          });
+
+          // Group devices by userId for efficient lookup
+          const devicesByUser = new Map();
+          for (const device of devices) {
+            if (!devicesByUser.has(device.userId)) {
+              devicesByUser.set(device.userId, []);
+            }
+            devicesByUser.get(device.userId).push(device);
+          }
+
+          const groupName = group?.name || 'Group';
+
+          // Send notifications in batch
+          const notificationPromises = [];
+          for (const userId of offlineUserIds) {
+            const userDevices = devicesByUser.get(userId) || [];
+            for (const device of userDevices) {
+              notificationPromises.push(
+                fcmService.sendPushNotification(
                   device.token,
                   `${groupName}`,
                   `${socket.username}: ${content}`,
@@ -207,10 +231,13 @@ class MessageService {
                     groupId: groupId.toString(),
                     senderId: senderId.toString(),
                   }
-                );
-              }
+                )
+              );
             }
           }
+
+          // Send all notifications in parallel
+          await Promise.allSettled(notificationPromises);
         }
 
         // Track delivery for all members
@@ -384,12 +411,69 @@ class MessageService {
     const next = current + 1;
     this.messageSequences.set(userId, next);
 
-    // Persist sequence number in Redis for consistency across restarts
+    // OPTIMIZATION: Batch Redis writes instead of writing on every message
     if (this.redisClient) {
-      this.redisClient.set(`sequence:${userId}`, next);
+      this.sequenceBatch.set(userId, next);
+      this.scheduleSequenceBatchFlush();
     }
 
     return next;
+  }
+
+  // Schedule batch flush of sequence numbers to Redis
+  scheduleSequenceBatchFlush() {
+    if (this.sequenceBatchTimeout) {
+      return; // Already scheduled
+    }
+
+    this.sequenceBatchTimeout = setTimeout(() => {
+      this.flushSequenceBatch();
+    }, 5000); // Flush every 5 seconds
+  }
+
+  // Flush batched sequence numbers to Redis
+  async flushSequenceBatch() {
+    if (!this.redisClient || this.sequenceBatch.size === 0) {
+      this.sequenceBatchTimeout = null;
+      return;
+    }
+
+    try {
+      const pipeline = this.redisClient.pipeline();
+
+      for (const [userId, sequence] of this.sequenceBatch.entries()) {
+        pipeline.set(`sequence:${userId}`, sequence);
+      }
+
+      await pipeline.exec();
+
+      logger.debug(`✅ Flushed ${this.sequenceBatch.size} sequence numbers to Redis`);
+      this.sequenceBatch.clear();
+    } catch (error) {
+      logger.error('❌ Error flushing sequence batch:', error);
+    } finally {
+      this.sequenceBatchTimeout = null;
+    }
+  }
+
+  // Cleanup old sequence numbers from memory (keep only active users)
+  cleanupOldSequences() {
+    const MAX_SEQUENCES = 10000; // Keep max 10k users in memory
+    const CLEANUP_THRESHOLD = 12000; // Cleanup when reaching this threshold
+
+    if (this.messageSequences.size > CLEANUP_THRESHOLD) {
+      // Convert to array and sort by value (sequence number)
+      const entries = Array.from(this.messageSequences.entries());
+      entries.sort((a, b) => b[1] - a[1]); // Sort descending by sequence
+
+      // Keep only the most active users
+      this.messageSequences.clear();
+      for (let i = 0; i < MAX_SEQUENCES && i < entries.length; i++) {
+        this.messageSequences.set(entries[i][0], entries[i][1]);
+      }
+
+      logger.info(`🧹 Cleaned up sequence numbers: ${entries.length} -> ${this.messageSequences.size}`);
+    }
   }
 
   // Load sequence numbers from Redis on startup
@@ -399,15 +483,44 @@ class MessageService {
     }
 
     try {
-      // Get all sequence keys
-      const keys = await this.redisClient.keys('sequence:*');
-      for (const key of keys) {
-        const userId = key.replace('sequence:', '');
-        const sequence = await this.redisClient.get(key);
-        if (sequence) {
-          this.messageSequences.set(userId, parseInt(sequence, 10));
+      // OPTIMIZATION: Use SCAN instead of KEYS to avoid blocking Redis
+      let cursor = '0';
+      const pattern = 'sequence:*';
+
+      do {
+        const [nextCursor, keys] = await this.redisClient.scan(
+          cursor,
+          'MATCH',
+          pattern,
+          'COUNT',
+          100
+        );
+
+        cursor = nextCursor;
+
+        // Batch get sequence values using pipeline for efficiency
+        if (keys.length > 0) {
+          const pipeline = this.redisClient.pipeline();
+          for (const key of keys) {
+            pipeline.get(key);
+          }
+
+          const results = await pipeline.exec();
+
+          // Process results
+          for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            const [err, sequence] = results[i];
+
+            if (!err && sequence) {
+              const userId = key.replace('sequence:', '');
+              this.messageSequences.set(userId, parseInt(sequence, 10));
+            }
+          }
         }
-      }
+      } while (cursor !== '0');
+
+      logger.info(`✅ Loaded ${this.messageSequences.size} sequence numbers from Redis`);
     } catch (error) {
       logger.error('❌ Error loading sequence numbers:', error);
     }
@@ -443,26 +556,17 @@ class MessageService {
 
   // Broadcast message to specific user across all servers
   async broadcastToUser(userId, event, data) {
-    console.log('🔵 Backend: broadcastToUser called', {
+    logger.debug('broadcastToUser called', {
       userId,
       event,
       room: `user:${userId}`,
-      hasRedis: !!this.redisClient,
     });
 
-    // SKIP REDIS PUB/SUB - Redis client is in subscriber mode and can't publish
-    // This needs separate Redis clients for pub and sub
-    // For now, use local Socket.IO broadcasting only
-    // if (this.redisClient) {
-    //   await this.redisClient.publish(`broadcast:user:${userId}`, JSON.stringify({ event, data }));
-    //   console.log('📡 Backend: Published to Redis');
-    // }
-
     // Broadcast locally via Socket.IO
+    // Note: Cross-server broadcasting handled by Socket.IO Redis adapter
     const io = getIO();
-    console.log('📡 Backend: Emitting to room:', `user:${userId}`, 'with event:', event);
     io.to(`user:${userId}`).emit(event, data);
-    console.log('✅ Backend: Emit completed');
+    logger.debug('Broadcast completed', { event, userId });
   }
 
   // Store message in database with proper validation and relationships
@@ -534,21 +638,6 @@ class MessageService {
       );
 
       await transaction.commit();
-
-      // Cache message in Redis for 30 days for quick access
-      // Temporarily disabled for testing
-      // if (this.redisClient) {
-      //   await this.redisClient.setex(
-      //     `message:${messageData.id}`,
-      //     2592000, // 30 days
-      //     JSON.stringify({
-      //       ...messageData,
-      //       id: message.id,
-      //       createdAt: message.createdAt,
-      //       updatedAt: message.updatedAt,
-      //     })
-      //   );
-      // }
 
       return message;
     } catch (error) {
@@ -682,18 +771,20 @@ class MessageService {
 
       // Update message status to read
       logger.debug(`📖 Updating message ${messageId} to read status`);
+      const readAtTimestamp = timestamp || new Date();
       await Message.update(
         {
           status: 'read',
-          readAt: timestamp || new Date(),
+          readAt: readAtTimestamp,
         },
         {
           where: { id: messageId },
         }
       );
 
-      // Refresh message instance
-      await message.reload();
+      // OPTIMIZATION: Update instance in-memory instead of reloading from database
+      message.status = 'read';
+      message.readAt = readAtTimestamp;
 
       // Cache read status in Redis for 30 days
       if (this.redisClient) {
@@ -921,9 +1012,17 @@ class MessageService {
       clearTimeout(timeout);
     }
 
+    // OPTIMIZATION: Flush pending sequence numbers before shutdown
+    if (this.sequenceBatchTimeout) {
+      clearTimeout(this.sequenceBatchTimeout);
+      this.sequenceBatchTimeout = null;
+    }
+    await this.flushSequenceBatch();
+
     this.messageSequences.clear();
     this.pendingDeliveries.clear();
     this.deliveryTimeouts.clear();
+    this.sequenceBatch.clear();
 
     if (this.redisClient) {
       await this.redisClient.unsubscribe('message_delivery');

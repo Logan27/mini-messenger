@@ -6,29 +6,118 @@ import logger from '../utils/logger.js';
 
 /**
  * General API rate limiting
+ * Applies to most API endpoints
  */
-export const apiRateLimit = (req, res, next) => {
-  // DISABLED FOR TESTING - Skip rate limiting
-  next();
-};
+export const apiRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requests per window per IP
+  message: {
+    success: false,
+    error: {
+      type: 'API_RATE_LIMIT_EXCEEDED',
+      message: 'Too many requests. Please try again in 15 minutes.',
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting in test environment
+    return config.nodeEnv === 'test';
+  },
+  handler: (req, res) => {
+    logger.warn(`API rate limit exceeded for IP: ${req.ip}`, {
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      url: req.url,
+      method: req.method,
+    });
+
+    res.status(429).json({
+      success: false,
+      error: {
+        type: 'API_RATE_LIMIT_EXCEEDED',
+        message: 'Too many requests. Please try again in 15 minutes.',
+      },
+    });
+  },
+});
 
 /**
  * Strict authentication rate limiting for login attempts
- * More restrictive for login endpoints
+ * More restrictive for login endpoints to prevent brute force
  */
-export const authRateLimit = (req, res, next) => {
-  // DISABLED FOR TESTING - Skip rate limiting
-  next();
-};
+export const authRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 login attempts per window per IP
+  message: {
+    success: false,
+    error: {
+      type: 'AUTH_RATE_LIMIT_EXCEEDED',
+      message: 'Too many login attempts. Please try again in 15 minutes.',
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // Don't count successful logins
+  skip: (req) => {
+    // Skip rate limiting in test environment
+    return config.nodeEnv === 'test';
+  },
+  handler: (req, res) => {
+    logger.warn(`Auth rate limit exceeded for IP: ${req.ip}`, {
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      url: req.url,
+      identifier: req.body?.identifier || req.body?.email,
+    });
+
+    res.status(429).json({
+      success: false,
+      error: {
+        type: 'AUTH_RATE_LIMIT_EXCEEDED',
+        message: 'Too many login attempts. Please try again in 15 minutes.',
+      },
+    });
+  },
+});
 
 /**
  * Registration rate limiting
- * More lenient than login but still restrictive
+ * Prevents mass registration abuse
  */
-export const registerRateLimit = (req, res, next) => {
-  // DISABLED FOR TESTING - Skip rate limiting
-  next();
-};
+export const registerRateLimit = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 registration attempts per hour per IP
+  message: {
+    success: false,
+    error: {
+      type: 'REGISTER_RATE_LIMIT_EXCEEDED',
+      message: 'Too many registration attempts. Please try again in 1 hour.',
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting in test environment
+    return config.nodeEnv === 'test';
+  },
+  handler: (req, res) => {
+    logger.warn(`Registration rate limit exceeded for IP: ${req.ip}`, {
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      url: req.url,
+      email: req.body?.email,
+    });
+
+    res.status(429).json({
+      success: false,
+      error: {
+        type: 'REGISTER_RATE_LIMIT_EXCEEDED',
+        message: 'Too many registration attempts. Please try again in 1 hour.',
+      },
+    });
+  },
+});
 
 /**
  * Password reset rate limiting

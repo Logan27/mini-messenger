@@ -1,17 +1,24 @@
 import { config } from '../config/index.js';
+import logger from '../utils/logger.js';
 
 export const errorHandler = (err, req, res, next) => {
   let error = { ...err };
   error.message = err.message;
 
-  // Log error with request correlation ID
+  // Log error with request correlation ID and structured data
   const requestId = req.id || 'unknown';
-  console.error(`[${requestId}] ❌ Error:`, {
+  logger.error({
     message: err.message,
     stack: err.stack,
     statusCode: err.statusCode,
     name: err.name,
     code: err.code,
+    requestId,
+    url: req.originalUrl,
+    method: req.method,
+    ip: req.ip,
+    userId: req.user?.id,
+    isOperational: err.isOperational !== false, // Default to true if not set
   });
 
   // Sequelize validation error

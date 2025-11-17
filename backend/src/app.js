@@ -87,7 +87,7 @@ import sanitizeInput from './middleware/sanitize.js';
 app.use(sanitizeInput);
 
 // CSRF protection middleware
-import { conditionalCsrfProtection, csrfErrorHandler } from './middleware/csrf.js';
+import { conditionalCsrfProtection, csrfErrorHandler, generateToken } from './middleware/csrf.js';
 app.use(conditionalCsrfProtection);
 
 // Response time tracking
@@ -150,7 +150,8 @@ app.use('/health', healthRoutes);
 
 // CSRF token endpoint (must be after CSRF middleware)
 app.get('/api/csrf-token', (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
+  const token = generateToken(req, res);
+  res.json({ csrfToken: token });
 });
 
 // CSRF error handler (must be after routes that use CSRF)

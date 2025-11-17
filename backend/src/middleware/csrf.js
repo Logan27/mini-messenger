@@ -1,64 +1,48 @@
-import csrf from 'csurf';
+import { doubleCsrf } from 'csrf-csrf';
 import { config } from '../config/index.js';
 import logger from '../utils/logger.js';
 
 /**
  * CSRF Protection Middleware
- * Protects against Cross-Site Request Forgery attacks
+ * Protects against Cross-Site Request Forgery attacks using the Double Submit Cookie Pattern
  */
 
 /**
- * CSRF protection using double-submit cookie pattern
- * More suitable for APIs than session-based CSRF
+ * CSRF secret for HMAC token generation
+ * In production, this should come from environment variables
  */
-const csrfProtection = csrf({
-  cookie: {
+const csrfSecret = process.env.CSRF_SECRET || 'your-csrf-secret-change-this-in-production';
+
+/**
+ * Configure CSRF protection using csrf-csrf (modern replacement for deprecated csurf)
+ * Uses the Double Submit Cookie Pattern for stateless CSRF protection
+ */
+const {
+  doubleCsrfProtection,
+  generateToken,
+  invalidCsrfTokenError,
+} = doubleCsrf({
+  getSecret: () => csrfSecret,
+  cookieName: '_csrf',
+  cookieOptions: {
     httpOnly: true,
     secure: config.isProduction, // Only use secure cookies in production
     sameSite: 'strict',
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    path: '/',
   },
-  // Ignore CSRF for certain routes
-  ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
+  size: 64, // Size of the generated token
+  ignoredMethods: ['GET', 'HEAD', 'OPTIONS'], // Methods that don't require CSRF protection
+  getTokenFromRequest: (req) => {
+    // Try to get token from common locations
+    return (
+      req.headers['x-csrf-token'] ||
+      req.headers['csrf-token'] ||
+      req.body?._csrf ||
+      req.body?.csrfToken
+    );
+  },
 });
-
-/**
- * Error handler for CSRF validation failures
- */
-const csrfErrorHandler = (err, req, res, next) => {
-  if (err.code !== 'EBADCSRFTOKEN') {
-    return next(err);
-  }
-
-  // CSRF token validation failed
-  logger.warn('CSRF token validation failed', {
-    ip: req.ip,
-    method: req.method,
-    url: req.originalUrl,
-    userAgent: req.get('User-Agent'),
-    userId: req.user?.id,
-  });
-
-  res.status(403).json({
-    success: false,
-    error: {
-      type: 'CSRF_TOKEN_INVALID',
-      message: 'Invalid CSRF token. Please refresh the page and try again.',
-      code: 'CSRF_VALIDATION_FAILED',
-    },
-  });
-};
-
-/**
- * Middleware to attach CSRF token to response
- * This allows clients to retrieve the token
- */
-const attachCsrfToken = (req, res, next) => {
-  if (req.csrfToken) {
-    res.locals.csrfToken = req.csrfToken();
-  }
-  next();
-};
 
 /**
  * Routes that should be excluded from CSRF protection
@@ -85,15 +69,58 @@ const conditionalCsrfProtection = (req, res, next) => {
   }
 
   // Apply CSRF protection
-  csrfProtection(req, res, next);
+  doubleCsrfProtection(req, res, next);
+};
+
+/**
+ * Error handler for CSRF validation failures
+ */
+const csrfErrorHandler = (err, req, res, next) => {
+  // Check if this is a CSRF error
+  if (err === invalidCsrfTokenError) {
+    logger.warn('CSRF token validation failed', {
+      ip: req.ip,
+      method: req.method,
+      url: req.originalUrl,
+      userAgent: req.get('User-Agent'),
+      userId: req.user?.id,
+    });
+
+    return res.status(403).json({
+      success: false,
+      error: {
+        type: 'CSRF_TOKEN_INVALID',
+        message: 'Invalid CSRF token. Please refresh the page and try again.',
+        code: 'CSRF_VALIDATION_FAILED',
+      },
+    });
+  }
+
+  // Not a CSRF error, pass to next error handler
+  next(err);
+};
+
+/**
+ * Middleware to generate and attach CSRF token to response
+ * This allows clients to retrieve the token for subsequent requests
+ */
+const attachCsrfToken = (req, res, next) => {
+  try {
+    const token = generateToken(req, res);
+    res.locals.csrfToken = token;
+  } catch (error) {
+    logger.error('Error generating CSRF token', { error: error.message });
+  }
+  next();
 };
 
 export {
-  csrfProtection,
+  doubleCsrfProtection as csrfProtection,
   csrfErrorHandler,
   attachCsrfToken,
   conditionalCsrfProtection,
-  csrfExemptRoutes
+  csrfExemptRoutes,
+  generateToken,
 };
 
 export default conditionalCsrfProtection;

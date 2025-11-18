@@ -88,7 +88,8 @@ const sanitizeInput = (req, res, next) => {
       'publicKey',
       'privateKey',
       'signature',
-      'signal' // WebRTC signaling data
+      'signal', // WebRTC signaling data
+      'metadata' // File metadata (contains mimeType with slashes)
     ];
 
     // Sanitize body

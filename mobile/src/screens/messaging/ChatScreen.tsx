@@ -20,6 +20,7 @@ import { useMessagingStore } from '../../stores/messagingStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useCallStore } from '../../stores/callStore';
+import { useContactStore } from '../../stores/contactStore';
 import { Message, Conversation } from '../../types';
 import { wsService, fileAPI } from '../../services/api';
 import MessageActionsSheet from '../../components/messaging/MessageActionsSheet';
@@ -33,6 +34,7 @@ import WhoReactedModal from '../../components/messaging/WhoReactedModal';
 import LinkPreview from '../../components/messaging/LinkPreview';
 import { extractFirstUrl, fetchLinkMetadata, containsUrl } from '../../utils/linkPreview';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftMessages';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ChatScreenProps {
   route: {
@@ -54,6 +56,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     isLoading,
     error,
     loadMessages,
+    loadOlderMessages,
     sendMessage,
     editMessage,
     deleteMessage,
@@ -63,6 +66,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     addReaction,
     removeReaction,
   } = useMessagingStore();
+  const { contacts, blockContact, muteContact, unmuteContact } = useContactStore();
 
   // Theme colors
   const isDark = theme === 'dark';
@@ -92,6 +96,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Message[]>([]);
@@ -104,22 +109,47 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
 
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const hasLoadedDraft = useRef(false);
+  const savedScrollPosition = useRef<string | null>(null);
+  const shouldRestoreScroll = useRef(false);
+  const currentVisibleMessageId = useRef<string | null>(null);
+  const viewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 50,
+    waitForInteraction: false,
+  }).current;
 
   const conversation = conversations?.find(c => c.id === conversationId);
   const conversationMessages = messages?.[conversationId] || [];
 
   useEffect(() => {
-    if (conversationId) {
-      loadMessages(conversationId);
-    }
+    const initializeConversation = async () => {
+      if (conversationId) {
+        // Load saved scroll position before loading messages
+        const savedPosition = await AsyncStorage.getItem(`scroll_${conversationId}`);
+        if (savedPosition) {
+          savedScrollPosition.current = savedPosition;
+          shouldRestoreScroll.current = true;
+        }
+
+        await loadMessages(conversationId);
+        // Reset pagination state for new conversation
+        setCurrentPage(1);
+        setHasMoreMessages(true);
+      }
+    };
+
+    initializeConversation();
   }, [conversationId, loadMessages]);
 
   useEffect(() => {
-    // Load draft message for this conversation
+    // Load draft message for this conversation (only once on mount)
     const loadDraftMessage = async () => {
-      const draft = await loadDraft(conversationId);
-      if (draft && !editingMessage) {
-        setMessageText(draft);
+      if (!hasLoadedDraft.current) {
+        const draft = await loadDraft(conversationId);
+        if (draft && !editingMessage) {
+          setMessageText(draft);
+        }
+        hasLoadedDraft.current = true;
       }
     };
     loadDraftMessage();
@@ -131,8 +161,32 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
 
     return () => {
       wsService.emit('leaveConversation', conversationId);
+
+      // Save scroll position when leaving conversation
+      if (currentVisibleMessageId.current) {
+        AsyncStorage.setItem(`scroll_${conversationId}`, currentVisibleMessageId.current);
+      }
     };
-  }, [conversationId]);
+  }, [conversationId, conversationMessages]);
+
+  // Restore scroll position after messages are loaded
+  useEffect(() => {
+    if (shouldRestoreScroll.current && conversationMessages.length > 0 && savedScrollPosition.current) {
+      const messageIndex = conversationMessages.findIndex(m => m.id === savedScrollPosition.current);
+      if (messageIndex !== -1) {
+        // Small delay to ensure FlatList is ready
+        setTimeout(() => {
+          flatListRef.current?.scrollToIndex({
+            index: messageIndex,
+            animated: false,
+            viewPosition: 0.5, // Center the message
+          });
+          shouldRestoreScroll.current = false;
+          savedScrollPosition.current = null;
+        }, 100);
+      }
+    }
+  }, [conversationMessages]);
 
   useEffect(() => {
     // Scroll to bottom when new messages arrive (but not when loading more)
@@ -256,12 +310,30 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     }
   }, [conversationId, setTyping, user, isTyping]);
 
-  const handleMessagePress = useCallback((message: Message) => {
-    // Mark message as read (only if read receipts are enabled)
-    if (!message.isRead && message.senderId !== user?.id && privacy.showReadReceipts) {
-      markAsRead(conversationId, message.id);
+  // Automatically mark messages as read when they become visible
+  const handleViewableItemsChanged = useCallback(({ viewableItems }: any) => {
+    // Track the first visible message for scroll position restoration
+    if (viewableItems.length > 0) {
+      const firstVisible: any = viewableItems[0];
+      if (firstVisible?.item?.id) {
+        currentVisibleMessageId.current = firstVisible.item.id;
+      }
     }
+
+    if (!privacy.showReadReceipts || !user) return;
+
+    viewableItems.forEach((viewable: any) => {
+      const message: Message = viewable.item;
+      // Mark as read if it's not from current user and not already read
+      if (message && !message.isRead && message.senderId !== user.id) {
+        markAsRead(conversationId, message.id);
+      }
+    });
   }, [conversationId, markAsRead, user, privacy.showReadReceipts]);
+
+  const handleMessagePress = useCallback((message: Message) => {
+    // Keep this for additional tap-to-mark-read behavior if needed
+  }, []);
 
   const handleMessageLongPress = useCallback((message: Message) => {
     setSelectedMessage(message);
@@ -351,17 +423,22 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
 
     setIsLoadingMore(true);
     try {
-      // TODO: Implement pagination
-      // const olderMessages = await loadOlderMessages(conversationId, conversationMessages[0]?.id);
-      // if (olderMessages.length === 0) {
-      //   setHasMoreMessages(false);
-      // }
+      const nextPage = currentPage + 1;
+      const result = await loadOlderMessages(conversationId, nextPage);
+
+      setCurrentPage(nextPage);
+      setHasMoreMessages(result.hasMore);
+
+      if (result.messages.length === 0) {
+        setHasMoreMessages(false);
+      }
     } catch (error) {
       console.error('Load more messages error:', error);
+      setHasMoreMessages(false);
     } finally {
       setIsLoadingMore(false);
     }
-  }, [conversationId, conversationMessages, isLoadingMore, hasMoreMessages]);
+  }, [conversationId, currentPage, isLoadingMore, hasMoreMessages, loadOlderMessages]);
 
   const handleSearchToggle = useCallback(() => {
     setShowSearch(!showSearch);
@@ -777,6 +854,31 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           <Ionicons name="arrow-back" size={24} color={colors.primary} />
         </TouchableOpacity>
 
+        {/* Avatar */}
+        {(() => {
+          const otherUser = conversation.type === 'direct'
+            ? conversation.participants?.find(p => p.id !== user?.id)
+            : null;
+          const avatarUri = conversation.type === 'group'
+            ? conversation.avatar
+            : (otherUser?.avatar || otherUser?.profilePicture);
+
+          return avatarUri ? (
+            <Image
+              source={{ uri: avatarUri }}
+              style={styles.headerAvatar}
+            />
+          ) : (
+            <View style={[styles.headerAvatar, styles.headerAvatarPlaceholder, { backgroundColor: colors.accent }]}>
+              <Ionicons
+                name={conversation.type === 'group' ? 'people' : 'person'}
+                size={20}
+                color={colors.textSecondary}
+              />
+            </View>
+          );
+        })()}
+
         <TouchableOpacity
           style={styles.headerInfo}
           onPress={() => {
@@ -788,7 +890,13 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         >
           <View style={styles.headerTitleRow}>
             <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
-              {conversation.name || 'Chat'}
+              {(() => {
+                if (conversation.type === 'group') {
+                  return conversation.name || 'Group Chat';
+                }
+                const otherUser = conversation.participants?.find(p => p.id !== user?.id);
+                return otherUser?.name || otherUser?.username || 'Chat';
+              })()}
             </Text>
             {conversation.type === 'group' && (
               <Ionicons name="people" size={16} color={colors.textSecondary} style={styles.groupIcon} />
@@ -832,6 +940,123 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
             </TouchableOpacity>
           </>
         )}
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => {
+            const otherUser = conversation.type === 'direct'
+              ? conversation.participants?.find(p => p.id !== user?.id)
+              : null;
+
+            const contact = otherUser
+              ? contacts.find(c => c.user?.id === otherUser.id || c.userId === otherUser.id)
+              : null;
+
+            const isMuted = contact?.isMuted || false;
+
+            // Show options menu
+            Alert.alert(
+              'Options',
+              '',
+              [
+                conversation.type === 'direct' && {
+                  text: 'View Contact',
+                  onPress: () => {
+                    if (otherUser) {
+                      navigation.navigate('ContactProfile', { userId: otherUser.id });
+                    }
+                  }
+                },
+                conversation.type === 'group' && {
+                  text: 'Group Info',
+                  onPress: () => navigation.navigate('GroupInfo', { groupId: conversation.id })
+                },
+                {
+                  text: isMuted ? 'Unmute Notifications' : 'Mute Notifications',
+                  onPress: async () => {
+                    if (!contact) {
+                      Alert.alert('Error', 'Contact not found');
+                      return;
+                    }
+                    try {
+                      if (isMuted) {
+                        await unmuteContact(contact.id);
+                        Alert.alert('Success', 'Notifications unmuted');
+                      } else {
+                        await muteContact(contact.id);
+                        Alert.alert('Success', 'Notifications muted');
+                      }
+                    } catch (error) {
+                      Alert.alert('Error', 'Failed to update notification settings');
+                    }
+                  }
+                },
+                conversation.type === 'direct' && {
+                  text: 'Block User',
+                  style: 'destructive',
+                  onPress: () => {
+                    if (!contact) {
+                      Alert.alert('Error', 'Contact not found');
+                      return;
+                    }
+                    Alert.alert(
+                      'Block User',
+                      'Are you sure you want to block this user? They will not be able to contact you.',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Block',
+                          style: 'destructive',
+                          onPress: async () => {
+                            try {
+                              await blockContact(contact.id);
+                              Alert.alert('Blocked', 'User has been blocked');
+                              navigation.goBack();
+                            } catch (error) {
+                              Alert.alert('Error', 'Failed to block user');
+                            }
+                          }
+                        }
+                      ]
+                    );
+                  }
+                },
+                {
+                  text: 'Delete Chat',
+                  style: 'destructive',
+                  onPress: () => {
+                    Alert.alert(
+                      'Delete Chat',
+                      'Are you sure you want to delete this chat? This action cannot be undone.',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Delete',
+                          style: 'destructive',
+                          onPress: async () => {
+                            // Delete all messages in conversation
+                            const conversationMessages = messages[conversationId] || [];
+                            try {
+                              for (const msg of conversationMessages) {
+                                await deleteMessage(conversationId, msg.id, false);
+                              }
+                              Alert.alert('Deleted', 'Chat has been deleted');
+                              navigation.goBack();
+                            } catch (error) {
+                              Alert.alert('Error', 'Failed to delete chat');
+                            }
+                          }
+                        }
+                      ]
+                    );
+                  }
+                },
+                { text: 'Cancel', style: 'cancel' }
+              ].filter(Boolean) as any
+            );
+          }}
+        >
+          <Ionicons name="ellipsis-vertical" size={24} color={colors.primary} />
+        </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
@@ -886,6 +1111,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         onContentSizeChange={() => !isLoadingMore && flatListRef.current?.scrollToEnd({ animated: true })}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
+        onViewableItemsChanged={handleViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
       />
 
       {/* Reply Bar */}
@@ -1025,6 +1252,16 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginRight: 15,
+  },
+  headerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  headerAvatarPlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerInfo: {
     flex: 1,

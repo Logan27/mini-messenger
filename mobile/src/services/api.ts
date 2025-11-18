@@ -12,7 +12,24 @@ const api = axios.create({
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
+    'User-Agent': 'ReactNative/Expo-Mobile-App', // Identify as mobile app for CSRF exemption
+    'X-Mobile-App': 'true', // Additional mobile app identifier
   },
+  // Explicitly configure params serialization (axios 1.x+ syntax)
+  paramsSerializer: (params) => {
+    // Log what we're trying to serialize
+    console.log('[API] Serializing params:', params);
+    // Use default URLSearchParams serialization
+    const searchParams = new URLSearchParams();
+    Object.keys(params || {}).forEach(key => {
+      if (params[key] !== undefined && params[key] !== null) {
+        searchParams.append(key, String(params[key]));
+      }
+    });
+    const result = searchParams.toString();
+    console.log('[API] Serialized result:', result);
+    return result;
+  }
 });
 
 // Request interceptor to add auth token
@@ -22,6 +39,19 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Log request details for debugging
+    log.debug('API Request', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`,
+      headers: config.headers,
+      hasToken: !!token,
+      params: config.params, // Log params object
+      data: config.data
+    }, 'API');
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -48,8 +78,26 @@ const processQueue = (error: any, token: string | null = null) => {
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log successful responses
+    log.debug('API Response Success', {
+      status: response.status,
+      url: response.config.url,
+      method: response.config.method?.toUpperCase()
+    }, 'API');
+    return response;
+  },
   async (error) => {
+    // Log error responses
+    log.error('API Response Error', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      method: error.config?.method?.toUpperCase(),
+      data: error.response?.data,
+      message: error.message
+    }, 'API');
+
     const originalRequest = error.config;
 
     // Handle 401 errors with token refresh
@@ -307,10 +355,18 @@ export const fileAPI = {
       formData.append('messageId', messageId);
     }
 
+    console.log('[FileAPI] Uploading file', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      hasMessageId: !!messageId
+    });
+
     return api.post('/api/files/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 60000, // 60 seconds for file uploads
     });
   },
 

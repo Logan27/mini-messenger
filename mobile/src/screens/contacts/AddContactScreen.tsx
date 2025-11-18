@@ -10,6 +10,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -120,7 +121,7 @@ const AddContactScreen: React.FC<AddContactScreenProps> = ({ navigation }) => {
       >
         <View style={styles.avatarContainer}>
           {item.avatar || item.profilePicture ? (
-            <Text style={styles.avatar}>{initials}</Text>
+            <Image source={{ uri: item.avatar || item.profilePicture }} style={styles.avatar} />
           ) : (
             <View style={styles.avatarPlaceholder}>
               <Text style={styles.avatarText}>{initials}</Text>
@@ -229,6 +230,9 @@ const AddContactScreen: React.FC<AddContactScreenProps> = ({ navigation }) => {
               value={nickname}
               onChangeText={setNickname}
               maxLength={100}
+              autoCapitalize="words"
+              autoComplete="off"
+              textContentType="none"
               placeholderTextColor="#9ca3af"
             />
 
@@ -242,6 +246,8 @@ const AddContactScreen: React.FC<AddContactScreenProps> = ({ navigation }) => {
               multiline
               numberOfLines={4}
               textAlignVertical="top"
+              autoComplete="off"
+              textContentType="none"
               placeholderTextColor="#9ca3af"
             />
           </View>
@@ -303,6 +309,8 @@ const AddContactScreen: React.FC<AddContactScreenProps> = ({ navigation }) => {
           autoFocus
           autoCapitalize="none"
           autoCorrect={false}
+          autoComplete="off"
+          textContentType="none"
           placeholderTextColor="#9ca3af"
         />
         {searchQuery.length > 0 && (

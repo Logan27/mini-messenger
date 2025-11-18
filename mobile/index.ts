@@ -48,11 +48,11 @@ if (Platform.OS === 'android' || Platform.OS === 'ios') {
   log.info('Setting up FCM background message handler', undefined, 'FCM');
 
   try {
-    // Import Firebase messaging dynamically to avoid crashes if not configured
+    // Import Firebase messaging - use default export
     const messaging = require('@react-native-firebase/messaging').default;
 
-    // Set background message handler on the messaging instance
-    messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+    // Set background message handler on the default export
+    messaging().setBackgroundMessageHandler(async (remoteMessage: any) => {
       log.info('Background message received', {
         messageId: remoteMessage.messageId,
         from: remoteMessage.from,
@@ -60,11 +60,10 @@ if (Platform.OS === 'android' || Platform.OS === 'ios') {
         notification: remoteMessage.notification
       }, 'FCM');
 
-      // You can perform background tasks here
+      // Background tasks can be performed here
       // For example, update local storage, show notification, etc.
 
       // The notification will be automatically displayed by the system
-      // You can customize it here if needed
     });
     log.info('FCM background handler registered successfully', undefined, 'FCM');
   } catch (error) {

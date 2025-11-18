@@ -63,6 +63,7 @@ export const config = {
       allowedHeaders: process.env.CORS_ALLOWED_HEADERS?.split(',') || [
         'Content-Type',
         'Authorization',
+        'x-csrf-token',
       ],
     },
     rateLimit: {

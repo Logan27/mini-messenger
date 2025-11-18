@@ -107,10 +107,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const handleContactPress = (contact: any) => {
     // Start a conversation with this contact
+    const user = contact.user || contact;
     navigation.navigate('Chat', {
-      conversationId: null,
-      recipientId: contact.userId,
-      recipientName: contact.nickname || contact.username || `${contact.firstName} ${contact.lastName}`.trim(),
+      conversationId: user.id,
+      recipientId: user.id,
+      recipientName: contact.nickname || user.name || user.username || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
     });
   };
 
@@ -173,13 +174,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       : getParticipantName(otherParticipants[0]) || 'Unknown';
 
     const lastMessage = conversation.lastMessage;
-    const lastMessageText = lastMessage?.type === 'text'
-      ? lastMessage.content
-      : lastMessage?.type === 'image'
-      ? '📷 Photo'
-      : lastMessage?.type === 'file'
-      ? '📎 File'
-      : 'Voice message';
+    const lastMessageText = lastMessage
+      ? (lastMessage.messageType === 'text' || lastMessage.type === 'text')
+        ? lastMessage.content
+        : (lastMessage.messageType === 'image' || lastMessage.type === 'image')
+        ? '📷 Photo'
+        : (lastMessage.messageType === 'file' || lastMessage.type === 'file')
+        ? '📎 File'
+        : 'Voice message'
+      : 'No messages yet';
 
     const isLastMessageFromMe = lastMessage?.senderId === user?.id;
 
@@ -194,9 +197,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               source={{ uri: conversation.avatar }}
               style={styles.avatar}
             />
-          ) : otherParticipants[0]?.avatar ? (
+          ) : (otherParticipants[0]?.avatar || otherParticipants[0]?.profilePicture) ? (
             <Image
-              source={{ uri: otherParticipants[0].avatar }}
+              source={{ uri: otherParticipants[0]?.avatar || otherParticipants[0]?.profilePicture }}
               style={styles.avatar}
             />
           ) : (
@@ -257,10 +260,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   const renderContact = ({ item: contact }: { item: any }) => {
+    const user = contact.user || contact;
     const displayName = contact.nickname ||
-      (contact.firstName && contact.lastName
-        ? `${contact.firstName} ${contact.lastName}`
-        : contact.firstName || contact.lastName || contact.username);
+      user.name ||
+      (user.firstName && user.lastName
+        ? `${user.firstName} ${user.lastName}`
+        : user.firstName || user.lastName || user.username || 'Unknown');
+
+    const avatarUri = user.avatar || user.profilePicture;
 
     return (
       <TouchableOpacity
@@ -268,9 +275,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         onPress={() => handleContactPress(contact)}
       >
         <View style={styles.avatarContainer}>
-          {contact.avatar || contact.profilePicture ? (
+          {avatarUri ? (
             <Image
-              source={{ uri: contact.avatar || contact.profilePicture }}
+              source={{ uri: avatarUri }}
               style={styles.avatar}
             />
           ) : (
@@ -280,7 +287,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               </Text>
             </View>
           )}
-          {contact.isOnline && (
+          {user.isOnline && (
             <OnlineStatusBadge
               isOnline={true}
               size={14}
@@ -293,9 +300,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <Text style={[styles.contactName, { color: colors.text }]} numberOfLines={1}>
             {displayName}
           </Text>
-          <Text style={[styles.contactUsername, { color: colors.textSecondary }]} numberOfLines={1}>
-            @{contact.username}
-          </Text>
+          {user.username && (
+            <Text style={[styles.contactUsername, { color: colors.textSecondary }]} numberOfLines={1}>
+              @{user.username}
+            </Text>
+          )}
         </View>
       </TouchableOpacity>
     );

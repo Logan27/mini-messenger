@@ -464,11 +464,15 @@ router.get('/:id', downloadRateLimit, downloadValidation, async (req, res) => {
     if (file.messageId) {
       const message = file.message;
 
-      if (message.recipientId && message.recipientId !== userId && message.senderId !== userId) {
+      // Allow if user is the uploader
+      if (file.uploaderId === userId) {
+        // Uploader can always access their own files
+      } else if (!message) {
+        // Message not loaded - deny access for safety
         return res.status(403).json({ error: 'Access denied to file' });
-      }
-
-      if (message.groupId) {
+      } else if (message.recipientId && message.recipientId !== userId && message.senderId !== userId) {
+        return res.status(403).json({ error: 'Access denied to file' });
+      } else if (message.groupId) {
         const { GroupMember } = await import('../models/index.js');
         const membership = await GroupMember.findOne({
           where: { groupId: message.groupId, userId },
@@ -477,6 +481,11 @@ router.get('/:id', downloadRateLimit, downloadValidation, async (req, res) => {
         if (!membership) {
           return res.status(403).json({ error: 'Access denied to group file' });
         }
+      }
+    } else {
+      // File not associated with a message - only uploader can access
+      if (file.uploaderId !== userId) {
+        return res.status(403).json({ error: 'Access denied to file' });
       }
     }
 

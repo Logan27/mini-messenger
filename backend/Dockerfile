@@ -1,5 +1,5 @@
 # Multi-stage build for optimal image size
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
@@ -20,7 +20,7 @@ COPY . .
 # RUN npm run build
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 # Install dumb-init and security packages
 RUN apk add --no-cache \

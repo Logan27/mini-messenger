@@ -5,35 +5,25 @@ import api from './api';
 import { navigate } from './navigationService';
 import { getPlatformInfo } from '../utils/platform';
 
-// Try to import Firebase, but make it optional
+// Try to import Firebase messaging, but make it optional
 let messaging: any = null;
+let FirebaseMessaging: any = null;
 let isFirebaseAvailable = false;
 
-// DIAGNOSTIC: Enhanced Firebase availability check
 try {
-  const firebaseModule = require('@react-native-firebase/messaging');
-  messaging = firebaseModule.default;
+  // Import Firebase messaging module
+  FirebaseMessaging = require('@react-native-firebase/messaging');
+  messaging = FirebaseMessaging.default;
   isFirebaseAvailable = true;
-  
-  // DIAGNOSTIC: Log Firebase version and API details
+
   console.log('Firebase Cloud Messaging is available', {
-    version: firebaseModule.VERSION || 'unknown',
-    hasDefault: !!firebaseModule.default,
-    hasGetApp: !!firebaseModule.getApp,
-    moduleType: typeof firebaseModule,
-    defaultType: typeof firebaseModule.default
+    hasMessaging: !!messaging,
+    hasAuthStatus: !!FirebaseMessaging.AuthorizationStatus,
+    moduleType: typeof messaging
   });
 } catch (error) {
-  console.warn('Firebase Cloud Messaging is not available, using Expo notifications only:', error);
+  console.warn('Firebase Cloud Messaging is not available, using Expo notifications only');
   isFirebaseAvailable = false;
-  
-  // DIAGNOSTIC: Log detailed error information
-  console.error('Firebase import error details', {
-    errorType: error?.constructor?.name,
-    errorMessage: (error as any)?.message,
-    errorCode: (error as any)?.code,
-    errorStack: (error as any)?.stack
-  });
 }
 
 // Configure notification handler
@@ -157,21 +147,21 @@ export class PushNotificationService {
         try {
           console.log('Using Firebase for permission request');
           const authStatus = await messaging().requestPermission();
-          
+
           // DIAGNOSTIC: Log Firebase permission result
           console.log('Firebase permission result', {
             authStatus,
             statusNames: {
-              AUTHORIZED: messaging.AuthorizationStatus.AUTHORIZED,
-              PROVISIONAL: messaging.AuthorizationStatus.PROVISIONAL,
-              DENIED: messaging.AuthorizationStatus.DENIED,
-              NOT_DETERMINED: messaging.AuthorizationStatus.NOT_DETERMINED
+              AUTHORIZED: FirebaseMessaging.AuthorizationStatus.AUTHORIZED,
+              PROVISIONAL: FirebaseMessaging.AuthorizationStatus.PROVISIONAL,
+              DENIED: FirebaseMessaging.AuthorizationStatus.DENIED,
+              NOT_DETERMINED: FirebaseMessaging.AuthorizationStatus.NOT_DETERMINED
             }
           });
-          
+
           return (
-            authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-            authStatus === messaging.AuthorizationStatus.PROVISIONAL
+            authStatus === FirebaseMessaging.AuthorizationStatus.AUTHORIZED ||
+            authStatus === FirebaseMessaging.AuthorizationStatus.PROVISIONAL
           );
         } catch (firebaseError) {
           console.warn('Firebase permission request failed, falling back to Expo:', firebaseError);
@@ -200,8 +190,8 @@ export class PushNotificationService {
         try {
           const authStatus = await messaging().requestPermission();
           return (
-            authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-            authStatus === messaging.AuthorizationStatus.PROVISIONAL
+            authStatus === FirebaseMessaging.AuthorizationStatus.AUTHORIZED ||
+            authStatus === FirebaseMessaging.AuthorizationStatus.PROVISIONAL
           );
         } catch (firebaseError) {
           console.warn('Firebase permission request failed, falling back to Expo:', firebaseError);
@@ -560,8 +550,8 @@ export class PushNotificationService {
         try {
           const authStatus = await messaging().hasPermission();
           return (
-            authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-            authStatus === messaging.AuthorizationStatus.PROVISIONAL
+            authStatus === FirebaseMessaging.AuthorizationStatus.AUTHORIZED ||
+            authStatus === FirebaseMessaging.AuthorizationStatus.PROVISIONAL
           );
         } catch {
           // Fall back to Expo permissions

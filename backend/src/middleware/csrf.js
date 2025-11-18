@@ -19,7 +19,7 @@ const csrfSecret = process.env.CSRF_SECRET || 'your-csrf-secret-change-this-in-p
  */
 const {
   doubleCsrfProtection,
-  generateToken,
+  generateCsrfToken,
   invalidCsrfTokenError,
 } = doubleCsrf({
   getSecret: () => csrfSecret,
@@ -33,6 +33,10 @@ const {
   },
   size: 64, // Size of the generated token
   ignoredMethods: ['GET', 'HEAD', 'OPTIONS'], // Methods that don't require CSRF protection
+  getSessionIdentifier: (req) => {
+    // Use session ID if available, otherwise use a static identifier for stateless mode
+    return req.session?.id || req.user?.id || '';
+  },
   getTokenFromRequest: (req) => {
     // Try to get token from common locations
     return (
@@ -53,18 +57,34 @@ const csrfExemptRoutes = [
   '/api/health',
   '/api/auth/login', // Login doesn't need CSRF on first request
   '/api/auth/register', // Registration doesn't need CSRF on first request
+  '/api/auth/refresh', // Token refresh for mobile apps
   '/api/csrf-token', // Token endpoint itself
 ];
 
 /**
  * Conditional CSRF middleware
- * Skips CSRF for exempt routes
+ * Skips CSRF for exempt routes and mobile apps
  */
 const conditionalCsrfProtection = (req, res, next) => {
   // Skip CSRF for exempt routes
   const isExempt = csrfExemptRoutes.some(route => req.path.startsWith(route));
 
   if (isExempt) {
+    return next();
+  }
+
+  // Skip CSRF for mobile apps (detect by User-Agent or custom header)
+  const userAgent = req.get('User-Agent') || '';
+  const isMobileApp = userAgent.includes('Expo') ||
+                      userAgent.includes('ReactNative') ||
+                      req.get('X-Mobile-App') === 'true';
+
+  if (isMobileApp) {
+    logger.debug('Skipping CSRF for mobile app', {
+      userAgent,
+      path: req.path,
+      method: req.method
+    });
     return next();
   }
 
@@ -106,12 +126,20 @@ const csrfErrorHandler = (err, req, res, next) => {
  */
 const attachCsrfToken = (req, res, next) => {
   try {
-    const token = generateToken(req, res);
+    const token = generateCsrfToken(req, res);
     res.locals.csrfToken = token;
   } catch (error) {
     logger.error('Error generating CSRF token', { error: error.message });
   }
   next();
+};
+
+/**
+ * Generate CSRF token for a request
+ * This is a wrapper to expose the token generation function
+ */
+const generateToken = (req, res) => {
+  return generateCsrfToken(req, res);
 };
 
 export {

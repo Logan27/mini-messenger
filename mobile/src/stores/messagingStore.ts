@@ -12,6 +12,7 @@ interface MessagingState {
   // Actions
   loadConversations: () => Promise<void>;
   loadMessages: (conversationId: string) => Promise<void>;
+  loadOlderMessages: (conversationId: string, page: number) => Promise<{ messages: Message[]; hasMore: boolean }>;
   sendMessage: (conversationId: string, content: string, replyTo?: string, file?: any) => Promise<void>;
   editMessage: (conversationId: string, messageId: string, content: string) => Promise<void>;
   deleteMessage: (conversationId: string, messageId: string, deleteForEveryone?: boolean) => Promise<void>;
@@ -119,54 +120,177 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
 
   loadMessages: async (conversationId: string) => {
     try {
+      console.log('[MessagingStore] Loading messages', {
+        conversationId
+      });
+
       // Find the conversation to determine if it's a direct message or group
       const { conversations } = get();
       const conversation = conversations.find(c => c.id === conversationId);
 
+      console.log('[MessagingStore] Conversation found', {
+        conversationType: conversation?.type,
+        conversationId
+      });
+
       let response;
+      let params;
       if (conversation?.type === 'group') {
-        // Load group messages
-        response = await messagingAPI.getMessages({ groupId: conversationId });
+        // Load group messages - only first page (newest 50 messages)
+        params = { groupId: conversationId, page: 1, limit: 50 };
+        console.log('[MessagingStore] Calling getMessages with params:', params);
+        response = await messagingAPI.getMessages(params);
       } else {
-        // Load direct messages
-        response = await messagingAPI.getMessages({ conversationWith: conversationId });
+        // Load direct messages - only first page (newest 50 messages)
+        params = { conversationWith: conversationId, page: 1, limit: 50 };
+        console.log('[MessagingStore] Calling getMessages with params:', params);
+        response = await messagingAPI.getMessages(params);
       }
 
+      console.log('[MessagingStore] Messages loaded', {
+        responseData: response.data,
+        messageCount: (response.data?.data || response.data || []).length
+      });
+
       const messages = response.data?.data || response.data || [];
+      // Backend returns messages in DESC order (newest first), reverse for chat UI (oldest first)
+      const messagesArray = Array.isArray(messages) ? messages.reverse() : [];
+
       set((state) => ({
         messages: {
           ...state.messages,
-          [conversationId]: Array.isArray(messages) ? messages : [],
+          [conversationId]: messagesArray,
         },
       }));
+
+      console.log('[MessagingStore] Messages set in state', {
+        conversationId,
+        messageCount: (Array.isArray(messages) ? messages : []).length
+      });
     } catch (error: any) {
+      console.error('[MessagingStore] Failed to load messages', {
+        error: error.message,
+        response: error.response?.data,
+        conversationId
+      });
+
       set({
         error: error.response?.data?.message || 'Failed to load messages',
       });
     }
   },
 
+  loadOlderMessages: async (conversationId: string, page: number) => {
+    try {
+      console.log('[MessagingStore] Loading older messages', {
+        conversationId,
+        page
+      });
+
+      const { conversations } = get();
+      const conversation = conversations.find(c => c.id === conversationId);
+
+      let response;
+      let params: any = { page, limit: 50 };
+
+      if (conversation?.type === 'group') {
+        params.groupId = conversationId;
+      } else {
+        params.conversationWith = conversationId;
+      }
+
+      response = await messagingAPI.getMessages(params);
+
+      const messagesData = response.data?.data || response.data || [];
+      const pagination = response.data?.pagination;
+
+      // Backend returns DESC, reverse for chronological order
+      const newMessages = Array.isArray(messagesData) ? messagesData.reverse() : [];
+
+      // Prepend older messages to existing messages, avoiding duplicates
+      set((state) => {
+        const existingMessages = state.messages[conversationId] || [];
+        const existingIds = new Set(existingMessages.map(m => m.id));
+
+        // Filter out any duplicates from new messages
+        const uniqueNewMessages = newMessages.filter(m => !existingIds.has(m.id));
+
+        return {
+          messages: {
+            ...state.messages,
+            [conversationId]: [...uniqueNewMessages, ...existingMessages],
+          },
+        };
+      });
+
+      console.log('[MessagingStore] Older messages loaded', {
+        conversationId,
+        newMessagesCount: newMessages.length,
+        hasMore: pagination?.hasNextPage || false
+      });
+
+      return {
+        messages: newMessages,
+        hasMore: pagination?.hasNextPage || false
+      };
+    } catch (error: any) {
+      console.error('[MessagingStore] Failed to load older messages', {
+        error: error.message,
+        response: error.response?.data,
+        conversationId,
+        page
+      });
+
+      return { messages: [], hasMore: false };
+    }
+  },
+
   sendMessage: async (conversationId: string, content: string, replyTo?: string, file?: any) => {
     try {
+      console.log('[MessagingStore] Sending message', {
+        conversationId,
+        contentLength: content?.length,
+        hasReplyTo: !!replyTo,
+        hasFile: !!file
+      });
+
       const response = await messagingAPI.sendMessage(conversationId, content, 'text', replyTo, file);
-      const newMessage = response.data;
 
-      set((state) => ({
-        messages: {
-          ...state.messages,
-          [conversationId]: [...(state.messages[conversationId] || []), newMessage],
-        },
-      }));
+      console.log('[MessagingStore] Message sent successfully', {
+        status: response.status,
+        data: response.data
+      });
 
-      // Update conversation's last message
-      set((state) => ({
-        conversations: state.conversations.map((conv) =>
-          conv.id === conversationId
-            ? { ...conv, lastMessage: newMessage, updatedAt: new Date().toISOString() }
-            : conv
-        ),
-      }));
+      // Extract message from response (API returns {success, data: message, message: string})
+      const newMessage = response.data.data || response.data;
+
+      set((state) => {
+        const existingMessages = state.messages[conversationId] || [];
+        // Check if message already exists to avoid duplicates (e.g., from WebSocket echo)
+        const messageExists = existingMessages.some(m => m.id === newMessage.id);
+
+        return {
+          messages: {
+            ...state.messages,
+            [conversationId]: messageExists
+              ? existingMessages
+              : [...existingMessages, newMessage],
+          },
+          conversations: state.conversations.map((conv) =>
+            conv.id === conversationId
+              ? { ...conv, lastMessage: newMessage, updatedAt: new Date().toISOString() }
+              : conv
+          ),
+        };
+      });
     } catch (error: any) {
+      console.error('[MessagingStore] Failed to send message', {
+        error: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        conversationId
+      });
+
       set({
         error: error.response?.data?.message || 'Failed to send message',
       });
@@ -218,7 +342,7 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
 
   markAsRead: async (conversationId: string, messageId: string) => {
     try {
-      await messagingAPI.markAsRead(conversationId, messageId);
+      await messagingAPI.markAsRead(messageId);
 
       set((state) => ({
         messages: {
@@ -254,17 +378,25 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
   addMessage: (message: Message) => {
     const { conversationId } = message;
 
-    set((state) => ({
-      messages: {
-        ...state.messages,
-        [conversationId]: [...(state.messages[conversationId] || []), message],
-      },
-      conversations: state.conversations.map((conv) =>
-        conv.id === conversationId
-          ? { ...conv, lastMessage: message, updatedAt: new Date().toISOString() }
-          : conv
-      ),
-    }));
+    set((state) => {
+      const existingMessages = state.messages[conversationId] || [];
+      // Check if message already exists to avoid duplicates
+      const messageExists = existingMessages.some(m => m.id === message.id);
+
+      return {
+        messages: {
+          ...state.messages,
+          [conversationId]: messageExists
+            ? existingMessages
+            : [...existingMessages, message],
+        },
+        conversations: state.conversations.map((conv) =>
+          conv.id === conversationId
+            ? { ...conv, lastMessage: message, updatedAt: new Date().toISOString() }
+            : conv
+        ),
+      };
+    });
   },
 
   updateMessage: (message: Message) => {

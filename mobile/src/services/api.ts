@@ -339,7 +339,7 @@ export const messagingAPI = {
 
   deleteMessage: (messageId: string, deleteForEveryone: boolean = false) =>
     api.delete(`/api/messages/${messageId}`, {
-      params: { deleteForEveryone }
+      params: { deleteType: deleteForEveryone ? 'hard' : 'soft' }
     }),
 
   markAsRead: (messageId: string) =>
@@ -384,8 +384,14 @@ export const userAPI = {
   updateProfile: (data: any) =>
     api.put('/api/users/me', data),
 
-  searchUsers: (query: string) =>
-    api.get(`/api/users/search?query=${encodeURIComponent(query)}`),
+  searchUsers: (query: string, page: number = 1, limit: number = 20) =>
+    api.get(`/api/users/search`, {
+      params: {
+        query,
+        page,
+        limit
+      }
+    }),
 };
 
 export const groupAPI = {
@@ -434,8 +440,8 @@ export const groupAPI = {
   getGroupMembers: (groupId: string) =>
     api.get(`/api/groups/${groupId}/members`),
 
-  addGroupMembers: (groupId: string, userIds: string[]) =>
-    api.post(`/api/groups/${groupId}/members`, { userIds }),
+  addGroupMember: (groupId: string, userId: string, role?: 'admin' | 'moderator' | 'member') =>
+    api.post(`/api/groups/${groupId}/members`, { userId, role }),
 
   removeGroupMember: (groupId: string, userId: string) =>
     api.delete(`/api/groups/${groupId}/members/${userId}`),
@@ -483,15 +489,6 @@ export const contactAPI = {
 
   unblockContact: (contactId: string) =>
     api.delete(`/api/contacts/${contactId}/block`),
-
-  favoriteContact: (contactId: string) =>
-    api.post(`/api/contacts/${contactId}/favorite`),
-
-  unfavoriteContact: (contactId: string) =>
-    api.delete(`/api/contacts/${contactId}/favorite`),
-
-  updateContact: (contactId: string, data: { nickname?: string; notes?: string }) =>
-    api.patch(`/api/contacts/${contactId}`, data),
 
   muteContact: (contactId: string) =>
     api.post(`/api/contacts/${contactId}/mute`),

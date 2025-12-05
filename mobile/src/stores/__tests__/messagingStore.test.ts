@@ -10,6 +10,7 @@ jest.mock('../../services/api', () => ({
     editMessage: jest.fn(),
     deleteMessage: jest.fn(),
     markAsRead: jest.fn(),
+    markMessagesAsRead: jest.fn(),
   },
   wsService: {
     emit: jest.fn(),
@@ -211,6 +212,8 @@ describe('messagingStore', () => {
       expect(state.messages['user-2']).toHaveLength(2);
       expect(messagingAPI.getMessages).toHaveBeenCalledWith({
         conversationWith: 'user-2',
+        page: 1,
+        limit: 50,
       });
     });
 
@@ -241,6 +244,8 @@ describe('messagingStore', () => {
       expect(state.messages['group-1']).toHaveLength(1);
       expect(messagingAPI.getMessages).toHaveBeenCalledWith({
         groupId: 'group-1',
+        page: 1,
+        limit: 50,
       });
     });
 
@@ -430,7 +435,6 @@ describe('messagingStore', () => {
       await useMessagingStore.getState().deleteMessage('conv-1', 'msg-1', true);
 
       expect(messagingAPI.deleteMessage).toHaveBeenCalledWith(
-        'conv-1',
         'msg-1',
         true
       );
@@ -464,13 +468,14 @@ describe('messagingStore', () => {
         ],
       });
 
-      (messagingAPI.markAsRead as jest.Mock).mockResolvedValueOnce({});
+      (messagingAPI.markMessagesAsRead as jest.Mock).mockResolvedValueOnce({});
 
       await useMessagingStore.getState().markAsRead('conv-1', 'msg-1');
 
       const state = useMessagingStore.getState();
       expect(state.messages['conv-1'][0].isRead).toBe(true);
       expect(state.conversations[0].unreadCount).toBe(2);
+      expect(messagingAPI.markMessagesAsRead).toHaveBeenCalledWith(['msg-1']);
     });
   });
 

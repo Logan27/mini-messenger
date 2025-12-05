@@ -45,6 +45,9 @@ const MessageActionsSheet: React.FC<MessageActionsSheetProps> = ({
 }) => {
   if (!message) return null;
 
+  // Handle both frontend (type) and backend (messageType) formats
+  const messageType = (message as any).messageType || message.type || 'text';
+
   // Check if message can be edited (within 5 minutes)
   const canEdit = () => {
     if (!isOwnMessage) return false;
@@ -79,7 +82,7 @@ const MessageActionsSheet: React.FC<MessageActionsSheetProps> = ({
   });
 
   // Edit is only for own text messages within 5 minutes
-  if (isOwnMessage && message.type === 'text' && canEdit() && onEdit) {
+  if (isOwnMessage && messageType === 'text' && canEdit() && onEdit) {
     actions.push({
       icon: 'pencil',
       label: 'Edit',
@@ -91,7 +94,7 @@ const MessageActionsSheet: React.FC<MessageActionsSheetProps> = ({
   }
 
   // Copy is only for text messages
-  if (message.type === 'text' && onCopy) {
+  if (messageType === 'text' && onCopy) {
     actions.push({
       icon: 'copy',
       label: 'Copy',
@@ -154,7 +157,7 @@ const MessageActionsSheet: React.FC<MessageActionsSheetProps> = ({
             </View>
 
             {/* Message Preview */}
-            {message.type === 'text' && (
+            {messageType === 'text' && (
               <View style={styles.previewContainer}>
                 <Text style={styles.previewText} numberOfLines={2}>
                   {message.content}

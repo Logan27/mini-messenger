@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,15 +10,36 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 type ThemeMode = 'light' | 'dark' | 'auto';
 type FontSize = 'small' | 'medium' | 'large';
 
 const AppearanceSettingsScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { appearance, updateAppearance } = useSettingsStore();
 
-  const [theme, setTheme] = useState<ThemeMode>('light');
-  const [fontSize, setFontSize] = useState<FontSize>('medium');
+  const [theme, setTheme] = useState<ThemeMode>(appearance.theme);
+  const [fontSize, setFontSize] = useState<FontSize>(appearance.fontSize);
+
+  // Resolve 'system' theme to actual light/dark
+  const isDark = appearance.theme === 'dark' || (appearance.theme === 'system' && false);
+  const colors = {
+    background: isDark ? '#1a1a1a' : '#f5f5f5',
+    card: isDark ? '#2a2a2a' : '#ffffff',
+    text: isDark ? '#ffffff' : '#000000',
+    textSecondary: isDark ? '#a0a0a0' : '#666666',
+    border: isDark ? '#3a3a3a' : '#f0f0f0',
+    primary: '#007AFF',
+    accent: isDark ? '#333333' : '#f0f8ff',
+  };
+
+  useEffect(() => {
+    // Sync local state with store
+    // Map 'system' to 'auto' for UI display
+    setTheme(appearance.theme === 'system' ? 'auto' : appearance.theme);
+    setFontSize(appearance.fontSize);
+  }, [appearance]);
 
   const themeOptions: { value: ThemeMode; label: string; description: string }[] = [
     { value: 'light', label: 'Light', description: 'Classic light theme' },
@@ -34,45 +55,43 @@ const AppearanceSettingsScreen: React.FC = () => {
 
   const handleThemeChange = (newTheme: ThemeMode) => {
     setTheme(newTheme);
-    Alert.alert('Theme Changed', `Theme set to ${newTheme}. This will be applied in a future update.`);
+    // Update the settings store with new theme
+    if (newTheme === 'auto') {
+      updateAppearance({ theme: 'system' });
+    } else {
+      updateAppearance({ theme: newTheme });
+    }
   };
 
   const handleFontSizeChange = (newSize: FontSize) => {
     setFontSize(newSize);
-    Alert.alert('Font Size Changed', `Font size set to ${newSize}. This will be applied in a future update.`);
+    // Update the settings store with new font size
+    updateAppearance({ fontSize: newSize });
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Appearance</Text>
-        <View style={styles.headerRight} />
-      </View>
-
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView style={styles.content}>
         {/* Theme Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>THEME</Text>
-          <View style={styles.sectionContent}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>THEME</Text>
+          <View style={[styles.sectionContent, { backgroundColor: colors.card }]}>
             {themeOptions.map((option, index) => (
               <TouchableOpacity
                 key={option.value}
                 style={[
                   styles.optionItem,
+                  { borderBottomColor: colors.border },
                   index === themeOptions.length - 1 && styles.optionItemLast,
                 ]}
                 onPress={() => handleThemeChange(option.value)}
               >
                 <View style={styles.optionLeft}>
-                  <Text style={styles.optionLabel}>{option.label}</Text>
-                  <Text style={styles.optionDescription}>{option.description}</Text>
+                  <Text style={[styles.optionLabel, { color: colors.text }]}>{option.label}</Text>
+                  <Text style={[styles.optionDescription, { color: colors.textSecondary }]}>{option.description}</Text>
                 </View>
                 {theme === option.value && (
-                  <Ionicons name="checkmark-circle" size={24} color="#007AFF" />
+                  <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -81,13 +100,14 @@ const AppearanceSettingsScreen: React.FC = () => {
 
         {/* Font Size Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>TEXT SIZE</Text>
-          <View style={styles.sectionContent}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>TEXT SIZE</Text>
+          <View style={[styles.sectionContent, { backgroundColor: colors.card }]}>
             {fontSizeOptions.map((option, index) => (
               <TouchableOpacity
                 key={option.value}
                 style={[
                   styles.optionItem,
+                  { borderBottomColor: colors.border },
                   index === fontSizeOptions.length - 1 && styles.optionItemLast,
                 ]}
                 onPress={() => handleFontSizeChange(option.value)}
@@ -96,6 +116,7 @@ const AppearanceSettingsScreen: React.FC = () => {
                   <Text
                     style={[
                       styles.fontSizeLabel,
+                      { color: colors.text },
                       option.value === 'small' && styles.fontSizeSmall,
                       option.value === 'medium' && styles.fontSizeMedium,
                       option.value === 'large' && styles.fontSizeLarge,
@@ -105,7 +126,7 @@ const AppearanceSettingsScreen: React.FC = () => {
                   </Text>
                 </View>
                 {fontSize === option.value && (
-                  <Ionicons name="checkmark-circle" size={24} color="#007AFF" />
+                  <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -114,59 +135,32 @@ const AppearanceSettingsScreen: React.FC = () => {
 
         {/* Preview Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>PREVIEW</Text>
-          <View style={styles.previewContainer}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>PREVIEW</Text>
+          <View style={[styles.previewContainer, { backgroundColor: colors.card }]}>
             <View style={styles.previewHeader}>
-              <View style={styles.previewAvatar}>
+              <View style={[styles.previewAvatar, { backgroundColor: colors.primary }]}>
                 <Ionicons name="person" size={20} color="#fff" />
               </View>
               <View style={styles.previewInfo}>
-                <Text style={styles.previewName}>John Doe</Text>
+                <Text style={[styles.previewName, { color: colors.text }]}>John Doe</Text>
                 <Text style={styles.previewStatus}>Online</Text>
               </View>
             </View>
             <View style={styles.previewMessage}>
-              <View style={styles.previewBubble}>
-                <Text style={styles.previewText}>
+              <View style={[styles.previewBubble, { backgroundColor: isDark ? '#3a3a3a' : '#f1f5f9' }]}>
+                <Text style={[styles.previewText, { color: colors.text }]}>
                   This is how messages will look with your current settings.
                 </Text>
-                <Text style={styles.previewTime}>12:34 PM</Text>
+                <Text style={[styles.previewTime, { color: colors.textSecondary }]}>12:34 PM</Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* Chat Bubbles */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>CHAT BUBBLES</Text>
-          <View style={styles.sectionContent}>
-            <TouchableOpacity
-              style={styles.optionItem}
-              onPress={() => Alert.alert('Chat Bubbles', 'Bubble style customization coming soon!')}
-            >
-              <View style={styles.optionLeft}>
-                <Text style={styles.optionLabel}>Bubble Style</Text>
-                <Text style={styles.optionDescription}>Default</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.optionItem, styles.optionItemLast]}
-              onPress={() => Alert.alert('Bubble Color', 'Bubble color customization coming soon!')}
-            >
-              <View style={styles.optionLeft}>
-                <Text style={styles.optionLabel}>Bubble Color</Text>
-                <View style={styles.colorPreview} />
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.infoBox}>
-          <Ionicons name="information-circle-outline" size={20} color="#666" />
-          <Text style={styles.infoText}>
+        <View style={[styles.infoBox, { backgroundColor: colors.accent }]}>
+          <Ionicons name="information-circle-outline" size={20} color={colors.textSecondary} />
+          <Text style={[styles.infoText, { color: colors.textSecondary }]}>
             Appearance changes will be applied immediately after selection.
           </Text>
         </View>
@@ -178,7 +172,6 @@ const AppearanceSettingsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
     flexDirection: 'row',
@@ -211,13 +204,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#666',
     letterSpacing: 0.5,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   sectionContent: {
-    backgroundColor: '#fff',
   },
   optionItem: {
     flexDirection: 'row',
@@ -226,7 +217,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   optionItemLast: {
     borderBottomWidth: 0,
@@ -237,16 +227,13 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#000',
     marginBottom: 2,
   },
   optionDescription: {
     fontSize: 13,
-    color: '#666',
   },
   fontSizeLabel: {
     fontWeight: '500',
-    color: '#000',
   },
   fontSizeSmall: {
     fontSize: 14,
@@ -258,7 +245,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   previewContainer: {
-    backgroundColor: '#fff',
     padding: 16,
   },
   previewHeader: {
@@ -270,7 +256,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -281,7 +266,6 @@ const styles = StyleSheet.create({
   previewName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
     marginBottom: 2,
   },
   previewStatus: {
@@ -292,7 +276,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   previewBubble: {
-    backgroundColor: '#f1f5f9',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 18,
@@ -300,12 +283,10 @@ const styles = StyleSheet.create({
   },
   previewText: {
     fontSize: 15,
-    color: '#000',
     marginBottom: 4,
   },
   previewTime: {
     fontSize: 11,
-    color: '#666',
   },
   colorPreview: {
     width: 24,
@@ -317,7 +298,6 @@ const styles = StyleSheet.create({
   infoBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#f0f8ff',
     padding: 16,
     marginHorizontal: 16,
     marginTop: 20,
@@ -328,7 +308,6 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 13,
-    color: '#666',
     lineHeight: 18,
   },
 });

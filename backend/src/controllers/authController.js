@@ -346,6 +346,10 @@ class AuthController {
       session.lastAccessedAt = new Date();
       await session.save();
 
+      // Ensure session is fully committed before storing in Redis and returning
+      // This prevents race conditions where mobile clients immediately retry with new token
+      await session.reload();
+
       try {
         await AuthController.storeSessionInRedis(session);
       } catch (redisError) {

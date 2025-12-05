@@ -15,12 +15,27 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../types';
 import { useAuthStore } from '../../stores/authStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 type SettingsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Settings'>;
 
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
   const { user, biometricEnabled, enableBiometric, disableBiometric } = useAuthStore();
+  const { appearance } = useSettingsStore();
+  const theme = appearance.theme;
+
+  // Resolve 'system' theme to actual light/dark
+  const isDark = theme === 'dark' || (theme === 'system' && false);
+  const colors = {
+    background: isDark ? '#1a1a1a' : '#f5f5f5',
+    card: isDark ? '#2a2a2a' : '#ffffff',
+    text: isDark ? '#ffffff' : '#000000',
+    textSecondary: isDark ? '#a0a0a0' : '#666666',
+    border: isDark ? '#3a3a3a' : '#f0f0f0',
+    primary: '#007AFF',
+    accent: isDark ? '#333333' : '#f0f8ff',
+  };
 
   // Construct full name from user data
   const getDisplayName = () => {
@@ -61,7 +76,7 @@ const SettingsScreen: React.FC = () => {
         },
         {
           icon: 'shield-checkmark-outline',
-          label: 'Privacy & Security',
+          label: 'Privacy',
           subtitle: 'Manage your privacy settings',
           onPress: () => navigation.navigate('PrivacySettings'),
           showChevron: true,
@@ -85,13 +100,6 @@ const SettingsScreen: React.FC = () => {
           onPress: () => navigation.navigate('AppearanceSettings'),
           showChevron: true,
         },
-        {
-          icon: 'language-outline',
-          label: 'Language',
-          subtitle: 'English',
-          onPress: () => Alert.alert('Language', 'Language selection coming soon!'),
-          showChevron: true,
-        },
       ],
     },
     {
@@ -104,48 +112,28 @@ const SettingsScreen: React.FC = () => {
           onPress: () => navigation.navigate('DataStorageSettings'),
           showChevron: true,
         },
-        {
-          icon: 'download-outline',
-          label: 'Media Auto-Download',
-          subtitle: 'Manage auto-download settings',
-          onPress: () => Alert.alert('Auto-Download', 'Media auto-download settings coming soon!'),
-          showChevron: true,
-        },
       ],
     },
     {
       title: 'SECURITY',
       items: [
         {
-          icon: 'shield-checkmark',
-          label: 'Two-Factor Authentication',
-          subtitle: 'Add extra security to your account',
-          onPress: () => navigation.navigate('TwoFactorAuth'),
-          showChevron: true,
-        },
-        {
           icon: 'finger-print',
           label: 'Biometric Authentication',
           subtitle: biometricEnabled ? 'Enabled' : 'Disabled',
-          onPress: () => {},
+          onPress: () => { },
           showToggle: true,
           toggleValue: biometricEnabled,
           onToggle: handleBiometricToggle,
         },
         {
           icon: 'lock-closed-outline',
-          label: 'Change Password',
-          subtitle: 'Update your account password',
-          onPress: () => Alert.alert('Change Password', 'Password change coming soon!'),
+          label: 'Security',
+          subtitle: 'Password, 2FA, Sessions',
+          onPress: () => navigation.navigate('SecuritySettings'),
           showChevron: true,
         },
-        {
-          icon: 'log-out-outline',
-          label: 'Active Sessions',
-          subtitle: 'Manage logged-in devices',
-          onPress: () => Alert.alert('Sessions', 'Session management coming soon!'),
-          showChevron: true,
-        },
+
         {
           icon: 'ban',
           label: 'Blocked Contacts',
@@ -175,47 +163,14 @@ const SettingsScreen: React.FC = () => {
       ],
     },
     {
-      title: 'SUPPORT',
-      items: [
-        {
-          icon: 'help-circle-outline',
-          label: 'Help & Support',
-          subtitle: 'FAQs and contact support',
-          onPress: () => Alert.alert('Help', 'Help center coming soon!'),
-          showChevron: true,
-        },
-        {
-          icon: 'document-text-outline',
-          label: 'Terms of Service',
-          subtitle: 'Read our terms',
-          onPress: () => Alert.alert('Terms', 'Terms of service coming soon!'),
-          showChevron: true,
-        },
-        {
-          icon: 'shield-outline',
-          label: 'Privacy Policy',
-          subtitle: 'Read our privacy policy',
-          onPress: () => Alert.alert('Privacy', 'Privacy policy coming soon!'),
-          showChevron: true,
-        },
-      ],
-    },
-    {
       title: 'ABOUT',
       items: [
         {
           icon: 'information-circle-outline',
           label: 'App Version',
           subtitle: 'v1.0.0',
-          onPress: () => {},
+          onPress: () => { },
           showChevron: false,
-        },
-        {
-          icon: 'bug-outline',
-          label: 'Report a Bug',
-          subtitle: 'Help us improve',
-          onPress: () => Alert.alert('Report Bug', 'Bug reporting coming soon!'),
-          showChevron: true,
         },
       ],
     },
@@ -239,19 +194,23 @@ const SettingsScreen: React.FC = () => {
     return (
       <TouchableOpacity
         key={item.label}
-        style={[styles.settingItem, isLast && styles.settingItemLast]}
+        style={[
+          styles.settingItem,
+          { borderBottomColor: colors.border },
+          isLast && styles.settingItemLast
+        ]}
         onPress={item.onPress}
         activeOpacity={item.showToggle ? 1 : 0.7}
         disabled={item.showToggle}
       >
         <View style={styles.settingItemLeft}>
-          <View style={styles.iconContainer}>
-            <Ionicons name={item.icon as any} size={24} color={isDanger ? "#ef4444" : "#007AFF"} />
+          <View style={[styles.iconContainer, { backgroundColor: colors.accent }]}>
+            <Ionicons name={item.icon as any} size={24} color={isDanger ? "#ef4444" : colors.primary} />
           </View>
           <View style={styles.settingItemContent}>
-            <Text style={[styles.settingItemLabel, isDanger && styles.dangerText]}>{item.label}</Text>
+            <Text style={[styles.settingItemLabel, { color: colors.text }, isDanger && styles.dangerText]}>{item.label}</Text>
             {item.subtitle && (
-              <Text style={styles.settingItemSubtitle}>{item.subtitle}</Text>
+              <Text style={[styles.settingItemSubtitle, { color: colors.textSecondary }]}>{item.subtitle}</Text>
             )}
           </View>
         </View>
@@ -260,34 +219,36 @@ const SettingsScreen: React.FC = () => {
           <Switch
             value={item.toggleValue}
             onValueChange={item.onToggle}
-            trackColor={{ false: '#e0e0e0', true: '#007AFF' }}
+            trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor="#fff"
           />
         ) : item.showChevron ? (
-          <Ionicons name="chevron-forward" size={20} color={isDanger ? "#ef4444" : "#ccc"} />
+          <Ionicons name="chevron-forward" size={20} color={isDanger ? "#ef4444" : colors.textSecondary} />
         ) : null}
       </TouchableOpacity>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <View style={styles.headerRight} />
-      </View>
-
       {/* Settings List */}
       <ScrollView style={styles.content}>
         {/* User Info Card */}
-        <View style={styles.userCard}>
+        <View style={[styles.userCard, { backgroundColor: colors.card }]}>
           <View style={styles.userAvatar}>
-            {user?.avatar ? (
-              <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+            {user?.profilePicture || user?.avatar ? (
+              <Image
+                source={{
+                  uri: (() => {
+                    const avatarUrl = user.profilePicture || user.avatar;
+                    if (!avatarUrl) return '';
+                    return avatarUrl.startsWith('http') ? avatarUrl : `http://localhost:4000${avatarUrl}`;
+                  })()
+                }}
+                style={styles.avatarImage}
+                onError={(error) => console.log('Settings avatar load error:', error.nativeEvent.error)}
+              />
             ) : (
               <Text style={styles.avatarText}>
                 {getDisplayName()
@@ -300,16 +261,16 @@ const SettingsScreen: React.FC = () => {
             )}
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{getDisplayName()}</Text>
-            <Text style={styles.userEmail}>{user?.email || ''}</Text>
+            <Text style={[styles.userName, { color: colors.text }]}>{getDisplayName()}</Text>
+            <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{user?.email || ''}</Text>
           </View>
         </View>
 
         {/* Settings Sections */}
         {settingsSections.map((section, sectionIndex) => (
           <View key={section.title} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <View style={styles.sectionContent}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{section.title}</Text>
+            <View style={[styles.sectionContent, { backgroundColor: colors.card }]}>
               {section.items.map((item, itemIndex) =>
                 renderSettingItem(item, itemIndex === section.items.length - 1)
               )}
@@ -327,29 +288,6 @@ const SettingsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  backButton: {
-    padding: 4,
-    minWidth: 40,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
-  },
-  headerRight: {
-    minWidth: 40,
   },
   content: {
     flex: 1,
@@ -357,7 +295,6 @@ const styles = StyleSheet.create({
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     padding: 20,
     marginBottom: 12,
   },
@@ -386,12 +323,10 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 14,
-    color: '#666',
   },
   section: {
     marginBottom: 12,
@@ -399,13 +334,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#666',
     letterSpacing: 0.5,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   sectionContent: {
-    backgroundColor: '#fff',
   },
   settingItem: {
     flexDirection: 'row',
@@ -414,7 +347,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   settingItemLast: {
     borderBottomWidth: 0,
@@ -428,7 +360,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f0f8ff',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -439,12 +370,10 @@ const styles = StyleSheet.create({
   settingItemLabel: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#000',
     marginBottom: 2,
   },
   settingItemSubtitle: {
     fontSize: 13,
-    color: '#666',
   },
   dangerText: {
     color: '#ef4444',

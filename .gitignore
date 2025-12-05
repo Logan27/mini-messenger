@@ -54,6 +54,13 @@ temp_*.json
 *_token.txt
 token.txt
 admin_token.txt
+csrf-test-results.txt
+login-result.txt
+contacts.json
+eicar.txt
+mobile/test-results.txt
+mobile/android-build.log
+mobile/android/app/.cxx/
 
 # Temporary uploads and quarantine
 backend/uploads/files/*

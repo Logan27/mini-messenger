@@ -15,11 +15,23 @@ import { useSettingsStore } from '../../stores/settingsStore';
 
 const PrivacySettingsScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { privacy, loadSettings, updatePrivacy } = useSettingsStore();
+  const { privacy, appearance, loadSettings, updatePrivacy } = useSettingsStore();
 
   useEffect(() => {
     loadSettings();
   }, []);
+
+  // Resolve 'system' theme to actual light/dark
+  const isDark = appearance.theme === 'dark' || (appearance.theme === 'system' && false);
+  const colors = {
+    background: isDark ? '#1a1a1a' : '#f5f5f5',
+    card: isDark ? '#2a2a2a' : '#ffffff',
+    text: isDark ? '#ffffff' : '#000000',
+    textSecondary: isDark ? '#a0a0a0' : '#666666',
+    border: isDark ? '#3a3a3a' : '#f0f0f0',
+    primary: '#007AFF',
+    accent: isDark ? '#333333' : '#f0f8ff',
+  };
 
   const handleBlockedContacts = () => {
     Alert.alert('Blocked Contacts', 'Blocked contacts management coming soon!');
@@ -112,39 +124,31 @@ const PrivacySettingsScreen: React.FC = () => {
   ];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Privacy & Security</Text>
-        <View style={styles.headerRight} />
-      </View>
-
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView style={styles.content}>
         {sections.map((section) => (
           <View key={section.title} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <View style={styles.sectionContent}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{section.title}</Text>
+            <View style={[styles.sectionContent, { backgroundColor: colors.card }]}>
               {section.items.map((item, index) => (
                 <View
                   key={item.label}
                   style={[
                     styles.settingItem,
+                    { borderBottomColor: colors.border },
                     index === section.items.length - 1 && styles.settingItemLast,
                   ]}
                 >
                   <View style={styles.settingItemLeft}>
-                    <Text style={styles.settingItemLabel}>{item.label}</Text>
+                    <Text style={[styles.settingItemLabel, { color: colors.text }]}>{item.label}</Text>
                     {item.subtitle && (
-                      <Text style={styles.settingItemSubtitle}>{item.subtitle}</Text>
+                      <Text style={[styles.settingItemSubtitle, { color: colors.textSecondary }]}>{item.subtitle}</Text>
                     )}
                   </View>
                   <Switch
                     value={item.value}
                     onValueChange={item.onValueChange}
-                    trackColor={{ false: '#e0e0e0', true: '#007AFF' }}
+                    trackColor={{ false: colors.border, true: colors.primary }}
                     thumbColor="#fff"
                   />
                 </View>
@@ -155,58 +159,58 @@ const PrivacySettingsScreen: React.FC = () => {
 
         {/* Blocked Contacts */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>BLOCKED USERS</Text>
-          <View style={styles.sectionContent}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>BLOCKED USERS</Text>
+          <View style={[styles.sectionContent, { backgroundColor: colors.card }]}>
             <TouchableOpacity
-              style={styles.actionItem}
+              style={[styles.actionItem, { borderBottomColor: colors.border }]}
               onPress={handleBlockedContacts}
             >
               <View style={styles.actionItemLeft}>
-                <View style={[styles.actionIcon, { backgroundColor: '#fff0f0' }]}>
+                <View style={[styles.actionIcon, { backgroundColor: isDark ? '#4a1a1a' : '#fff0f0' }]}>
                   <Ionicons name="ban" size={20} color="#ff3b30" />
                 </View>
-                <Text style={styles.actionItemLabel}>Blocked Contacts</Text>
+                <Text style={[styles.actionItemLabel, { color: colors.text }]}>Blocked Contacts</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Account Data */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>ACCOUNT DATA</Text>
-          <View style={styles.sectionContent}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>ACCOUNT DATA</Text>
+          <View style={[styles.sectionContent, { backgroundColor: colors.card }]}>
             <TouchableOpacity
-              style={styles.actionItem}
+              style={[styles.actionItem, { borderBottomColor: colors.border }]}
               onPress={handleDataDownload}
             >
               <View style={styles.actionItemLeft}>
-                <View style={[styles.actionIcon, { backgroundColor: '#f0f8ff' }]}>
-                  <Ionicons name="download-outline" size={20} color="#007AFF" />
+                <View style={[styles.actionIcon, { backgroundColor: colors.accent }]}>
+                  <Ionicons name="download-outline" size={20} color={colors.primary} />
                 </View>
-                <Text style={styles.actionItemLabel}>Download Your Data</Text>
+                <Text style={[styles.actionItemLabel, { color: colors.text }]}>Download Your Data</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.actionItem, styles.settingItemLast]}
+              style={[styles.actionItem, { borderBottomColor: colors.border }, styles.settingItemLast]}
               onPress={handleDeleteAccount}
             >
               <View style={styles.actionItemLeft}>
-                <View style={[styles.actionIcon, { backgroundColor: '#fff0f0' }]}>
+                <View style={[styles.actionIcon, { backgroundColor: isDark ? '#4a1a1a' : '#fff0f0' }]}>
                   <Ionicons name="trash-outline" size={20} color="#ff3b30" />
                 </View>
                 <Text style={[styles.actionItemLabel, styles.dangerText]}>Delete Account</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.infoBox}>
-          <Ionicons name="information-circle-outline" size={20} color="#666" />
-          <Text style={styles.infoText}>
+        <View style={[styles.infoBox, { backgroundColor: colors.accent }]}>
+          <Ionicons name="information-circle-outline" size={20} color={colors.textSecondary} />
+          <Text style={[styles.infoText, { color: colors.textSecondary }]}>
             Some privacy settings may affect your ability to use certain features.
           </Text>
         </View>
@@ -218,7 +222,6 @@ const PrivacySettingsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
     flexDirection: 'row',
@@ -251,13 +254,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#666',
     letterSpacing: 0.5,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   sectionContent: {
-    backgroundColor: '#fff',
   },
   settingItem: {
     flexDirection: 'row',
@@ -266,7 +267,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   settingItemLast: {
     borderBottomWidth: 0,
@@ -278,12 +278,10 @@ const styles = StyleSheet.create({
   settingItemLabel: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#000',
     marginBottom: 2,
   },
   settingItemSubtitle: {
     fontSize: 13,
-    color: '#666',
   },
   actionItem: {
     flexDirection: 'row',
@@ -292,7 +290,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   actionItemLeft: {
     flexDirection: 'row',
@@ -310,7 +307,6 @@ const styles = StyleSheet.create({
   actionItemLabel: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#000',
   },
   dangerText: {
     color: '#ff3b30',
@@ -318,7 +314,6 @@ const styles = StyleSheet.create({
   infoBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#f0f8ff',
     padding: 16,
     marginHorizontal: 16,
     marginTop: 20,
@@ -329,7 +324,6 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 13,
-    color: '#666',
     lineHeight: 18,
   },
 });

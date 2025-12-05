@@ -146,7 +146,7 @@ const Index = () => {
         timestamp: msg.timestamp || new Date(msg.createdAt),
         isOwn: msg.senderId === user?.id,
         status: msg.status, // 'sent', 'delivered', 'read', 'failed'
-        imageUrl: msg.messageType === 'image' ? msg.fileName : undefined,
+        imageUrl: msg.messageType === 'image' ? (msg.fileUrl || msg.metadata?.fileUrl) : undefined,
         messageType: msg.messageType,
         reactions: msg.reactions || {},
         // File attachment fields

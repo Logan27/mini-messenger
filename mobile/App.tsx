@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AppNavigator from './src/navigation/AppNavigator';
 import { useAuthStore } from './src/stores/authStore';
+import { useSettingsStore } from './src/stores/settingsStore';
 import { wsService } from './src/services/api';
 import { initializeCallWebSocketHandlers, cleanupCallWebSocketHandlers } from './src/services/callWebSocketHandler';
 import { pushNotificationService } from './src/services/pushNotifications';
@@ -22,18 +23,19 @@ const queryClient = new QueryClient({
 
 export default function App() {
   const { checkAuth, token } = useAuthStore();
+  const { loadSettings } = useSettingsStore();
 
   useEffect(() => {
     // App initialization logging
     log.info('App component mounting', undefined, 'App');
     log.debug('React Native DevTools connection test', undefined, 'App');
-    
+
     // FIX: Use proper platform detection utility
     const { getPlatformInfo, getApiUrl, getWebSocketUrl } = require('./src/utils/platform');
     const platformInfo = getPlatformInfo();
-    
+
     log.info('Platform detected', platformInfo, 'App');
-    
+
     // FIX: Use platform-aware URLs and proper environment checking
     const envConfig = {
       API_URL: process.env.EXPO_PUBLIC_API_URL,
@@ -47,8 +49,12 @@ export default function App() {
       resolvedApiUrl: getApiUrl(),
       resolvedWebSocketUrl: getWebSocketUrl(),
     };
-    
+
     log.debug('Environment configuration', envConfig, 'App');
+
+    // Load settings on app start
+    log.info('Loading user settings from storage');
+    loadSettings();
 
     // Check authentication on app start
     log.auth('Checking authentication...');

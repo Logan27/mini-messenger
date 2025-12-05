@@ -215,13 +215,25 @@ router.post(
           await File.update({ messageId }, { where: { id: metadata.fileId }, transaction });
         }
 
-        // Get the created message with sender info
+        // Get the created message with sender info and replyTo relationship
         const messageWithSender = await Message.findByPk(messageId, {
           include: [
             {
               model: User,
               as: 'sender',
               attributes: ['id', 'username', 'firstName', 'lastName'],
+            },
+            {
+              model: Message,
+              as: 'replyTo',
+              attributes: ['id', 'content', 'senderId', 'messageType'],
+              include: [
+                {
+                  model: User,
+                  as: 'sender',
+                  attributes: ['id', 'username', 'firstName', 'lastName'],
+                },
+              ],
             },
           ],
           transaction,
@@ -253,7 +265,25 @@ router.post(
               content: messageWithSender.content,
               messageType: messageWithSender.messageType,
               status: messageWithSender.status,
+              isRead: messageWithSender.status === 'read',
+              isDelivered: messageWithSender.status === 'delivered' || messageWithSender.status === 'read',
               replyToId: messageWithSender.replyToId,
+              replyTo: messageWithSender.replyTo
+                ? {
+                  id: messageWithSender.replyTo.id,
+                  content: messageWithSender.replyTo.content,
+                  senderId: messageWithSender.replyTo.senderId,
+                  messageType: messageWithSender.replyTo.messageType,
+                  sender: messageWithSender.replyTo.sender
+                    ? {
+                      id: messageWithSender.replyTo.sender.id,
+                      username: messageWithSender.replyTo.sender.username,
+                      firstName: messageWithSender.replyTo.sender.firstName,
+                      lastName: messageWithSender.replyTo.sender.lastName,
+                    }
+                    : null,
+                }
+                : null,
               metadata: messageWithSender.metadata,
               reactions: messageWithSender.reactions || {},
               createdAt: messageWithSender.createdAt,
@@ -267,11 +297,11 @@ router.post(
                 : null,
               sender: messageWithSender.sender
                 ? {
-                    id: messageWithSender.sender.id,
-                    username: messageWithSender.sender.username,
-                    firstName: messageWithSender.sender.firstName,
-                    lastName: messageWithSender.sender.lastName,
-                  }
+                  id: messageWithSender.sender.id,
+                  username: messageWithSender.sender.username,
+                  firstName: messageWithSender.sender.firstName,
+                  lastName: messageWithSender.sender.lastName,
+                }
                 : null,
             };
 
@@ -316,7 +346,25 @@ router.post(
             content: messageWithSender.content,
             messageType: messageWithSender.messageType,
             status: messageWithSender.status,
+            isRead: messageWithSender.status === 'read',
+            isDelivered: messageWithSender.status === 'delivered' || messageWithSender.status === 'read',
             replyToId: messageWithSender.replyToId,
+            replyTo: messageWithSender.replyTo
+              ? {
+                id: messageWithSender.replyTo.id,
+                content: messageWithSender.replyTo.content,
+                senderId: messageWithSender.replyTo.senderId,
+                messageType: messageWithSender.replyTo.messageType,
+                sender: messageWithSender.replyTo.sender
+                  ? {
+                    id: messageWithSender.replyTo.sender.id,
+                    username: messageWithSender.replyTo.sender.username,
+                    firstName: messageWithSender.replyTo.sender.firstName,
+                    lastName: messageWithSender.replyTo.sender.lastName,
+                  }
+                  : null,
+              }
+              : null,
             metadata: messageWithSender.metadata,
             reactions: messageWithSender.reactions || {},
             createdAt: messageWithSender.createdAt,
@@ -326,13 +374,16 @@ router.post(
             fileName: messageWithSender.metadata?.fileName || null,
             fileSize: messageWithSender.metadata?.fileSize || null,
             mimeType: messageWithSender.metadata?.mimeType || null,
+            fileUrl: messageWithSender.metadata?.fileId
+              ? `/api/files/${messageWithSender.metadata.fileId}`
+              : null,
             sender: messageWithSender.sender
               ? {
-                  id: messageWithSender.sender.id,
-                  username: messageWithSender.sender.username,
-                  firstName: messageWithSender.sender.firstName,
-                  lastName: messageWithSender.sender.lastName,
-                }
+                id: messageWithSender.sender.id,
+                username: messageWithSender.sender.username,
+                firstName: messageWithSender.sender.firstName,
+                lastName: messageWithSender.sender.lastName,
+              }
               : null,
           },
         });
@@ -492,7 +543,7 @@ router.get(
           {
             model: User,
             as: 'sender',
-            attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+            attributes: ['id', 'username', 'firstName', 'lastName'],
           },
           {
             model: Message,
@@ -533,7 +584,7 @@ router.get(
           {
             model: User,
             as: 'sender',
-            attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+            attributes: ['id', 'username', 'firstName', 'lastName'],
           },
           {
             model: Group,
@@ -618,22 +669,24 @@ router.get(
           content: message.content,
           messageType: message.messageType,
           status: message.status,
+          isRead: message.status === 'read',
+          isDelivered: message.status === 'delivered' || message.status === 'read',
           replyToId: message.replyToId,
           replyTo: message.replyTo
             ? {
-                id: message.replyTo.id,
-                content: message.replyTo.content,
-                senderId: message.replyTo.senderId,
-                messageType: message.replyTo.messageType,
-                sender: message.replyTo.sender
-                  ? {
-                      id: message.replyTo.sender.id,
-                      username: message.replyTo.sender.username,
-                      firstName: message.replyTo.sender.firstName,
-                      lastName: message.replyTo.sender.lastName,
-                    }
-                  : null,
-              }
+              id: message.replyTo.id,
+              content: message.replyTo.content,
+              senderId: message.replyTo.senderId,
+              messageType: message.replyTo.messageType,
+              sender: message.replyTo.sender
+                ? {
+                  id: message.replyTo.sender.id,
+                  username: message.replyTo.sender.username,
+                  firstName: message.replyTo.sender.firstName,
+                  lastName: message.replyTo.sender.lastName,
+                }
+                : null,
+            }
             : null,
           metadata: message.metadata,
           reactions: message.reactions || {},
@@ -648,19 +701,18 @@ router.get(
           fileUrl: message.metadata?.fileId ? `/api/files/${message.metadata.fileId}` : null,
           sender: message.sender
             ? {
-                id: message.sender.id,
-                username: message.sender.username,
-                firstName: message.sender.firstName,
-                lastName: message.sender.lastName,
-                avatar: message.sender.avatar,
-              }
+              id: message.sender.id,
+              username: message.sender.username,
+              firstName: message.sender.firstName,
+              lastName: message.sender.lastName,
+            }
             : null,
           group: message.group
             ? {
-                id: message.group.id,
-                name: message.group.name,
-                description: message.group.description,
-              }
+              id: message.group.id,
+              name: message.group.name,
+              description: message.group.description,
+            }
             : null,
         })),
         pagination: {
@@ -964,6 +1016,8 @@ router.put(
           content: message.content,
           messageType: message.messageType,
           status: message.status,
+          isRead: message.status === 'read',
+          isDelivered: message.status === 'delivered' || message.status === 'read',
           replyToId: message.replyToId,
           metadata: message.metadata,
           reactions: message.reactions || {},
@@ -972,11 +1026,11 @@ router.put(
           updatedAt: message.updatedAt,
           sender: message.sender
             ? {
-                id: message.sender.id,
-                username: message.sender.username,
-                firstName: message.sender.firstName,
-                lastName: message.sender.lastName,
-              }
+              id: message.sender.id,
+              username: message.sender.username,
+              firstName: message.sender.firstName,
+              lastName: message.sender.lastName,
+            }
             : null,
         },
       });
@@ -1291,11 +1345,11 @@ router.get(
           editedAt: edit.editedAt,
           editor: edit.editor
             ? {
-                id: edit.editor.id,
-                username: edit.editor.username,
-                firstName: edit.editor.firstName,
-                lastName: edit.editor.lastName,
-              }
+              id: edit.editor.id,
+              username: edit.editor.username,
+              firstName: edit.editor.firstName,
+              lastName: edit.editor.lastName,
+            }
             : null,
         })),
       });
@@ -1623,6 +1677,8 @@ router.get(
         content: message.content,
         messageType: message.messageType,
         status: message.status,
+        isRead: message.status === 'read',
+        isDelivered: message.status === 'delivered' || message.status === 'read',
         replyToId: message.replyToId,
         metadata: message.metadata,
         editedAt: message.editedAt,
@@ -1630,19 +1686,18 @@ router.get(
         updatedAt: message.updatedAt,
         sender: message.sender
           ? {
-              id: message.sender.id,
-              username: message.sender.username,
-              firstName: message.sender.firstName,
-              lastName: message.sender.lastName,
-              avatar: message.sender.avatar,
-            }
+            id: message.sender.id,
+            username: message.sender.username,
+            firstName: message.sender.firstName,
+            lastName: message.sender.lastName,
+          }
           : null,
         group: message.Group
           ? {
-              id: message.Group.id,
-              name: message.Group.name,
-              description: message.Group.description,
-            }
+            id: message.Group.id,
+            name: message.Group.name,
+            description: message.Group.description,
+          }
           : null,
       }));
 
@@ -1806,22 +1861,22 @@ router.get(
             type: 'direct',
             user: otherUser
               ? {
-                  id: otherUser.id,
-                  username: otherUser.username,
-                  firstName: otherUser.firstName,
-                  lastName: otherUser.lastName,
-                  profilePicture: otherUser.avatar,
-                  onlineStatus: otherUser.status,
-                }
+                id: otherUser.id,
+                username: otherUser.username,
+                firstName: otherUser.firstName,
+                lastName: otherUser.lastName,
+                profilePicture: otherUser.avatar,
+                onlineStatus: otherUser.status,
+              }
               : null,
             lastMessage: lastMessage
               ? {
-                  id: lastMessage.id,
-                  content: lastMessage.content,
-                  type: lastMessage.messageType,
-                  createdAt: lastMessage.createdAt,
-                  isOwn: lastMessage.senderId === userId,
-                }
+                id: lastMessage.id,
+                content: lastMessage.content,
+                type: lastMessage.messageType,
+                createdAt: lastMessage.createdAt,
+                isOwn: lastMessage.senderId === userId,
+              }
               : null,
             messageCount: parseInt(dm.messageCount),
             unreadCount: parseInt(dm.unreadCount || 0),
@@ -1876,28 +1931,28 @@ router.get(
             type: 'group',
             group: gm.group
               ? {
-                  id: gm.group.id,
-                  name: gm.group.name,
-                  description: gm.group.description,
-                  avatar: gm.group.avatar,
-                  creatorId: gm.group.creatorId,
-                }
+                id: gm.group.id,
+                name: gm.group.name,
+                description: gm.group.description,
+                avatar: gm.group.avatar,
+                creatorId: gm.group.creatorId,
+              }
               : null,
             userRole: gm.role, // Include user's role in the group (admin, member, etc.)
             lastMessage: lastMessage
               ? {
-                  id: lastMessage.id,
-                  content: lastMessage.content,
-                  type: lastMessage.messageType,
-                  createdAt: lastMessage.createdAt,
-                  sender: lastMessage.sender
-                    ? {
-                        id: lastMessage.sender.id,
-                        username: lastMessage.sender.username,
-                      }
-                    : null,
-                  isOwn: lastMessage.senderId === userId,
-                }
+                id: lastMessage.id,
+                content: lastMessage.content,
+                type: lastMessage.messageType,
+                createdAt: lastMessage.createdAt,
+                sender: lastMessage.sender
+                  ? {
+                    id: lastMessage.sender.id,
+                    username: lastMessage.sender.username,
+                  }
+                  : null,
+                isOwn: lastMessage.senderId === userId,
+              }
               : null,
             unreadCount,
             lastMessageAt: lastMessage ? lastMessage.createdAt : gm.joinedAt,

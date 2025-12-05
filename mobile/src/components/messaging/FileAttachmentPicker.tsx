@@ -5,7 +5,7 @@ import {
   Modal,
   TouchableOpacity,
   StyleSheet,
-  TouchableWithoutFeedback,
+  Pressable,
   Animated,
   Dimensions,
   Alert,
@@ -53,9 +53,13 @@ const FileAttachmentPicker: React.FC<FileAttachmentPickerProps> = ({
 
   const handlePickImage = async (useCamera: boolean) => {
     try {
+      console.log(`[FileAttachmentPicker] ${useCamera ? 'Camera' : 'Gallery'} - Requesting permissions...`);
+
       const permissionResult = useCamera
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      console.log(`[FileAttachmentPicker] Permission result:`, permissionResult);
 
       if (!permissionResult.granted) {
         Alert.alert(
@@ -67,31 +71,52 @@ const FileAttachmentPicker: React.FC<FileAttachmentPickerProps> = ({
         return;
       }
 
+      console.log(`[FileAttachmentPicker] Launching ${useCamera ? 'camera' : 'image library'}...`);
+
       const result = useCamera
         ? await ImagePicker.launchCameraAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             quality: 0.8,
-            allowsEditing: true,
+            allowsEditing: false,
+            allowsMultipleSelection: false,
           })
         : await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             quality: 0.8,
-            allowsEditing: true,
+            allowsEditing: false,
+            allowsMultipleSelection: true,
           });
 
-      if (!result.canceled && result.assets[0]) {
-        const asset = result.assets[0];
-        onFileSelected({
-          uri: asset.uri,
-          type: 'image',
-          name: asset.fileName || `image-${Date.now()}.jpg`,
-          size: asset.fileSize,
-        });
+      console.log(`[FileAttachmentPicker] Picker result:`, result);
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        console.log(`[FileAttachmentPicker] Processing ${result.assets.length} asset(s)...`);
+
+        // Handle multiple selections from gallery
+        for (const asset of result.assets) {
+          const extension = asset.uri.split('.').pop()?.toLowerCase() || 'jpg';
+          const mimeType = extension === 'png' ? 'image/png' :
+                          extension === 'webp' ? 'image/webp' :
+                          extension === 'gif' ? 'image/gif' : 'image/jpeg';
+
+          onFileSelected({
+            uri: asset.uri,
+            type: mimeType,
+            name: asset.fileName || `image-${Date.now()}.${extension}`,
+            size: asset.fileSize,
+          });
+        }
         onClose();
+      } else {
+        console.log(`[FileAttachmentPicker] User canceled or no assets selected`);
       }
-    } catch (error) {
-      console.error('Image picker error:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    } catch (error: any) {
+      console.error('[FileAttachmentPicker] Image picker error:', error);
+      console.error('[FileAttachmentPicker] Error stack:', error?.stack);
+      Alert.alert(
+        'Error',
+        `Failed to ${useCamera ? 'launch camera' : 'pick image'}: ${error?.message || 'Unknown error'}`
+      );
     }
   };
 
@@ -109,10 +134,12 @@ const FileAttachmentPicker: React.FC<FileAttachmentPickerProps> = ({
         copyToCacheDirectory: true,
       });
 
-      if (result.type === 'success') {
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+
         // Check file size (10MB limit)
         const maxSize = 10 * 1024 * 1024; // 10MB
-        if (result.size && result.size > maxSize) {
+        if (asset.size && asset.size > maxSize) {
           Alert.alert(
             'File Too Large',
             'File size must be less than 10MB. Please choose a smaller file.'
@@ -121,10 +148,10 @@ const FileAttachmentPicker: React.FC<FileAttachmentPickerProps> = ({
         }
 
         onFileSelected({
-          uri: result.uri,
-          type: 'document',
-          name: result.name || 'document',
-          size: result.size ?? undefined,
+          uri: asset.uri,
+          type: asset.mimeType || 'application/octet-stream',
+          name: asset.name || 'document',
+          size: asset.size ?? undefined,
         });
         onClose();
       }
@@ -187,18 +214,16 @@ const FileAttachmentPicker: React.FC<FileAttachmentPickerProps> = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <Animated.View
-              style={[
-                styles.modalContent,
-                {
-                  transform: [{ translateY: slideAnim }],
-                },
-              ]}
-            >
-              <View style={styles.handle} />
+      <Pressable style={styles.overlay} onPress={onClose}>
+        <Animated.View
+          style={[
+            styles.modalContent,
+            {
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View style={styles.handle} />
 
               <Text style={styles.title}>Attach File</Text>
 

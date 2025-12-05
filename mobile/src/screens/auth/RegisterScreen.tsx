@@ -29,8 +29,14 @@ const registerSchema = z.object({
     .min(8, 'Password must be at least 8 characters')
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])/, 'Password must contain uppercase, lowercase, number, and special character'),
   confirmPassword: z.string(),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  termsAccepted: z.boolean().refine(val => val === true, {
+    message: 'You must accept the Terms of Service',
+  }),
+  privacyAccepted: z.boolean().refine(val => val === true, {
+    message: 'You must accept the Privacy Policy',
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -86,6 +92,46 @@ const RegisterScreen = ({ navigation }: any) => {
         </View>
 
         <View style={styles.form}>
+          {/* First Name Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="person" size={20} color="#666" style={styles.inputIcon} />
+            <Controller
+              control={control}
+              name="firstName"
+              render={({ field: { onChange, value } }) => (
+                <TextInput
+                  style={styles.input}
+                  placeholder="First Name"
+                  value={value}
+                  onChangeText={onChange}
+                  autoCapitalize="words"
+                  testID="firstname-input"
+                />
+              )}
+            />
+          </View>
+          {errors.firstName && <Text style={styles.errorText}>{errors.firstName.message}</Text>}
+
+          {/* Last Name Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="person" size={20} color="#666" style={styles.inputIcon} />
+            <Controller
+              control={control}
+              name="lastName"
+              render={({ field: { onChange, value } }) => (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Last Name"
+                  value={value}
+                  onChangeText={onChange}
+                  autoCapitalize="words"
+                  testID="lastname-input"
+                />
+              )}
+            />
+          </View>
+          {errors.lastName && <Text style={styles.errorText}>{errors.lastName.message}</Text>}
+
           {/* Username Input */}
           <View style={styles.inputContainer}>
             <Ionicons name="at" size={20} color="#666" style={styles.inputIcon} />
@@ -212,6 +258,55 @@ const RegisterScreen = ({ navigation }: any) => {
           </View>
           {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword.message}</Text>}
 
+          {/* Terms and Privacy Checkboxes */}
+          <View style={styles.checkboxContainer}>
+            <Controller
+              control={control}
+              name="termsAccepted"
+              defaultValue={false}
+              render={({ field: { onChange, value } }) => (
+                <TouchableOpacity
+                  style={styles.checkboxRow}
+                  onPress={() => onChange(!value)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name={value ? "checkbox" : "square-outline"}
+                    size={24}
+                    color={value ? "#2563eb" : "#666"}
+                  />
+                  <Text style={styles.checkboxLabel}>
+                    I accept the <Text style={styles.linkText}>Terms of Service</Text>
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+            {errors.termsAccepted && <Text style={styles.errorText}>{errors.termsAccepted.message}</Text>}
+
+            <Controller
+              control={control}
+              name="privacyAccepted"
+              defaultValue={false}
+              render={({ field: { onChange, value } }) => (
+                <TouchableOpacity
+                  style={styles.checkboxRow}
+                  onPress={() => onChange(!value)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name={value ? "checkbox" : "square-outline"}
+                    size={24}
+                    color={value ? "#2563eb" : "#666"}
+                  />
+                  <Text style={styles.checkboxLabel}>
+                    I accept the <Text style={styles.linkText}>Privacy Policy</Text>
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+            {errors.privacyAccepted && <Text style={styles.errorText}>{errors.privacyAccepted.message}</Text>}
+          </View>
+
           {/* Register Button */}
           <TouchableOpacity
             style={[styles.registerButton, isLoading && styles.disabledButton]}
@@ -337,6 +432,23 @@ const styles = StyleSheet.create({
   loginLink: {
     color: '#2563eb',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  checkboxContainer: {
+    marginBottom: 20,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  checkboxLabel: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: '#666',
+  },
+  linkText: {
+    color: '#2563eb',
     fontWeight: '600',
   },
 });

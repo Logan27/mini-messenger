@@ -85,7 +85,11 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
   };
 
   const handleFileClick = () => {
-    if (message.fileUrl && message.fileName && message.mimeType?.startsWith('image/')) {
+    // Support both new fileUrl format and legacy imageUrl format
+    const imageUrl = message.fileUrl || message.imageUrl;
+    const isImage = message.mimeType?.startsWith('image/') || message.messageType === 'image' || message.imageUrl;
+
+    if (imageUrl && isImage) {
       // Find index of current image in all images
       const index = allImages.findIndex(img => img.id === message.id);
       setCurrentImageIndex(index !== -1 ? index : 0);
@@ -102,15 +106,17 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
   };
 
   // Get all file preview data for navigation (images, PDFs, videos, audio)
+  // Support both new fileUrl format and legacy imageUrl format
   const allFileMessages = allImages.filter(msg =>
-    msg.fileId && msg.fileName && msg.fileUrl && msg.mimeType
+    (msg.fileId && msg.fileName && msg.fileUrl && msg.mimeType) ||
+    (msg.imageUrl && (msg.messageType === 'image' || msg.mimeType?.startsWith('image/')))
   );
 
   const allImageFiles: FilePreviewData[] = allFileMessages.map(msg => ({
-    id: msg.fileId!,
-    fileName: msg.fileName!,
-    fileUrl: msg.fileUrl!,
-    mimeType: msg.mimeType!,
+    id: msg.fileId || msg.id,
+    fileName: msg.fileName || `image_${msg.id}.jpg`,
+    fileUrl: msg.fileUrl || msg.imageUrl!,
+    mimeType: msg.mimeType || 'image/jpeg',
     fileSize: msg.fileSize || 0,
     uploadedAt: msg.timestamp,
   }));
@@ -215,16 +221,11 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
 
               {/* Image (legacy support) */}
               {message.imageUrl && (
-                <LazyImage
+                <AuthenticatedImage
                   src={message.imageUrl}
                   alt="Shared image"
-                  className="rounded-lg mb-2 max-w-full"
-                  objectFit="contain"
-                  loading="lazy"
-                  onClick={() => {
-                    // Could open FilePreview here too
-                    window.open(message.imageUrl, '_blank');
-                  }}
+                  className="rounded-lg mb-2 max-w-full cursor-pointer"
+                  onClick={handleFileClick}
                 />
               )}
 

@@ -20,12 +20,12 @@ import HomeScreen from '../screens/HomeScreen';
 import ChatScreen from '../screens/messaging/ChatScreen';
 import AddContactScreen from '../screens/contacts/AddContactScreen';
 import ContactRequestsScreen from '../screens/contacts/ContactRequestsScreen';
-import ContactProfileScreen from '../screens/contacts/ContactProfileScreen';
 import CreateGroupScreen from '../screens/groups/CreateGroupScreen';
 import GroupInfoScreen from '../screens/groups/GroupInfoScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
+import SecuritySettingsScreen from '../screens/settings/SecuritySettingsScreen';
 import NotificationSettingsScreen from '../screens/settings/NotificationSettingsScreen';
 import PrivacySettingsScreen from '../screens/settings/PrivacySettingsScreen';
 import AppearanceSettingsScreen from '../screens/settings/AppearanceSettingsScreen';
@@ -118,14 +118,6 @@ const MainNavigator = () => {
         }}
       />
       <Stack.Screen
-        name="ContactProfile"
-        component={ContactProfileScreen}
-        options={{
-          headerShown: true,
-          headerTitle: 'Contact Profile',
-        }}
-      />
-      <Stack.Screen
         name="CreateGroup"
         component={CreateGroupScreen}
         options={{
@@ -155,6 +147,14 @@ const MainNavigator = () => {
         options={{
           headerShown: true,
           headerTitle: 'Settings',
+        }}
+      />
+      <Stack.Screen
+        name="SecuritySettings"
+        component={SecuritySettingsScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Security',
         }}
       />
       <Stack.Screen

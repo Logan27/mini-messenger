@@ -58,12 +58,13 @@ const csrfExemptRoutes = [
   '/api/auth/login', // Login doesn't need CSRF on first request
   '/api/auth/register', // Registration doesn't need CSRF on first request
   '/api/auth/refresh', // Token refresh for mobile apps
+  '/api/auth/logout', // Logout endpoint for mobile apps
   '/api/csrf-token', // Token endpoint itself
 ];
 
 /**
  * Conditional CSRF middleware
- * Skips CSRF for exempt routes and mobile apps
+ * Skips CSRF for exempt routes and authenticated mobile apps
  */
 const conditionalCsrfProtection = (req, res, next) => {
   // Skip CSRF for exempt routes
@@ -73,22 +74,31 @@ const conditionalCsrfProtection = (req, res, next) => {
     return next();
   }
 
-  // Skip CSRF for mobile apps (detect by User-Agent or custom header)
-  const userAgent = req.get('User-Agent') || '';
-  const isMobileApp = userAgent.includes('Expo') ||
-                      userAgent.includes('ReactNative') ||
-                      req.get('X-Mobile-App') === 'true';
+  // Verify mobile app with secret header
+  const mobileAppHeader = req.get('X-Mobile-App');
+  const mobileAppSecret = req.get('X-Mobile-App-Secret');
+  const expectedSecret = process.env.MOBILE_APP_SECRET || 'your_mobile_app_secret_change_this_in_production';
 
-  if (isMobileApp) {
-    logger.debug('Skipping CSRF for mobile app', {
-      userAgent,
+  if (mobileAppHeader === 'true' && mobileAppSecret === expectedSecret) {
+    logger.debug('Skipping CSRF for authenticated mobile app', {
       path: req.path,
-      method: req.method
+      method: req.method,
+      hasValidSecret: true
     });
     return next();
   }
 
-  // Apply CSRF protection
+  // If mobile header present but secret invalid, log warning and apply CSRF
+  if (mobileAppHeader === 'true' && mobileAppSecret !== expectedSecret) {
+    logger.warn('Mobile app header present but invalid secret', {
+      path: req.path,
+      method: req.method,
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+  }
+
+  // Apply CSRF protection for web clients and invalid mobile requests
   doubleCsrfProtection(req, res, next);
 };
 

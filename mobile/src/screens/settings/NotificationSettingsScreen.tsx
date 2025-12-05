@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,13 +6,33 @@ import {
   StyleSheet,
   ScrollView,
   Switch,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { notificationAPI } from '../../services/api';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 const NotificationSettingsScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { appearance } = useSettingsStore();
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Resolve 'system' theme to actual light/dark
+  const isDark = appearance.theme === 'dark' || (appearance.theme === 'system' && false);
+  const colors = {
+    background: isDark ? '#1a1a1a' : '#f5f5f5',
+    card: isDark ? '#2a2a2a' : '#ffffff',
+    text: isDark ? '#ffffff' : '#000000',
+    textSecondary: isDark ? '#a0a0a0' : '#666666',
+    border: isDark ? '#3a3a3a' : '#f0f0f0',
+    primary: '#007AFF',
+    accent: isDark ? '#333333' : '#f0f8ff',
+  };
 
   // Notification preferences state
   const [messageNotifications, setMessageNotifications] = useState(true);
@@ -24,6 +44,63 @@ const NotificationSettingsScreen: React.FC = () => {
   const [notificationPreviews, setNotificationPreviews] = useState(true);
   const [doNotDisturb, setDoNotDisturb] = useState(false);
 
+  // Load settings from backend
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      setIsLoading(true);
+      const response = await notificationAPI.getSettings();
+      const settings = response.data.data || response.data;
+
+      // Update state with backend settings
+      setMessageNotifications(settings.messageNotifications ?? true);
+      setGroupNotifications(settings.groupNotifications ?? true);
+      setContactRequestNotifications(settings.contactRequestNotifications ?? true);
+      setSoundEnabled(settings.soundEnabled ?? true);
+      setVibrationEnabled(settings.vibrationEnabled ?? true);
+      setInAppNotifications(settings.inAppNotifications ?? true);
+      setNotificationPreviews(settings.notificationPreviews ?? true);
+      setDoNotDisturb(settings.doNotDisturb ?? false);
+    } catch (error: any) {
+      console.error('Failed to load notification settings:', error);
+      Alert.alert('Error', 'Failed to load notification settings');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveSettings = async (updates: any) => {
+    try {
+      setIsSaving(true);
+      const settings = {
+        messageNotifications,
+        groupNotifications,
+        contactRequestNotifications,
+        soundEnabled,
+        vibrationEnabled,
+        inAppNotifications,
+        notificationPreviews,
+        doNotDisturb,
+        ...updates,
+      };
+
+      await notificationAPI.updateSettings(settings);
+    } catch (error: any) {
+      console.error('Failed to save notification settings:', error);
+      Alert.alert('Error', 'Failed to save settings');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const createToggleHandler = (setter: (value: boolean) => void, key: string) => async (value: boolean) => {
+    setter(value);
+    await saveSettings({ [key]: value });
+  };
+
   const sections = [
     {
       title: 'MESSAGE NOTIFICATIONS',
@@ -32,19 +109,19 @@ const NotificationSettingsScreen: React.FC = () => {
           label: 'Direct Messages',
           subtitle: 'Receive notifications for direct messages',
           value: messageNotifications,
-          onValueChange: setMessageNotifications,
+          onValueChange: createToggleHandler(setMessageNotifications, 'messageNotifications'),
         },
         {
           label: 'Group Messages',
           subtitle: 'Receive notifications for group messages',
           value: groupNotifications,
-          onValueChange: setGroupNotifications,
+          onValueChange: createToggleHandler(setGroupNotifications, 'groupNotifications'),
         },
         {
           label: 'Contact Requests',
           subtitle: 'Receive notifications for contact requests',
           value: contactRequestNotifications,
-          onValueChange: setContactRequestNotifications,
+          onValueChange: createToggleHandler(setContactRequestNotifications, 'contactRequestNotifications'),
         },
       ],
     },
@@ -55,25 +132,25 @@ const NotificationSettingsScreen: React.FC = () => {
           label: 'Sound',
           subtitle: 'Play sound for notifications',
           value: soundEnabled,
-          onValueChange: setSoundEnabled,
+          onValueChange: createToggleHandler(setSoundEnabled, 'soundEnabled'),
         },
         {
           label: 'Vibration',
           subtitle: 'Vibrate for notifications',
           value: vibrationEnabled,
-          onValueChange: setVibrationEnabled,
+          onValueChange: createToggleHandler(setVibrationEnabled, 'vibrationEnabled'),
         },
         {
           label: 'In-App Notifications',
           subtitle: 'Show notifications while using the app',
           value: inAppNotifications,
-          onValueChange: setInAppNotifications,
+          onValueChange: createToggleHandler(setInAppNotifications, 'inAppNotifications'),
         },
         {
           label: 'Message Previews',
           subtitle: 'Show message content in notifications',
           value: notificationPreviews,
-          onValueChange: setNotificationPreviews,
+          onValueChange: createToggleHandler(setNotificationPreviews, 'notificationPreviews'),
         },
       ],
     },
@@ -84,46 +161,49 @@ const NotificationSettingsScreen: React.FC = () => {
           label: 'Enable Do Not Disturb',
           subtitle: 'Mute all notifications',
           value: doNotDisturb,
-          onValueChange: setDoNotDisturb,
+          onValueChange: createToggleHandler(setDoNotDisturb, 'doNotDisturb'),
         },
       ],
     },
   ];
 
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <View style={styles.headerRight} />
-      </View>
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading settings...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView style={styles.content}>
         {sections.map((section) => (
           <View key={section.title} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <View style={styles.sectionContent}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{section.title}</Text>
+            <View style={[styles.sectionContent, { backgroundColor: colors.card }]}>
               {section.items.map((item, index) => (
                 <View
                   key={item.label}
                   style={[
                     styles.settingItem,
+                    { borderBottomColor: colors.border },
                     index === section.items.length - 1 && styles.settingItemLast,
                   ]}
                 >
                   <View style={styles.settingItemLeft}>
-                    <Text style={styles.settingItemLabel}>{item.label}</Text>
+                    <Text style={[styles.settingItemLabel, { color: colors.text }]}>{item.label}</Text>
                     {item.subtitle && (
-                      <Text style={styles.settingItemSubtitle}>{item.subtitle}</Text>
+                      <Text style={[styles.settingItemSubtitle, { color: colors.textSecondary }]}>{item.subtitle}</Text>
                     )}
                   </View>
                   <Switch
                     value={item.value}
                     onValueChange={item.onValueChange}
-                    trackColor={{ false: '#e0e0e0', true: '#007AFF' }}
+                    trackColor={{ false: colors.border, true: colors.primary }}
                     thumbColor="#fff"
                   />
                 </View>
@@ -132,9 +212,9 @@ const NotificationSettingsScreen: React.FC = () => {
           </View>
         ))}
 
-        <View style={styles.infoBox}>
-          <Ionicons name="information-circle-outline" size={20} color="#666" />
-          <Text style={styles.infoText}>
+        <View style={[styles.infoBox, { backgroundColor: colors.accent }]}>
+          <Ionicons name="information-circle-outline" size={20} color={colors.textSecondary} />
+          <Text style={[styles.infoText, { color: colors.textSecondary }]}>
             System notification settings can be managed in your device settings.
           </Text>
         </View>
@@ -146,7 +226,15 @@ const NotificationSettingsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
   },
   header: {
     flexDirection: 'row',
@@ -179,13 +267,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#666',
     letterSpacing: 0.5,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   sectionContent: {
-    backgroundColor: '#fff',
   },
   settingItem: {
     flexDirection: 'row',
@@ -194,7 +280,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   settingItemLast: {
     borderBottomWidth: 0,
@@ -206,17 +291,14 @@ const styles = StyleSheet.create({
   settingItemLabel: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#000',
     marginBottom: 2,
   },
   settingItemSubtitle: {
     fontSize: 13,
-    color: '#666',
   },
   infoBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#f0f8ff',
     padding: 16,
     marginHorizontal: 16,
     marginTop: 20,
@@ -226,7 +308,6 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 13,
-    color: '#666',
     lineHeight: 18,
   },
 });

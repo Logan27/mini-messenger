@@ -1,6 +1,16 @@
 import { create } from 'zustand';
-import { messagingAPI, wsService } from '../services/api';
+import { messagingAPI, wsService, API_URL } from '../services/api';
 import { Conversation, Message } from '../types';
+
+// Utility function to convert relative avatar URLs to absolute URLs
+const getFullAvatarUrl = (avatarPath: string | null | undefined): string | undefined => {
+  if (!avatarPath) return undefined;
+  if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
+    return avatarPath; // Already absolute URL
+  }
+  // Relative path - prepend API_URL
+  return `${API_URL}${avatarPath}`;
+};
 
 interface MessagingState {
   conversations: Conversation[];
@@ -11,12 +21,14 @@ interface MessagingState {
 
   // Actions
   loadConversations: () => Promise<void>;
+  setConversations: (conversations: Conversation[]) => void;
   loadMessages: (conversationId: string) => Promise<void>;
   loadOlderMessages: (conversationId: string, page: number) => Promise<{ messages: Message[]; hasMore: boolean }>;
   sendMessage: (conversationId: string, content: string, replyTo?: string, file?: any) => Promise<void>;
   editMessage: (conversationId: string, messageId: string, content: string) => Promise<void>;
   deleteMessage: (conversationId: string, messageId: string, deleteForEveryone?: boolean) => Promise<void>;
   markAsRead: (conversationId: string, messageId: string) => Promise<void>;
+  markMessagesAsRead: (conversationId: string, messageIds: string[]) => Promise<void>;
   setActiveConversation: (conversation: Conversation | null) => void;
   addMessage: (message: Message) => void;
   updateMessage: (message: Message) => void;
@@ -53,56 +65,56 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
       // Transform backend conversation format to match frontend expectations
       const transformedConversations = Array.isArray(conversationsData)
         ? conversationsData.map((conv: any) => {
-            if (conv.type === 'direct' && conv.user) {
-              // Transform direct conversation format
-              const user = {
-                ...conv.user,
-                // Map profilePicture to avatar for consistency
-                avatar: conv.user.profilePicture || conv.user.avatar,
-                // Ensure isOnline is set
-                isOnline: conv.user.onlineStatus === 'online',
-                // Compute name if not present
-                name: conv.user.name ||
-                      (conv.user.firstName && conv.user.lastName
-                        ? `${conv.user.firstName} ${conv.user.lastName}`
-                        : conv.user.firstName || conv.user.username || 'Unknown'),
-              };
-
-              return {
-                id: conv.user.id, // Use user ID as conversation ID for direct messages
-                type: 'direct' as const,
-                participants: [user],
-                lastMessage: conv.lastMessage,
-                unreadCount: conv.unreadCount || 0,
-                createdAt: conv.lastMessageAt || new Date().toISOString(),
-                updatedAt: conv.lastMessageAt || new Date().toISOString(),
-                createdBy: conv.user.id, // Add required createdBy field
-              };
-            } else if (conv.type === 'group' && conv.group) {
-              // Transform group conversation format
-              return {
-                id: conv.group.id,
-                type: 'group' as const,
-                name: conv.group.name,
-                description: conv.group.description,
-                avatar: conv.group.avatar,
-                participants: [], // Will be loaded separately if needed
-                lastMessage: conv.lastMessage,
-                unreadCount: conv.unreadCount || 0,
-                createdAt: conv.lastMessageAt || new Date().toISOString(),
-                updatedAt: conv.lastMessageAt || new Date().toISOString(),
-                createdBy: conv.group.createdBy || conv.group.id, // Add required createdBy field
-              };
-            }
-            // Fallback: ensure all required fields exist
-            return {
-              ...conv,
-              type: conv.type || 'direct',
-              participants: conv.participants || [],
-              unreadCount: conv.unreadCount || 0,
-              createdBy: conv.createdBy || conv.id,
+          if (conv.type === 'direct' && conv.user) {
+            // Transform direct conversation format
+            const user = {
+              ...conv.user,
+              // Map profilePicture to avatar for consistency and convert to full URL
+              avatar: getFullAvatarUrl(conv.user.profilePicture || conv.user.avatar),
+              // Ensure isOnline is set
+              isOnline: conv.user.onlineStatus === 'online',
+              // Compute name if not present
+              name: conv.user.name ||
+                (conv.user.firstName && conv.user.lastName
+                  ? `${conv.user.firstName} ${conv.user.lastName}`
+                  : conv.user.firstName || conv.user.username || 'Unknown'),
             };
-          })
+
+            return {
+              id: conv.user.id, // Use user ID as conversation ID for direct messages
+              type: 'direct' as const,
+              participants: [user],
+              lastMessage: conv.lastMessage,
+              unreadCount: conv.unreadCount || 0,
+              createdAt: conv.lastMessageAt || new Date().toISOString(),
+              updatedAt: conv.lastMessageAt || new Date().toISOString(),
+              createdBy: conv.user.id, // Add required createdBy field
+            };
+          } else if (conv.type === 'group' && conv.group) {
+            // Transform group conversation format
+            return {
+              id: conv.group.id,
+              type: 'group' as const,
+              name: conv.group.name,
+              description: conv.group.description,
+              avatar: getFullAvatarUrl(conv.group.avatar),
+              participants: [], // Will be loaded separately if needed
+              lastMessage: conv.lastMessage,
+              unreadCount: conv.unreadCount || 0,
+              createdAt: conv.lastMessageAt || new Date().toISOString(),
+              updatedAt: conv.lastMessageAt || new Date().toISOString(),
+              createdBy: conv.group.createdBy || conv.group.id, // Add required createdBy field
+            };
+          }
+          // Fallback: ensure all required fields exist
+          return {
+            ...conv,
+            type: conv.type || 'direct',
+            participants: conv.participants || [],
+            unreadCount: conv.unreadCount || 0,
+            createdBy: conv.createdBy || conv.id,
+          };
+        })
         : [];
 
       set({
@@ -116,6 +128,10 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
         conversations: [], // Ensure conversations is always an array even on error
       });
     }
+  },
+
+  setConversations: (conversations: Conversation[]) => {
+    set({ conversations });
   },
 
   loadMessages: async (conversationId: string) => {
@@ -149,12 +165,20 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
 
       console.log('[MessagingStore] Messages loaded', {
         responseData: response.data,
-        messageCount: (response.data?.data || response.data || []).length
+        messageCount: (response.data?.data || response.data || []).length,
+        pagination: response.data?.pagination
       });
 
       const messages = response.data?.data || response.data || [];
-      // Backend returns messages in DESC order (newest first), reverse for chat UI (oldest first)
-      const messagesArray = Array.isArray(messages) ? messages.reverse() : [];
+      // Backend returns messages in DESC order (newest first), keep as-is for inverted FlatList
+      const messagesArray = Array.isArray(messages) ? messages : [];
+
+      console.log('[MessagingStore] Processing messages', {
+        conversationId,
+        receivedCount: messages.length,
+        hasMore: response.data?.pagination?.hasNextPage,
+        totalMessages: response.data?.pagination?.totalMessages
+      });
 
       set((state) => ({
         messages: {
@@ -165,7 +189,9 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
 
       console.log('[MessagingStore] Messages set in state', {
         conversationId,
-        messageCount: (Array.isArray(messages) ? messages : []).length
+        messageCount: messagesArray.length,
+        firstMessageId: messagesArray[0]?.id,
+        lastMessageId: messagesArray[messagesArray.length - 1]?.id
       });
     } catch (error: any) {
       console.error('[MessagingStore] Failed to load messages', {
@@ -204,10 +230,10 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
       const messagesData = response.data?.data || response.data || [];
       const pagination = response.data?.pagination;
 
-      // Backend returns DESC, reverse for chronological order
-      const newMessages = Array.isArray(messagesData) ? messagesData.reverse() : [];
+      // Backend returns DESC (newest first), keep as-is for inverted FlatList
+      const newMessages = Array.isArray(messagesData) ? messagesData : [];
 
-      // Prepend older messages to existing messages, avoiding duplicates
+      // Append older messages to end of array (they're older, so lower indices in inverted list)
       set((state) => {
         const existingMessages = state.messages[conversationId] || [];
         const existingIds = new Set(existingMessages.map(m => m.id));
@@ -218,7 +244,7 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
         return {
           messages: {
             ...state.messages,
-            [conversationId]: [...uniqueNewMessages, ...existingMessages],
+            [conversationId]: [...existingMessages, ...uniqueNewMessages],
           },
         };
       });
@@ -251,10 +277,25 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
         conversationId,
         contentLength: content?.length,
         hasReplyTo: !!replyTo,
-        hasFile: !!file
+        hasFile: !!file,
+        fileData: file
       });
 
-      const response = await messagingAPI.sendMessage(conversationId, content, 'text', replyTo, file);
+      // Determine message type
+      // file can be either:
+      // 1. An uploaded file object from backend: { id, fileUrl, fileName, mimeType, fileSize }
+      // 2. A local file object: { uri, type, name }
+      const type = file ? (
+        file.mimeType?.startsWith('image/') ||
+        file.type?.startsWith('image/') ? 'image' : 'file'
+      ) : 'text';
+
+      console.log('[MessagingStore] File details', {
+        type,
+        fileData: file
+      });
+
+      const response = await messagingAPI.sendMessage(conversationId, content, type, file, replyTo);
 
       console.log('[MessagingStore] Message sent successfully', {
         status: response.status,
@@ -272,9 +313,10 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
         return {
           messages: {
             ...state.messages,
+            // Prepend to beginning for inverted FlatList (newest at index 0)
             [conversationId]: messageExists
               ? existingMessages
-              : [...existingMessages, newMessage],
+              : [newMessage, ...existingMessages],
           },
           conversations: state.conversations.map((conv) =>
             conv.id === conversationId
@@ -300,7 +342,7 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
 
   editMessage: async (conversationId: string, messageId: string, content: string) => {
     try {
-      await messagingAPI.editMessage(conversationId, messageId, content);
+      await messagingAPI.editMessage(messageId, content);
 
       set((state) => ({
         messages: {
@@ -322,7 +364,7 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
 
   deleteMessage: async (conversationId: string, messageId: string, deleteForEveryone: boolean = false) => {
     try {
-      await messagingAPI.deleteMessage(conversationId, messageId, deleteForEveryone);
+      await messagingAPI.deleteMessage(messageId, deleteForEveryone);
 
       set((state) => ({
         messages: {
@@ -342,8 +384,7 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
 
   markAsRead: async (conversationId: string, messageId: string) => {
     try {
-      await messagingAPI.markAsRead(messageId);
-
+      // Update state OPTIMISTICALLY before API call to prevent duplicate requests
       set((state) => ({
         messages: {
           ...state.messages,
@@ -357,8 +398,65 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
             : conv
         ),
       }));
+
+      // Then send API request
+      await messagingAPI.markMessagesAsRead([messageId]);
     } catch (error: any) {
       console.error('Failed to mark message as read:', error);
+
+      // Rollback on error - restore isRead: false
+      set((state) => ({
+        messages: {
+          ...state.messages,
+          [conversationId]: (state.messages[conversationId] || []).map((msg) =>
+            msg.id === messageId ? { ...msg, isRead: false } : msg
+          ),
+        },
+        conversations: state.conversations.map((conv) =>
+          conv.id === conversationId
+            ? { ...conv, unreadCount: conv.unreadCount + 1 }
+            : conv
+        ),
+      }));
+    }
+  },
+
+  markMessagesAsRead: async (conversationId: string, messageIds: string[]) => {
+    try {
+      // Update state OPTIMISTICALLY before API call to prevent duplicate requests
+      set((state) => ({
+        messages: {
+          ...state.messages,
+          [conversationId]: (state.messages[conversationId] || []).map((msg) =>
+            messageIds.includes(msg.id) ? { ...msg, isRead: true } : msg
+          ),
+        },
+        conversations: state.conversations.map((conv) =>
+          conv.id === conversationId
+            ? { ...conv, unreadCount: Math.max(0, conv.unreadCount - messageIds.length) }
+            : conv
+        ),
+      }));
+
+      // Then send API request
+      await messagingAPI.markMessagesAsRead(messageIds);
+    } catch (error: any) {
+      console.error('Failed to mark messages as read:', error);
+
+      // Rollback on error - restore isRead: false for failed messages
+      set((state) => ({
+        messages: {
+          ...state.messages,
+          [conversationId]: (state.messages[conversationId] || []).map((msg) =>
+            messageIds.includes(msg.id) ? { ...msg, isRead: false } : msg
+          ),
+        },
+        conversations: state.conversations.map((conv) =>
+          conv.id === conversationId
+            ? { ...conv, unreadCount: conv.unreadCount + messageIds.length }
+            : conv
+        ),
+      }));
     }
   },
 
@@ -386,9 +484,10 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
       return {
         messages: {
           ...state.messages,
+          // Prepend to beginning for inverted FlatList (newest at index 0)
           [conversationId]: messageExists
             ? existingMessages
-            : [...existingMessages, message],
+            : [message, ...existingMessages],
         },
         conversations: state.conversations.map((conv) =>
           conv.id === conversationId
@@ -480,8 +579,8 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
         },
       }));
 
-      // TODO: API call to persist reaction
-      // await messagingAPI.addReaction(conversationId, messageId, emoji);
+      // API call to persist reaction
+      await messagingAPI.addReaction(messageId, emoji);
     } catch (error: any) {
       console.error('Failed to add reaction:', error);
     }
@@ -514,8 +613,8 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
         },
       }));
 
-      // TODO: API call to persist reaction removal
-      // await messagingAPI.removeReaction(conversationId, messageId, emoji);
+      // API call to persist reaction removal
+      await messagingAPI.removeReaction(messageId, emoji);
     } catch (error: any) {
       console.error('Failed to remove reaction:', error);
     }

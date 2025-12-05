@@ -29,7 +29,8 @@ interface HomeScreenProps {
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { user } = useAuthStore();
-  const { theme } = useSettingsStore();
+  const { appearance } = useSettingsStore();
+  const theme = appearance.theme;
   const {
     conversations,
     isLoading: isLoadingConversations,
@@ -54,7 +55,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'chats' | 'contacts'>('chats');
 
-  const isDark = theme === 'dark';
+  // Handle 'system' theme - default to light for now (TODO: use Appearance.getColorScheme())
+  const isDark = theme === 'dark' || (theme === 'system' && false);
   const colors = {
     background: isDark ? '#000000' : '#ffffff',
     card: isDark ? '#1a1a1a' : '#f8f9fa',
@@ -261,13 +263,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const renderContact = ({ item: contact }: { item: any }) => {
     const user = contact.user || contact;
-    const displayName = contact.nickname ||
-      user.name ||
-      (user.firstName && user.lastName
-        ? `${user.firstName} ${user.lastName}`
-        : user.firstName || user.lastName || user.username || 'Unknown');
+    const displayName = (user.firstName && user.lastName
+      ? `${user.firstName} ${user.lastName}`
+      : contact.nickname || user.name || user.firstName || user.lastName || user.username || 'Unknown');
 
     const avatarUri = user.avatar || user.profilePicture;
+    const fullAvatarUri = avatarUri && !avatarUri.startsWith('http')
+      ? `http://localhost:4000${avatarUri}`
+      : avatarUri;
 
     return (
       <TouchableOpacity
@@ -275,10 +278,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         onPress={() => handleContactPress(contact)}
       >
         <View style={styles.avatarContainer}>
-          {avatarUri ? (
+          {fullAvatarUri ? (
             <Image
-              source={{ uri: avatarUri }}
+              source={{ uri: fullAvatarUri }}
               style={styles.avatar}
+              onError={(error) => console.log('Contact avatar load error:', error.nativeEvent.error)}
             />
           ) : (
             <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary }]}>

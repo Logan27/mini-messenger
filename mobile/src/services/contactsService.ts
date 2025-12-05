@@ -1,5 +1,6 @@
 import * as Contacts from 'expo-contacts';
 import { Alert, Platform } from 'react-native';
+import { contactAPI, userAPI } from './api';
 
 export interface DeviceContact {
   id: string;
@@ -111,84 +112,98 @@ export class ContactsService {
   }
 
   async syncContactsWithServer(): Promise<ContactMatch[]> {
-    try {
-      const deviceContacts = await this.getDeviceContacts();
+    const deviceContacts = await this.getDeviceContacts();
+    const matches: ContactMatch[] = [];
 
-      // Extract email addresses from device contacts
-      const emailAddresses: string[] = [];
-      deviceContacts.forEach(contact => {
-        contact.emails?.forEach(email => {
-          if (email.email) {
-            emailAddresses.push(email.email);
+    // Limit to first 20 contacts to avoid spamming the API during this "hacky" sync
+    // In a real app, we need a bulk sync endpoint: POST /users/sync { emails, phones }
+    const contactsToSync = deviceContacts.slice(0, 20);
+
+    for (const contact of contactsToSync) {
+      try {
+        let userFound = null;
+
+        // Try searching by email first
+        if (contact.emails && contact.emails.length > 0) {
+          const email = contact.emails[0].email;
+          if (email) {
+            const response = await userAPI.searchUsers(email);
+            const users = response.data.data;
+            if (users && users.length > 0) {
+              // Exact match check might be needed if search is fuzzy
+              userFound = users.find((u: any) => u.email === email) || users[0];
+            }
           }
-        });
-      });
+        }
 
-      if (emailAddresses.length === 0) {
-        return [];
+        // If not found, try phone (if supported by search)
+        if (!userFound && contact.phoneNumbers && contact.phoneNumbers.length > 0) {
+          const phone = contact.phoneNumbers[0].number;
+          if (phone) {
+            // Clean phone number
+            const cleanPhone = phone.replace(/\D/g, '');
+            if (cleanPhone.length > 5) {
+              const response = await userAPI.searchUsers(cleanPhone);
+              const users = response.data.data;
+              if (users && users.length > 0) {
+                userFound = users[0];
+              }
+            }
+          }
+        }
+
+        if (userFound) {
+          matches.push({
+            deviceContact: contact,
+            userContact: {
+              id: userFound.id,
+              name: userFound.firstName ? `${userFound.firstName} ${userFound.lastName}` : userFound.username,
+              email: userFound.email,
+            },
+            isRegistered: true,
+          });
+        }
+      } catch (error) {
+        console.warn(`Failed to sync contact ${contact.name}:`, error);
       }
-
-      // In a real app, you would send these emails to your server
-      // to check which contacts are registered users
-      // For now, we'll simulate this
-
-      // Simulate API call to check registered users
-      const response = await fetch('/api/v1/contacts/check-registered', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ emails: emailAddresses }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to sync contacts');
-      }
-
-      const registeredUsers = await response.json();
-
-      // Match device contacts with registered users
-      const matches: ContactMatch[] = deviceContacts.map(deviceContact => {
-        const userEmail = deviceContact.emails?.[0]?.email;
-        const userContact = registeredUsers.find((user: any) => user.email === userEmail);
-
-        return {
-          deviceContact,
-          userContact,
-          isRegistered: !!userContact,
-        };
-      });
-
-      return matches.filter(match => match.isRegistered);
-    } catch (error) {
-      console.error('Error syncing contacts:', error);
-      Alert.alert('Error', 'Failed to sync contacts with server');
-      return [];
     }
+
+    return matches;
   }
 
   async addContactToMessenger(contact: DeviceContact): Promise<boolean> {
     try {
-      // In a real app, this would send the contact info to your server
-      // to create a contact relationship
+      // We need to find the user ID first if it's not already attached
+      // This method assumes we are passing a DeviceContact that might NOT have been synced yet
+      // But ideally, the UI should only allow adding synced contacts
 
-      const response = await fetch('/api/v1/contacts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: contact.name,
-          email: contact.emails?.[0]?.email,
-          phoneNumber: contact.phoneNumbers?.[0]?.number,
-        }),
-      });
+      let userId = '';
 
-      if (!response.ok) {
-        throw new Error('Failed to add contact');
+      // If we have a way to pass the synced user ID, great. 
+      // But DeviceContact doesn't have it. 
+      // We'll do a quick search to confirm.
+
+      if (contact.emails && contact.emails.length > 0) {
+        const response = await userAPI.searchUsers(contact.emails[0].email);
+        if (response.data.data.length > 0) {
+          userId = response.data.data[0].id;
+        }
       }
 
-      Alert.alert('Success', 'Contact added successfully');
+      if (!userId && contact.phoneNumbers && contact.phoneNumbers.length > 0) {
+        const response = await userAPI.searchUsers(contact.phoneNumbers[0].number);
+        if (response.data.data.length > 0) {
+          userId = response.data.data[0].id;
+        }
+      }
+
+      if (!userId) {
+        Alert.alert('User Not Found', 'This contact is not registered on Messenger.');
+        return false;
+      }
+
+      await contactAPI.addContact(userId);
+      Alert.alert('Success', 'Contact added to Messenger!');
       return true;
     } catch (error) {
       console.error('Error adding contact:', error);

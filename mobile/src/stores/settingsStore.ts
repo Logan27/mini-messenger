@@ -33,6 +33,10 @@ interface SettingsState {
   appearance: AppearanceSettings;
   isLoading: boolean;
 
+  // Computed properties for backwards compatibility
+  theme: 'light' | 'dark' | 'system';
+  setTheme: (theme: 'light' | 'dark' | 'system') => void;
+
   // Actions
   loadSettings: () => Promise<void>;
   updatePrivacy: (settings: Partial<PrivacySettings>) => Promise<void>;
@@ -71,6 +75,32 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   notifications: defaultNotificationSettings,
   appearance: defaultAppearanceSettings,
   isLoading: false,
+
+  // Computed properties for backwards compatibility
+  get theme() {
+    return get().appearance.theme;
+  },
+  setTheme: async (theme: 'light' | 'dark' | 'system') => {
+    console.log('[SettingsStore] Setting theme from', get().appearance.theme, 'to', theme);
+    const updatedAppearance = { ...get().appearance, theme };
+    set({ appearance: updatedAppearance });
+    console.log('[SettingsStore] State updated, new theme:', get().appearance.theme);
+
+    try {
+      const currentState = get();
+      await AsyncStorage.setItem(
+        SETTINGS_STORAGE_KEY,
+        JSON.stringify({
+          privacy: currentState.privacy,
+          notifications: currentState.notifications,
+          appearance: currentState.appearance,
+        })
+      );
+      console.log('[SettingsStore] Theme saved to AsyncStorage');
+    } catch (error) {
+      console.error('Failed to save theme setting:', error);
+    }
+  },
 
   // Actions
   loadSettings: async () => {

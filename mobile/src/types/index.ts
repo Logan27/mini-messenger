@@ -123,6 +123,19 @@ export interface Message {
   reactions?: MessageReaction[];
   linkPreview?: LinkPreviewData;
   metadata?: Record<string, any>;
+  sender?: {
+    id: string;
+    username: string;
+    firstName?: string;
+    lastName?: string;
+    avatar?: string;
+    name?: string;
+  };
+  group?: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
 }
 
 export interface Conversation {
@@ -171,7 +184,7 @@ export interface PaginatedResponse<T> {
 
 // Form types
 export interface LoginForm {
-  identifier: string; // Can be email or username
+  identifier: string;
   password: string;
   rememberMe?: boolean;
 }
@@ -181,8 +194,10 @@ export interface RegisterForm {
   email: string;
   password: string;
   confirmPassword: string;
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
+  termsAccepted: boolean;
+  privacyAccepted: boolean;
 }
 
 export interface ForgotPasswordForm {
@@ -195,6 +210,30 @@ export interface ResetPasswordForm {
   confirmPassword: string;
 }
 
+// Call types
+export interface Call {
+  id: string;
+  callerId: string;
+  recipientId: string;
+  callType: 'audio' | 'video';
+  status: 'calling' | 'connected' | 'ended' | 'rejected' | 'missed';
+  durationSeconds?: number;
+  startedAt?: string;
+  endedAt?: string;
+  createdAt: string;
+  caller?: User;
+  recipient?: User;
+}
+
+export interface CallState {
+  activeCall: Call | null;
+  localStream: any; // MediaStream
+  remoteStream: any; // MediaStream
+  isMuted: boolean;
+  isVideoEnabled: boolean;
+  isCallActive: boolean;
+}
+
 // Navigation types
 export type RootStackParamList = {
   Auth: undefined;
@@ -204,6 +243,7 @@ export type RootStackParamList = {
   Chat: { conversationId?: string | null; contactId?: string; recipientId?: string; recipientName?: string };
   Profile: { userId?: string };
   EditProfile: undefined;
+  SecuritySettings: undefined;
   Settings: undefined;
   NotificationSettings: undefined;
   PrivacySettings: undefined;
@@ -212,7 +252,6 @@ export type RootStackParamList = {
   AddContact: undefined;
   UserSearch: undefined;
   ContactRequests: undefined;
-  ContactProfile: { contactId: string };
   BlockedContacts: undefined;
   CreateGroup: undefined;
   GroupInfo: { groupId: string };
@@ -239,30 +278,6 @@ export type MainDrawerParamList = {
   Home: undefined;
   Profile: undefined;
 };
-
-// Call types
-export interface Call {
-  id: string;
-  callerId: string;
-  recipientId: string;
-  callType: 'audio' | 'video';
-  status: 'calling' | 'connected' | 'ended' | 'rejected' | 'missed';
-  durationSeconds?: number;
-  startedAt?: string;
-  endedAt?: string;
-  createdAt: string;
-  caller?: User;
-  recipient?: User;
-}
-
-export interface CallState {
-  activeCall: Call | null;
-  localStream: any; // MediaStream
-  remoteStream: any; // MediaStream
-  isMuted: boolean;
-  isVideoEnabled: boolean;
-  isCallActive: boolean;
-}
 
 export interface WebRTCSignal {
   type: 'offer' | 'answer' | 'ice-candidate';

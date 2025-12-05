@@ -14,14 +14,20 @@ import { useSettingsStore } from '../../stores/settingsStore';
 
 const DrawerMenu: React.FC<DrawerContentComponentProps> = (props) => {
   const { user, logout } = useAuthStore();
-  const { theme, setTheme } = useSettingsStore();
+  const { appearance, setTheme } = useSettingsStore();
+  const theme = appearance.theme;
 
   const handleLogout = async () => {
     await logout();
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+  const toggleTheme = async () => {
+    // Toggle between light and dark (ignore system for now)
+    console.log('[DrawerMenu] Current theme:', theme);
+    const newTheme = (theme === 'dark') ? 'light' : 'dark';
+    console.log('[DrawerMenu] Setting theme to:', newTheme);
+    await setTheme(newTheme);
+    console.log('[DrawerMenu] Theme set complete');
   };
 
   const getInitials = () => {
@@ -29,7 +35,8 @@ const DrawerMenu: React.FC<DrawerContentComponentProps> = (props) => {
     return user.username.substring(0, 2).toUpperCase();
   };
 
-  const isDark = theme === 'dark';
+  // Resolve 'system' theme to actual light/dark based on device settings
+  const isDark = theme === 'dark' || (theme === 'system' && false); // TODO: Use Appearance.getColorScheme() for system
   const colors = {
     background: isDark ? '#1a1a1a' : '#ffffff',
     card: isDark ? '#2a2a2a' : '#f8f9fa',
@@ -51,8 +58,15 @@ const DrawerMenu: React.FC<DrawerContentComponentProps> = (props) => {
         <View style={styles.avatarContainer}>
           {user?.profilePicture || user?.avatar ? (
             <Image
-              source={{ uri: user.profilePicture || user.avatar }}
+              source={{
+                uri: (() => {
+                  const avatarUrl = user.profilePicture || user.avatar;
+                  if (!avatarUrl) return '';
+                  return avatarUrl.startsWith('http') ? avatarUrl : `http://localhost:4000${avatarUrl}`;
+                })()
+              }}
               style={styles.avatar}
+              onError={(error) => console.log('Avatar load error:', error.nativeEvent.error)}
             />
           ) : (
             <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary }]}>

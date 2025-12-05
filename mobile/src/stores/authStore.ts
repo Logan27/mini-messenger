@@ -2,37 +2,39 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { authAPI } from '../services/api';
-import { User, AuthState, LoginForm, RegisterForm, BiometricAuthResult } from '../types';
 import * as SecureStore from 'expo-secure-store';
+import api, { authAPI, refreshAuthToken, wsService } from '../services/api';
+import { User, LoginCredentials, RegisterForm, AccountStatus, BiometricAuthResult } from '../types';
+import { isTokenExpired } from '../utils/auth';
 
-type AccountStatus = 'pending' | 'approved' | 'rejected' | 'suspended' | 'active';
+interface AuthStore {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+  biometricAvailable: boolean;
+  biometricEnabled: boolean;
+  isBiometricLoading: boolean;
+  accountStatus: AccountStatus | null;
+  refreshTokenInProgress: boolean;
+  lastTokenRefresh: Date | null;
 
-interface AuthStore extends AuthState {
   // Actions
-  login: (credentials: LoginForm) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<void>;
   register: (userData: RegisterForm) => Promise<void>;
   logout: () => Promise<void>;
   logoutAll: () => Promise<void>;
   checkAuth: () => Promise<void>;
   refreshToken: () => Promise<boolean>;
   checkAccountStatus: (email: string) => Promise<AccountStatus>;
-  authenticateWithBiometric: () => Promise<BiometricAuthResult>;
   enableBiometric: () => Promise<boolean>;
   disableBiometric: () => void;
+  authenticateWithBiometric: () => Promise<BiometricAuthResult>;
   storeBiometricCredentials: (email: string, password: string) => Promise<void>;
   getBiometricCredentials: () => Promise<{ email: string; password: string } | null>;
   clearBiometricCredentials: () => Promise<void>;
   setUser: (user: User) => void;
-
-  // State
-  biometricAvailable: boolean;
-  biometricEnabled: boolean;
-  isBiometricLoading: boolean;
-  accountStatus: AccountStatus | null;
-  refreshTokenInProgress: boolean;
-  error: string | null;
-  lastTokenRefresh: Date | null;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -41,19 +43,18 @@ export const useAuthStore = create<AuthStore>()(
       // Initial state
       user: null,
       token: null,
-      isLoading: false,
       isAuthenticated: false,
+      isLoading: false,
+      error: null,
       biometricAvailable: false,
       biometricEnabled: false,
       isBiometricLoading: false,
       accountStatus: null,
       refreshTokenInProgress: false,
-      error: null,
       lastTokenRefresh: null,
 
-      // Actions
-      login: async (credentials: LoginForm) => {
-        set({ isLoading: true });
+      login: async (credentials: LoginCredentials) => {
+        set({ isLoading: true, error: null });
 
         try {
           const response = await authAPI.login(credentials);
@@ -61,37 +62,27 @@ export const useAuthStore = create<AuthStore>()(
           const { user, tokens } = data;
           const { accessToken, refreshToken } = tokens;
 
+          // Save to AsyncStorage first to ensure it's available for request interceptor
+          await AsyncStorage.setItem('authToken', accessToken);
+          await AsyncStorage.setItem('refreshToken', refreshToken);
+          await AsyncStorage.setItem('user', JSON.stringify(user));
+
+          // Update API default headers immediately
+          api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+
           set({
             user,
             token: accessToken,
             isAuthenticated: true,
             isLoading: false,
+            error: null,
           });
 
-          // Store tokens for API calls
-          await AsyncStorage.setItem('authToken', accessToken);
-          await AsyncStorage.setItem('refreshToken', refreshToken);
-          await AsyncStorage.setItem('user', JSON.stringify(user));
+          // Connect WebSocket
+          wsService.connect(accessToken);
         } catch (error: any) {
           set({ isLoading: false });
-          
-          // Enhanced error logging
           const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Login failed';
-          const errorDetails = {
-            message: errorMessage,
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            data: error.response?.data,
-            isNetworkError: !error.response,
-            isTimeout: error.code === 'ECONNABORTED',
-            isConnectionError: error.code === 'ECONNREFUSED',
-            credentials: {
-              hasIdentifier: !!credentials.identifier,
-              identifierLength: credentials.identifier?.length
-            }
-          };
-          
-          console.error('Login error details:', errorDetails);
           set({ error: errorMessage });
           throw new Error(errorMessage);
         }
@@ -161,7 +152,32 @@ export const useAuthStore = create<AuthStore>()(
           if (token && userString) {
             const user = JSON.parse(userString);
 
-            // Set authenticated state immediately if we have a token
+            // Check if token is expired or about to expire
+            if (isTokenExpired(token)) {
+              console.log('Token expired or expiring soon, refreshing...');
+              // Token expired, attempt refresh
+              try {
+                await get().refreshToken();
+                // If refresh successful, state is updated by refreshToken
+                return;
+              } catch (refreshError) {
+                console.log('Initial token refresh failed:', refreshError);
+                // Refresh failed, clear auth
+                set({
+                  user: null,
+                  token: null,
+                  isAuthenticated: false,
+                  isLoading: false,
+                });
+                await AsyncStorage.multiRemove(['authToken', 'user', 'refreshToken']);
+                return;
+              }
+            }
+
+            // Update API default headers immediately
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+            // Set authenticated state immediately if we have a valid token
             set({
               user,
               token,
@@ -170,12 +186,8 @@ export const useAuthStore = create<AuthStore>()(
               error: null,
             });
 
-            // Optionally refresh token in background (don't block auth)
-            // This will update the token if needed without logging out the user
-            get().refreshToken().catch((error) => {
-              console.log('Background token refresh failed:', error);
-              // Don't log out user - let them continue with existing token
-            });
+            // Connect WebSocket with existing token
+            wsService.connect(token);
           } else {
             set({
               user: null,
@@ -199,7 +211,7 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       refreshToken: async (): Promise<boolean> => {
-        // Prevent concurrent refresh requests
+        // Prevent concurrent refresh requests initiated from store
         if (get().refreshTokenInProgress) {
           return false;
         }
@@ -207,31 +219,32 @@ export const useAuthStore = create<AuthStore>()(
         set({ refreshTokenInProgress: true });
 
         try {
-          const refreshToken = await AsyncStorage.getItem('refreshToken');
-          if (!refreshToken) {
-            set({ refreshTokenInProgress: false });
-            return false;
-          }
-
-          const response = await authAPI.refreshToken(refreshToken);
-          const data = response.data.data || response.data;
-          const { accessToken } = data.tokens || data;
+          // Use the shared refresh logic from api.ts
+          // This handles locking with the interceptor and updates AsyncStorage
+          const { accessToken } = await refreshAuthToken();
 
           set({
             token: accessToken,
+            isAuthenticated: true,
             refreshTokenInProgress: false,
             lastTokenRefresh: new Date(),
             error: null,
           });
 
-          await AsyncStorage.setItem('authToken', accessToken);
           return true;
-        } catch (error: any) {
+        } catch (error) {
           console.error('Token refresh error:', error);
+
+          // If refresh fails, clear auth state
+          // refreshAuthToken already clears AsyncStorage
           set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
             refreshTokenInProgress: false,
-            error: 'Failed to refresh session',
+            error: 'Session expired',
           });
+
           return false;
         }
       },

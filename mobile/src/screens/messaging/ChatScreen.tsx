@@ -11,11 +11,12 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  Clipboard,
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { Swipeable } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useMessagingStore } from '../../stores/messagingStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -23,32 +24,32 @@ import { useCallStore } from '../../stores/callStore';
 import { useContactStore } from '../../stores/contactStore';
 import { Message, Conversation } from '../../types';
 import { wsService, fileAPI } from '../../services/api';
-import MessageActionsSheet from '../../components/messaging/MessageActionsSheet';
+import MessageContextMenu from '../../components/messaging/MessageContextMenu';
+import ChatOptionsMenu, { ChatMenuAction } from '../../components/messaging/ChatOptionsMenu';
 import MessageStatusIndicator, { MessageStatus } from '../../components/messaging/MessageStatusIndicator';
 import FileAttachmentPicker from '../../components/messaging/FileAttachmentPicker';
 import ImageViewerModal from '../../components/messaging/ImageViewerModal';
 import TypingIndicator from '../../components/messaging/TypingIndicator';
 import OnlineStatusBadge from '../../components/common/OnlineStatusBadge';
+import AuthenticatedImage from '../../components/common/AuthenticatedImage';
 import ReactionPicker from '../../components/messaging/ReactionPicker';
 import WhoReactedModal from '../../components/messaging/WhoReactedModal';
 import LinkPreview from '../../components/messaging/LinkPreview';
 import { extractFirstUrl, fetchLinkMetadata, containsUrl } from '../../utils/linkPreview';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftMessages';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Clipboard from 'expo-clipboard';
 
-interface ChatScreenProps {
-  route: {
-    params: {
-      conversationId: string;
-    };
-  };
-  navigation: any;
-}
+import { StackScreenProps } from '@react-navigation/stack';
+import { RootStackParamList } from '../../types';
+
+type ChatScreenProps = StackScreenProps<RootStackParamList, 'Chat'>;
 
 const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const { conversationId } = route.params;
   const { user } = useAuthStore();
-  const { privacy, theme } = useSettingsStore();
+  const { privacy, appearance } = useSettingsStore();
+  const theme = appearance.theme;
   const {
     conversations,
     messages,
@@ -61,15 +62,17 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     editMessage,
     deleteMessage,
     markAsRead,
+    markMessagesAsRead,
     setTyping,
     typingUsers,
     addReaction,
     removeReaction,
   } = useMessagingStore();
-  const { contacts, blockContact, muteContact, unmuteContact } = useContactStore();
+  const { contacts, blockContact, muteContact, unmuteContact, deleteContact: removeContact } = useContactStore();
 
   // Theme colors
-  const isDark = theme === 'dark';
+  // Handle 'system' theme - default to light for now (TODO: use Appearance.getColorScheme())
+  const isDark = theme === 'dark' || (theme === 'system' && false);
   const colors = {
     background: isDark ? '#000000' : '#ffffff',
     card: isDark ? '#1a1a1a' : '#ffffff',
@@ -90,6 +93,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [showActionsModal, setShowActionsModal] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [viewingImageUri, setViewingImageUri] = useState<string>('');
@@ -106,138 +110,166 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const [showWhoReacted, setShowWhoReacted] = useState(false);
   const [whoReactedMessage, setWhoReactedMessage] = useState<Message | null>(null);
   const [linkPreviewsLoading, setLinkPreviewsLoading] = useState<Set<string>>(new Set());
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+  const [showChatOptionsMenu, setShowChatOptionsMenu] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const hasLoadedDraft = useRef(false);
-  const savedScrollPosition = useRef<string | null>(null);
-  const shouldRestoreScroll = useRef(false);
-  const currentVisibleMessageId = useRef<string | null>(null);
+  const processedLinkPreviewIds = useRef<Set<string>>(new Set());
+  const initialLoadComplete = useRef(false);
+  const currentScrollOffset = useRef<number>(0);
   const viewabilityConfig = useRef({
     itemVisiblePercentThreshold: 50,
     waitForInteraction: false,
   }).current;
 
-  const conversation = conversations?.find(c => c.id === conversationId);
-  const conversationMessages = messages?.[conversationId] || [];
+  const conversation = conversationId ? conversations?.find(c => c.id === conversationId) : undefined;
+  const conversationMessages = (conversationId && messages?.[conversationId]) || [];
+
+  // Track messages that have been marked as read to avoid duplicate API calls
+  const markedAsReadRef = useRef<Set<string>>(new Set());
+
+  // Mark unread messages as read when they are loaded
+  useEffect(() => {
+    if (conversationMessages.length > 0 && user && conversationId) {
+      const unreadMessages = conversationMessages.filter(
+        (m: Message) => !m.isRead && m.senderId !== user.id && !markedAsReadRef.current.has(m.id)
+      );
+
+      if (unreadMessages.length > 0) {
+        const unreadMessageIds = unreadMessages.map((m: Message) => m.id);
+
+        // Mark these messages as being processed
+        unreadMessageIds.forEach(id => markedAsReadRef.current.add(id));
+
+        markMessagesAsRead(conversationId, unreadMessageIds);
+      }
+    }
+    // Only run when message count changes or conversation changes, not on every message update
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationMessages.length, conversationId]);
 
   useEffect(() => {
     const initializeConversation = async () => {
       if (conversationId) {
-        // Load saved scroll position before loading messages
-        const savedPosition = await AsyncStorage.getItem(`scroll_${conversationId}`);
-        if (savedPosition) {
-          savedScrollPosition.current = savedPosition;
-          shouldRestoreScroll.current = true;
-        }
+        // Clear tracking refs when changing conversations
+        markedAsReadRef.current.clear();
+        processedLinkPreviewIds.current.clear();
+        initialLoadComplete.current = false; // Reset initial load flag
+        hasLoadedDraft.current = false; // Reset draft loading flag
+
+        // Clear message text when switching conversations
+        setMessageText('');
+        setEditingMessage(null);
+        setReplyToMessage(null);
+        currentScrollOffset.current = 0;
 
         await loadMessages(conversationId);
         // Reset pagination state for new conversation
         setCurrentPage(1);
         setHasMoreMessages(true);
-      }
-    };
 
-    initializeConversation();
-  }, [conversationId, loadMessages]);
+        // Mark initial load as complete to allow pagination
+        initialLoadComplete.current = true;
 
-  useEffect(() => {
-    // Load draft message for this conversation (only once on mount)
-    const loadDraftMessage = async () => {
-      if (!hasLoadedDraft.current) {
+        // Load draft for this conversation
         const draft = await loadDraft(conversationId);
-        if (draft && !editingMessage) {
+        if (draft) {
           setMessageText(draft);
         }
         hasLoadedDraft.current = true;
       }
     };
-    loadDraftMessage();
+
+    initializeConversation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
   useEffect(() => {
     // Join conversation for real-time updates
     wsService.emit('joinConversation', conversationId);
 
+    // Listen for user status changes
+    const handleUserStatusUpdate = (data: { userId: string; status: string }) => {
+      // Update conversation participant status
+      const { conversations, setConversations } = useMessagingStore.getState();
+      const updatedConversations = conversations.map(conv => {
+        if (conv.type === 'direct') {
+          const updatedParticipants = (conv.participants || []).map(p => {
+            if (p.id === data.userId) {
+              return { ...p, isOnline: data.status === 'online' };
+            }
+            return p;
+          });
+          return { ...conv, participants: updatedParticipants };
+        }
+        return conv;
+      });
+      setConversations(updatedConversations);
+    };
+
+    wsService.on('user_status_update', handleUserStatusUpdate);
+    wsService.on('user_online', handleUserStatusUpdate);
+    wsService.on('user_offline', handleUserStatusUpdate);
+
     return () => {
       wsService.emit('leaveConversation', conversationId);
-
-      // Save scroll position when leaving conversation
-      if (currentVisibleMessageId.current) {
-        AsyncStorage.setItem(`scroll_${conversationId}`, currentVisibleMessageId.current);
-      }
+      wsService.off('user_status_update', handleUserStatusUpdate);
+      wsService.off('user_online', handleUserStatusUpdate);
+      wsService.off('user_offline', handleUserStatusUpdate);
     };
-  }, [conversationId, conversationMessages]);
-
-  // Restore scroll position after messages are loaded
-  useEffect(() => {
-    if (shouldRestoreScroll.current && conversationMessages.length > 0 && savedScrollPosition.current) {
-      const messageIndex = conversationMessages.findIndex(m => m.id === savedScrollPosition.current);
-      if (messageIndex !== -1) {
-        // Small delay to ensure FlatList is ready
-        setTimeout(() => {
-          flatListRef.current?.scrollToIndex({
-            index: messageIndex,
-            animated: false,
-            viewPosition: 0.5, // Center the message
-          });
-          shouldRestoreScroll.current = false;
-          savedScrollPosition.current = null;
-        }, 100);
-      }
-    }
-  }, [conversationMessages]);
-
-  useEffect(() => {
-    // Scroll to bottom when new messages arrive (but not when loading more)
-    if (conversationMessages.length > 0 && !isLoadingMore) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    }
-  }, [conversationMessages]);
+  }, [conversationId]);
 
   useEffect(() => {
     // Auto-fetch link previews for text messages with URLs
+    // Only process NEW messages, not all messages on every change
     const fetchLinkPreviews = async () => {
-      for (const message of conversationMessages) {
-        // Only process text messages without existing previews
-        if (
+      const newMessages = conversationMessages.filter(
+        message =>
           message.type === 'text' &&
           !message.linkPreview &&
+          !processedLinkPreviewIds.current.has(message.id) &&
           !linkPreviewsLoading.has(message.id) &&
           containsUrl(message.content)
-        ) {
-          const url = extractFirstUrl(message.content);
-          if (url) {
-            // Mark as loading
-            setLinkPreviewsLoading(prev => new Set([...prev, message.id]));
+      );
 
-            try {
-              const metadata = await fetchLinkMetadata(url);
-              if (metadata) {
-                // Update message with link preview
-                // This would normally be done through the store
-                // For now, we'll just remove from loading state
-                // TODO: Add updateMessage with linkPreview to messaging store
-              }
-            } catch (error) {
-              console.error('Failed to fetch link preview:', error);
-            } finally {
-              // Remove from loading state
-              setLinkPreviewsLoading(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(message.id);
-                return newSet;
-              });
+      // Process only new messages with links
+      for (const message of newMessages) {
+        const url = extractFirstUrl(message.content);
+        if (url) {
+          // Mark as processed to avoid reprocessing
+          processedLinkPreviewIds.current.add(message.id);
+
+          // Mark as loading
+          setLinkPreviewsLoading(prev => new Set([...prev, message.id]));
+
+          try {
+            const metadata = await fetchLinkMetadata(url);
+            if (metadata) {
+              // Update message with link preview
+              // This would normally be done through the store
+              // For now, we'll just remove from loading state
+              // TODO: Add updateMessage with linkPreview to messaging store
             }
+          } catch (error) {
+            console.error('Failed to fetch link preview:', error);
+          } finally {
+            // Remove from loading state
+            setLinkPreviewsLoading(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(message.id);
+              return newSet;
+            });
           }
         }
       }
     };
 
     fetchLinkPreviews();
-  }, [conversationMessages]);
+    // Only depend on message count, not entire array reference
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationMessages.length]);
 
   const handleSendMessage = useCallback(async () => {
     if (!messageText.trim() || isSending) return;
@@ -245,6 +277,18 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     const messageToSend = messageText.trim();
     const messageToEdit = editingMessage;
     const replyTo = replyToMessage;
+
+    // Clear typing timeout to prevent draft save after send
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = undefined;
+    }
+
+    // Clear message text immediately
+    setMessageText('');
+
+    // Clear draft immediately (before sending to prevent race condition)
+    await clearDraft(conversationId);
 
     setIsSending(true);
     try {
@@ -256,12 +300,12 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         // Send new message
         await sendMessage(conversationId, messageToSend, replyTo?.id);
         setReplyToMessage(null);
+
+        // Always scroll to top (offset 0) to show the new message in inverted list
+        setTimeout(() => {
+          flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+        }, 100);
       }
-
-      setMessageText('');
-
-      // Clear draft message
-      await clearDraft(conversationId);
 
       // Stop typing indicator
       if (isTyping) {
@@ -295,12 +339,14 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     }
 
     // Set new timeout to stop typing indicator and save draft
-    if (text) {
+    if (text && text.trim()) {
       typingTimeoutRef.current = setTimeout(() => {
         setIsTypingLocal(false);
         setTyping(conversationId, user!.id, false);
-        // Save draft after user stops typing
-        saveDraft(conversationId, text);
+        // Save draft after user stops typing (only if text is not empty)
+        if (text.trim()) {
+          saveDraft(conversationId, text);
+        }
       }, 1000);
     } else {
       setIsTypingLocal(false);
@@ -312,20 +358,13 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
 
   // Automatically mark messages as read when they become visible
   const handleViewableItemsChanged = useCallback(({ viewableItems }: any) => {
-    // Track the first visible message for scroll position restoration
-    if (viewableItems.length > 0) {
-      const firstVisible: any = viewableItems[0];
-      if (firstVisible?.item?.id) {
-        currentVisibleMessageId.current = firstVisible.item.id;
-      }
-    }
-
     if (!privacy.showReadReceipts || !user) return;
 
     viewableItems.forEach((viewable: any) => {
       const message: Message = viewable.item;
-      // Mark as read if it's not from current user and not already read
-      if (message && !message.isRead && message.senderId !== user.id) {
+      // Mark as read if it's not from current user, not already read, and not already processed
+      if (message && !message.isRead && message.senderId !== user.id && !markedAsReadRef.current.has(message.id)) {
+        markedAsReadRef.current.add(message.id);
         markAsRead(conversationId, message.id);
       }
     });
@@ -335,9 +374,17 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     // Keep this for additional tap-to-mark-read behavior if needed
   }, []);
 
-  const handleMessageLongPress = useCallback((message: Message) => {
+  const handleMessageLongPress = useCallback((message: Message, event: any) => {
     setSelectedMessage(message);
-    setShowActionsModal(true);
+
+    // Get the position from the touch event
+    event.target.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
+      setMenuPosition({
+        x: pageX + width / 2,
+        y: pageY,
+      });
+      setShowActionsModal(true);
+    });
   }, []);
 
   const handleEditMessage = useCallback((message: Message) => {
@@ -375,8 +422,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     setReplyToMessage(message);
   }, []);
 
-  const handleCopyMessage = useCallback((message: Message) => {
-    Clipboard.setString(message.content);
+  const handleCopyMessage = useCallback(async (message: Message) => {
+    await Clipboard.setStringAsync(message.content);
     Alert.alert('Copied', 'Message copied to clipboard');
   }, []);
 
@@ -394,20 +441,67 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
       setIsSending(true);
       setShowAttachmentPicker(false);
 
+      // Determine MIME type from file extension or type/mimeType property
+      let mimeType = file.mimeType || file.type || 'image/jpeg';
+
+      // Handle 'video' type from video picker
+      if (mimeType === 'video') {
+        mimeType = 'video/mp4';
+      }
+
+      // Try to determine from URI extension if still generic
+      if (!file.mimeType && !file.type && file.uri) {
+        const extension = file.uri.split('.').pop()?.toLowerCase();
+        if (extension === 'png') mimeType = 'image/png';
+        else if (extension === 'jpg' || extension === 'jpeg') mimeType = 'image/jpeg';
+        else if (extension === 'webp') mimeType = 'image/webp';
+        else if (extension === 'gif') mimeType = 'image/gif';
+        else if (extension === 'mp4') mimeType = 'video/mp4';
+      }
+
+      const fileName = file.name || file.fileName || `file_${Date.now()}.${mimeType.split('/')[1]}`;
+
+      // Create FormData for file upload - React Native requires specific format
+      const formData = new FormData();
+      formData.append('file', {
+        uri: file.uri,
+        type: mimeType,
+        name: fileName,
+      } as any);
+
+      console.log('[ChatScreen] Uploading file:', {
+        uri: file.uri,
+        type: mimeType,
+        name: fileName,
+      });
+
       // Upload file to server
-      const uploadResponse = await fileAPI.uploadFile(file, conversationId);
+      const uploadResponse = await fileAPI.uploadFile(formData);
       const uploadedFile = uploadResponse.data.data;
+
+      console.log('[ChatScreen] File uploaded successfully:', uploadedFile);
 
       // Send message with file attachment
       await sendMessage(
         conversationId,
-        file.type === 'image' ? '📷 Photo' : file.type === 'video' ? '🎥 Video' : `📎 ${file.name}`,
+        mimeType.startsWith('image/') ? '📷 Photo' : mimeType.startsWith('video/') ? '🎥 Video' : `📎 ${file.name}`,
         undefined,
         uploadedFile
       );
-    } catch (error) {
-      console.error('File upload error:', error);
-      Alert.alert('Error', 'Failed to send file. Please try again.');
+    } catch (error: any) {
+      console.error('[ChatScreen] File upload error:', {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+        },
+      });
+      const errorMsg = error.response?.data?.error?.message || error.message || 'Failed to send file';
+      Alert.alert('Upload Error', errorMsg);
     } finally {
       setIsSending(false);
     }
@@ -419,8 +513,20 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   }, []);
 
   const handleLoadMore = useCallback(async () => {
-    if (isLoadingMore || !hasMoreMessages) return;
+    console.log('[ChatScreen] handleLoadMore called', {
+      initialLoadComplete: initialLoadComplete.current,
+      isLoadingMore,
+      hasMoreMessages,
+      currentPage
+    });
 
+    // Prevent loading more messages until initial load completes
+    if (!initialLoadComplete.current || isLoadingMore || !hasMoreMessages) {
+      console.log('[ChatScreen] Load more blocked');
+      return;
+    }
+
+    console.log('[ChatScreen] Loading page', currentPage + 1);
     setIsLoadingMore(true);
     try {
       const nextPage = currentPage + 1;
@@ -432,6 +538,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
       if (result.messages.length === 0) {
         setHasMoreMessages(false);
       }
+
+      console.log('[ChatScreen] Loaded page', nextPage, 'hasMore:', result.hasMore);
     } catch (error) {
       console.error('Load more messages error:', error);
       setHasMoreMessages(false);
@@ -460,9 +568,10 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     }
 
     // Filter messages that contain the search query (case-insensitive)
-    const results = conversationMessages.filter(msg =>
-      msg.type === 'text' && msg.content.toLowerCase().includes(query.toLowerCase())
-    );
+    const results = conversationMessages.filter(msg => {
+      const msgType = (msg as any).messageType || msg.type || 'text';
+      return msgType === 'text' && msg.content && msg.content.toLowerCase().includes(query.toLowerCase());
+    });
 
     setSearchResults(results);
     setCurrentSearchIndex(0);
@@ -495,6 +604,26 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     }
   }, [searchResults, currentSearchIndex, conversationMessages]);
 
+  const handleScrollToMessage = useCallback((messageId: string) => {
+    const messageIndex = conversationMessages.findIndex(m => m.id === messageId);
+    if (messageIndex !== -1) {
+      // Scroll to the message
+      flatListRef.current?.scrollToIndex({
+        index: messageIndex,
+        animated: true,
+        viewPosition: 0.5 // Center the message in view
+      });
+
+      // Highlight the message
+      setHighlightedMessageId(messageId);
+
+      // Remove highlight after 2 seconds
+      setTimeout(() => {
+        setHighlightedMessageId(null);
+      }, 2000);
+    }
+  }, [conversationMessages]);
+
   const handleOpenReactionPicker = useCallback((message: Message) => {
     setReactionTargetMessage(message);
     setShowReactionPicker(true);
@@ -514,6 +643,10 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
       // Add reaction
       await addReaction(conversationId, reactionTargetMessage.id, emoji);
     }
+
+    // Close reaction picker
+    setShowReactionPicker(false);
+    setReactionTargetMessage(null);
   }, [conversationId, reactionTargetMessage, user, addReaction, removeReaction]);
 
   const handleToggleReaction = useCallback(async (message: Message, emoji: string) => {
@@ -526,6 +659,9 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
       await addReaction(conversationId, message.id, emoji);
     }
   }, [conversationId, user, addReaction, removeReaction]);
+
+  // Create swipeable refs at component level (not inside render functions)
+  const swipeableRefs = useRef<Map<string, any>>(new Map());
 
   const handleShowWhoReacted = useCallback((message: Message) => {
     setWhoReactedMessage(message);
@@ -591,33 +727,82 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     return 'sent';
   };
 
+  const renderSwipeAction = useCallback((isMyMessage: boolean) => {
+    return (
+      <View style={[
+        styles.swipeActionContainer,
+        isMyMessage ? styles.swipeActionLeft : styles.swipeActionRight,
+      ]}>
+        <Ionicons
+          name="arrow-undo"
+          size={24}
+          color="#fff"
+        />
+      </View>
+    );
+  }, []);
+
   const renderMessage = ({ item: message }: { item: Message }) => {
     const isMyMessage = message.senderId === user?.id;
-    const showAvatar = !isMyMessage && message.type === 'text';
     const messageStatus = getMessageStatus(message);
     const isGroupChat = conversation?.type === 'group';
 
-    // Find sender info for group chats
+    // Find sender info for group chats - use message.sender if available
     const sender = !isMyMessage && isGroupChat
-      ? conversation?.participants?.find(p => p.id === message.senderId)
+      ? (message.sender || conversation?.participants?.find(p => p.id === message.senderId))
       : null;
 
-    return (
+    // Determine message type and file URL (handle both frontend and backend formats)
+    // Backend sends: messageType: "image", fileUrl: "/api/files/xxx"
+    // Frontend sends: type: "image", file: { url: "/api/files/xxx" }
+    // Backend returns: fileUrl at top level, or in metadata
+    const messageType = (message as any).messageType || message.type || 'text';
+    const fileUrl = (message as any).fileUrl || (message as any).metadata?.fileUrl || message.file?.url;
+    const hasImage = (
+      messageType === 'image' ||
+      message.type === 'image' ||
+      (fileUrl && (
+        fileUrl.includes('.jpg') ||
+        fileUrl.includes('.png') ||
+        fileUrl.includes('.webp') ||
+        fileUrl.includes('.jpeg') ||
+        fileUrl.includes('.gif')
+      ))
+    );
+
+    // Debug logging for photo messages
+    if (messageType === 'image' || message.type === 'image' || fileUrl) {
+      console.log('Photo message debug:', {
+        messageId: message.id,
+        messageType,
+        frontendType: message.type,
+        backendMessageType: (message as any).messageType,
+        fileUrl,
+        backendFileUrl: (message as any).fileUrl,
+        fileObject: message.file,
+        hasImage,
+        content: message.content
+      });
+    }
+
+    // Check if this message is a search result
+    const isSearchResult = searchResults.length > 0 && searchResults[currentSearchIndex]?.id === message.id;
+
+    // Check if this message is highlighted (from reply click)
+    const isHighlighted = highlightedMessageId === message.id;
+
+    const messageContent = (
       <TouchableOpacity
         style={[
           styles.messageContainer,
           isMyMessage ? styles.myMessage : styles.otherMessage,
+          isSearchResult && styles.searchHighlight,
+          isHighlighted && styles.replyHighlight,
         ]}
-        onPress={() => handleMessagePress(message)}
-        onLongPress={() => handleMessageLongPress(message)}
+        onPress={() => handleOpenReactionPicker(message)}
+        onLongPress={(event) => handleMessageLongPress(message, event)}
+        delayLongPress={300}
       >
-        {showAvatar && (
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatarPlaceholder}>
-              <Ionicons name="person" size={16} color={colors.textSecondary} />
-            </View>
-          </View>
-        )}
 
         <View style={[
           styles.messageBubble,
@@ -625,38 +810,69 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         ]}>
           {/* Sender name for group chats */}
           {!isMyMessage && isGroupChat && sender && (
-            <Text style={styles.senderName}>{sender.name}</Text>
+            <Text style={styles.senderName}>
+              {sender.name ||
+                (sender.firstName && sender.lastName ? `${sender.firstName} ${sender.lastName}` : null) ||
+                sender.firstName ||
+                sender.username ||
+                'Unknown'}
+            </Text>
           )}
 
           {/* Reply indicator */}
-          {message.replyTo && (
-            <View style={styles.replyContainer}>
-              <View style={styles.replyBar} />
-              <View style={styles.replyContent}>
-                <Text style={styles.replyText} numberOfLines={1}>
-                  Reply to message
-                </Text>
-              </View>
-            </View>
-          )}
+          {(() => {
+            const replyData = (message as any).replyTo;
+            if (!replyData) return null;
+
+            // Backend sends replyTo as an object with { id, content, senderId, messageType, sender: {...} }
+            const isReplyObject = typeof replyData === 'object' && replyData.content;
+            if (!isReplyObject) return null;
+
+            return (
+              <TouchableOpacity
+                style={styles.replyContainer}
+                onPress={() => handleScrollToMessage(replyData.id)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.replyBar} />
+                <View style={styles.replyContent}>
+                  <Text style={styles.replySender} numberOfLines={1}>
+                    {replyData.sender?.firstName || replyData.sender?.username || 'User'}
+                  </Text>
+                  <Text style={styles.replyText} numberOfLines={1}>
+                    {replyData.content || 'Message'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })()}
 
           {/* Message content */}
-          {message.type === 'image' ? (
+          {hasImage && fileUrl ? (
             <TouchableOpacity
               style={styles.imageContainer}
-              onPress={() => message.file?.url && handleImagePress(message.file.url)}
+              onPress={() => handleImagePress(fileUrl.startsWith('http') ? fileUrl : `http://localhost:4000${fileUrl}`)}
               activeOpacity={0.9}
             >
-              <Image
-                source={{ uri: message.file?.url }}
+              <AuthenticatedImage
+                uri={fileUrl.startsWith('http') ? fileUrl : `http://localhost:4000${fileUrl}`}
                 style={styles.messageImage}
                 resizeMode="cover"
               />
+              {message.content && message.content !== '📷 Photo' && (
+                <Text style={[
+                  styles.messageText,
+                  isMyMessage ? styles.myMessageText : styles.otherMessageText,
+                  { marginTop: 8 }
+                ]}>
+                  {message.content}
+                </Text>
+              )}
             </TouchableOpacity>
-          ) : message.type === 'video' ? (
+          ) : messageType === 'video' && fileUrl ? (
             <TouchableOpacity style={styles.imageContainer} activeOpacity={0.9}>
-              <Image
-                source={{ uri: message.file?.url }}
+              <AuthenticatedImage
+                uri={fileUrl.startsWith('http') ? fileUrl : `http://localhost:4000${fileUrl}`}
                 style={styles.messageImage}
                 resizeMode="cover"
               />
@@ -664,21 +880,62 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
                 <Ionicons name="play-circle" size={48} color="#fff" />
               </View>
             </TouchableOpacity>
-          ) : message.type === 'file' ? (
-            <Text style={[
-              styles.messageText,
-              isMyMessage ? styles.myMessageText : styles.otherMessageText,
-            ]}>
-              📎 {message.content || 'File'}
-            </Text>
-          ) : message.type === 'voice' ? (
+          ) : messageType === 'file' ? (
+            <TouchableOpacity
+              style={styles.fileContainer}
+              onPress={() => {
+                const url = (message as any).fileUrl || (message as any).metadata?.fileUrl;
+                if (url) {
+                  const fullUrl = url.startsWith('http') ? url : `http://localhost:4000${url}`;
+                  Alert.alert(
+                    'Download File',
+                    `File: ${(message as any).metadata?.fileName || message.content || 'Document'}`,
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Download',
+                        onPress: async () => {
+                          try {
+                            // TODO: Implement actual file download to device
+                            Alert.alert('Download', 'File download functionality will be implemented');
+                          } catch (error) {
+                            Alert.alert('Error', 'Failed to download file');
+                          }
+                        }
+                      }
+                    ]
+                  );
+                }
+              }}
+            >
+              <View style={styles.fileIconContainer}>
+                <Ionicons name="document" size={24} color={colors.primary} />
+              </View>
+              <View style={styles.fileInfo}>
+                <Text style={[
+                  styles.fileName,
+                  { color: isMyMessage ? '#fff' : colors.text }
+                ]} numberOfLines={1}>
+                  {(message as any).metadata?.fileName || message.content || 'Document'}
+                </Text>
+                {(message as any).metadata?.fileSize && (
+                  <Text style={[
+                    styles.fileSize,
+                    { color: isMyMessage ? 'rgba(255,255,255,0.7)' : colors.textSecondary }
+                  ]}>
+                    {((message as any).metadata.fileSize / 1024).toFixed(1)} KB
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          ) : messageType === 'voice' ? (
             <Text style={[
               styles.messageText,
               isMyMessage ? styles.myMessageText : styles.otherMessageText,
             ]}>
               🎵 Voice message
             </Text>
-          ) : message.type === 'system' ? (
+          ) : messageType === 'system' ? (
             <Text style={[
               styles.messageText,
               isMyMessage ? styles.myMessageText : styles.otherMessageText,
@@ -729,11 +986,27 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           </View>
 
           {/* Reactions */}
-          {message.reactions && message.reactions.length > 0 && (
-            <View style={styles.reactionsContainer}>
-              {message.reactions.map((reaction) => {
-                const userHasReacted = reaction.users.includes(user!.id);
-                return (
+          {(() => {
+            if (!message.reactions) return null;
+
+            // Convert reactions to array if it's an object
+            const reactionsArray = Array.isArray(message.reactions)
+              ? message.reactions
+              : Object.entries(message.reactions || {}).map(([emoji, users]) => ({
+                  emoji,
+                  users: Array.isArray(users) ? users : [users],
+                }));
+
+            // Filter out any empty or invalid reactions
+            const validReactions = reactionsArray.filter(r => r.emoji && r.users && r.users.length > 0);
+
+            if (validReactions.length === 0) return null;
+
+            return (
+              <View style={styles.reactionsContainer}>
+                {validReactions.map((reaction, idx) => {
+                  const userHasReacted = reaction.users.includes(user!.id);
+                  return (
                   <TouchableOpacity
                     key={`${message.id}-${reaction.emoji}`}
                     style={[
@@ -754,28 +1027,40 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
                   </TouchableOpacity>
                 );
               })}
-              <TouchableOpacity
-                style={styles.addReactionButton}
-                onPress={() => handleOpenReactionPicker(message)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="add" size={16} color="#6b7280" />
-              </TouchableOpacity>
             </View>
-          )}
+            );
+          })()}
         </View>
 
-        {/* Add reaction button for messages without reactions */}
-        {(!message.reactions || message.reactions.length === 0) && (
-          <TouchableOpacity
-            style={styles.addReactionIcon}
-            onPress={() => handleOpenReactionPicker(message)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="add-circle-outline" size={20} color="#9ca3af" />
-          </TouchableOpacity>
-        )}
       </TouchableOpacity>
+    );
+
+    // Get or create ref for this message
+    if (!swipeableRefs.current.has(message.id)) {
+      swipeableRefs.current.set(message.id, null);
+    }
+
+    return (
+      <Swipeable
+        ref={(ref) => swipeableRefs.current.set(message.id, ref)}
+        renderRightActions={isMyMessage ? () => renderSwipeAction(isMyMessage) : undefined}
+        renderLeftActions={!isMyMessage ? () => renderSwipeAction(isMyMessage) : undefined}
+        onSwipeableOpen={() => {
+          setReplyToMessage(message);
+          // Auto-close after setting reply
+          setTimeout(() => {
+            const ref = swipeableRefs.current.get(message.id);
+            ref?.close();
+          }, 200);
+        }}
+        overshootRight={false}
+        overshootLeft={false}
+        friction={1.5}
+        rightThreshold={40}
+        leftThreshold={40}
+      >
+        {messageContent}
+      </Swipeable>
     );
   };
 
@@ -800,16 +1085,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     const typingText = typingUserNames.length === 1
       ? `${typingUserNames[0]} is typing`
       : typingUserNames.length === 2
-      ? `${typingUserNames[0]} and ${typingUserNames[1]} are typing`
-      : `${typingUserNames.length} people are typing`;
+        ? `${typingUserNames[0]} and ${typingUserNames[1]} are typing`
+        : `${typingUserNames.length} people are typing`;
 
     return (
       <View key="typing-indicator-footer" style={[styles.messageContainer, styles.otherMessage]}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatarPlaceholder}>
-            <Ionicons name="person" size={16} color={colors.textSecondary} />
-          </View>
-        </View>
         <View style={[styles.messageBubble, styles.otherBubble, styles.typingBubble]}>
           <Text style={styles.typingText}>{typingText}</Text>
           <TypingIndicator color={colors.textSecondary} dotSize={6} />
@@ -837,361 +1117,404 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     );
   }
 
+  // Get contact and mute status for chat options menu
+  const otherUser = conversation.type === 'direct'
+    ? conversation.participants?.find(p => p.id !== user?.id)
+    : null;
+
+  const contact = otherUser
+    ? contacts.find(c => c.user?.id === otherUser.id || c.userId === otherUser.id)
+    : null;
+
+  const isMuted = contact?.isMuted || false;
+
+  // Build chat options menu actions
+  const chatMenuActions: ChatMenuAction[] = [];
+
+  // Files & Media
+  chatMenuActions.push({
+    icon: 'folder-outline',
+    label: 'Files & Media',
+    onPress: () => {
+      Alert.alert('Coming Soon', 'Files & Media gallery will be available soon');
+    },
+  });
+
+  // Mute/Unmute Notifications
+  if (conversation.type === 'direct') {
+    chatMenuActions.push({
+      icon: isMuted ? 'notifications' : 'notifications-off',
+      label: isMuted ? 'Unmute Notifications' : 'Mute Notifications',
+      onPress: async () => {
+        if (!contact) {
+          Alert.alert('Error', 'Contact not found');
+          return;
+        }
+        try {
+          if (isMuted) {
+            await unmuteContact(contact.id);
+            Alert.alert('Success', 'Notifications unmuted');
+          } else {
+            await muteContact(contact.id);
+            Alert.alert('Success', 'Notifications muted');
+          }
+        } catch (error) {
+          Alert.alert('Error', 'Failed to update notification settings');
+        }
+      },
+    });
+  }
+
+  // Block User
+  if (conversation.type === 'direct') {
+    chatMenuActions.push({
+      icon: 'ban',
+      label: 'Block User',
+      variant: 'danger',
+      onPress: () => {
+        if (!contact) {
+          Alert.alert('Error', 'Contact not found');
+          return;
+        }
+        Alert.alert(
+          'Block User',
+          'Are you sure you want to block this user? They will not be able to contact you.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Block',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await blockContact(contact.id);
+                  Alert.alert('Blocked', 'User has been blocked');
+                  navigation.goBack();
+                } catch (error) {
+                  Alert.alert('Error', 'Failed to block user');
+                }
+              }
+            }
+          ]
+        );
+      },
+    });
+  }
+
+  // Delete Chat
+  if (conversation.type === 'direct') {
+    chatMenuActions.push({
+      icon: 'trash',
+      label: 'Delete Chat',
+      variant: 'danger',
+      onPress: () => {
+        Alert.alert(
+          'Delete Chat',
+          'Are you sure you want to delete this chat? This will remove the contact and all messages.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                if (!contact) {
+                  Alert.alert('Error', 'Contact not found');
+                  return;
+                }
+                try {
+                  await removeContact(contact.id);
+                  Alert.alert('Deleted', 'Chat deleted');
+                  navigation.goBack();
+                } catch (error) {
+                  Alert.alert('Error', 'Failed to delete chat');
+                }
+              }
+            }
+          ]
+        );
+      },
+    });
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {/* Header */}
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
           <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.primary} />
-        </TouchableOpacity>
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.primary} />
+          </TouchableOpacity>
 
-        {/* Avatar */}
-        {(() => {
-          const otherUser = conversation.type === 'direct'
-            ? conversation.participants?.find(p => p.id !== user?.id)
-            : null;
-          const avatarUri = conversation.type === 'group'
-            ? conversation.avatar
-            : (otherUser?.avatar || otherUser?.profilePicture);
-
-          return avatarUri ? (
-            <Image
-              source={{ uri: avatarUri }}
-              style={styles.headerAvatar}
-            />
-          ) : (
-            <View style={[styles.headerAvatar, styles.headerAvatarPlaceholder, { backgroundColor: colors.accent }]}>
-              <Ionicons
-                name={conversation.type === 'group' ? 'people' : 'person'}
-                size={20}
-                color={colors.textSecondary}
-              />
-            </View>
-          );
-        })()}
-
-        <TouchableOpacity
-          style={styles.headerInfo}
-          onPress={() => {
-            if (conversation.type === 'group' && conversation.id) {
-              navigation.navigate('GroupInfo', { groupId: conversation.id });
-            }
-          }}
-          disabled={conversation.type !== 'group'}
-        >
-          <View style={styles.headerTitleRow}>
-            <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
-              {(() => {
-                if (conversation.type === 'group') {
-                  return conversation.name || 'Group Chat';
-                }
-                const otherUser = conversation.participants?.find(p => p.id !== user?.id);
-                return otherUser?.name || otherUser?.username || 'Chat';
-              })()}
-            </Text>
-            {conversation.type === 'group' && (
-              <Ionicons name="people" size={16} color={colors.textSecondary} style={styles.groupIcon} />
-            )}
-            {conversation.type === 'direct' && (() => {
-              const otherUser = conversation.participants?.find(p => p.id !== user?.id);
-              return otherUser?.isOnline && (
-                <OnlineStatusBadge isOnline={true} size={10} style={styles.onlineBadge} />
-              );
-            })()}
-          </View>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-            {(() => {
-              const typingUserIds = typingUsers[conversationId] || [];
-              const otherTypingUsers = typingUserIds.filter(id => id !== user?.id);
-
-              if (otherTypingUsers.length > 0) {
-                return 'typing...';
-              }
-
-              if (conversation.type === 'direct') {
-                const otherUser = conversation.participants?.find(p => p.id !== user?.id);
-                return otherUser?.isOnline ? 'online' : 'offline';
-              }
-
-              return `${conversation.participants?.length || 0} participants`;
-            })()}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.headerButton} onPress={handleSearchToggle}>
-          <Ionicons name="search" size={24} color={colors.primary} />
-        </TouchableOpacity>
-        {conversation.type === 'direct' && (
-          <>
-            <TouchableOpacity style={styles.headerButton} onPress={handleVoiceCall}>
-              <Ionicons name="call" size={24} color={colors.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.headerButton} onPress={handleVideoCall}>
-              <Ionicons name="videocam" size={24} color={colors.primary} />
-            </TouchableOpacity>
-          </>
-        )}
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => {
+          {/* Avatar */}
+          {(() => {
             const otherUser = conversation.type === 'direct'
               ? conversation.participants?.find(p => p.id !== user?.id)
               : null;
+            const avatarUri = conversation.type === 'group'
+              ? conversation.avatar
+              : (otherUser?.avatar || otherUser?.profilePicture);
 
-            const contact = otherUser
-              ? contacts.find(c => c.user?.id === otherUser.id || c.userId === otherUser.id)
-              : null;
-
-            const isMuted = contact?.isMuted || false;
-
-            // Show options menu
-            Alert.alert(
-              'Options',
-              '',
-              [
-                conversation.type === 'direct' && {
-                  text: 'View Contact',
-                  onPress: () => {
-                    if (otherUser) {
-                      navigation.navigate('ContactProfile', { userId: otherUser.id });
-                    }
-                  }
-                },
-                conversation.type === 'group' && {
-                  text: 'Group Info',
-                  onPress: () => navigation.navigate('GroupInfo', { groupId: conversation.id })
-                },
-                {
-                  text: isMuted ? 'Unmute Notifications' : 'Mute Notifications',
-                  onPress: async () => {
-                    if (!contact) {
-                      Alert.alert('Error', 'Contact not found');
-                      return;
-                    }
-                    try {
-                      if (isMuted) {
-                        await unmuteContact(contact.id);
-                        Alert.alert('Success', 'Notifications unmuted');
-                      } else {
-                        await muteContact(contact.id);
-                        Alert.alert('Success', 'Notifications muted');
-                      }
-                    } catch (error) {
-                      Alert.alert('Error', 'Failed to update notification settings');
-                    }
-                  }
-                },
-                conversation.type === 'direct' && {
-                  text: 'Block User',
-                  style: 'destructive',
-                  onPress: () => {
-                    if (!contact) {
-                      Alert.alert('Error', 'Contact not found');
-                      return;
-                    }
-                    Alert.alert(
-                      'Block User',
-                      'Are you sure you want to block this user? They will not be able to contact you.',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                          text: 'Block',
-                          style: 'destructive',
-                          onPress: async () => {
-                            try {
-                              await blockContact(contact.id);
-                              Alert.alert('Blocked', 'User has been blocked');
-                              navigation.goBack();
-                            } catch (error) {
-                              Alert.alert('Error', 'Failed to block user');
-                            }
-                          }
-                        }
-                      ]
-                    );
-                  }
-                },
-                {
-                  text: 'Delete Chat',
-                  style: 'destructive',
-                  onPress: () => {
-                    Alert.alert(
-                      'Delete Chat',
-                      'Are you sure you want to delete this chat? This action cannot be undone.',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                          text: 'Delete',
-                          style: 'destructive',
-                          onPress: async () => {
-                            // Delete all messages in conversation
-                            const conversationMessages = messages[conversationId] || [];
-                            try {
-                              for (const msg of conversationMessages) {
-                                await deleteMessage(conversationId, msg.id, false);
-                              }
-                              Alert.alert('Deleted', 'Chat has been deleted');
-                              navigation.goBack();
-                            } catch (error) {
-                              Alert.alert('Error', 'Failed to delete chat');
-                            }
-                          }
-                        }
-                      ]
-                    );
-                  }
-                },
-                { text: 'Cancel', style: 'cancel' }
-              ].filter(Boolean) as any
+            return avatarUri ? (
+              <Image
+                source={{ uri: avatarUri }}
+                style={styles.headerAvatar}
+              />
+            ) : (
+              <View style={[styles.headerAvatar, styles.headerAvatarPlaceholder, { backgroundColor: colors.accent }]}>
+                <Ionicons
+                  name={conversation.type === 'group' ? 'people' : 'person'}
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </View>
             );
-          }}
-        >
-          <Ionicons name="ellipsis-vertical" size={24} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
+          })()}
 
-      {/* Search Bar */}
-      {showSearch && (
-        <View style={[styles.searchBar, { backgroundColor: colors.searchBg, borderBottomColor: colors.border }]}>
-          <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
-          <TextInput
-            style={[styles.searchInput, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
-            placeholder="Search messages..."
-            value={searchQuery}
-            onChangeText={handleSearchChange}
-            autoFocus
-          />
-          {searchQuery.length > 0 && (
-            <>
-              <Text style={styles.searchCount}>
-                {searchResults.length > 0
-                  ? `${currentSearchIndex + 1}/${searchResults.length}`
-                  : '0'}
+          <TouchableOpacity
+            style={styles.headerInfo}
+            onPress={() => {
+              if (conversation.type === 'group') {
+                navigation.navigate('GroupInfo', { groupId: conversation.id });
+              }
+              // Removed ContactProfile navigation - direct chats have no profile screen
+            }}
+            disabled={conversation.type !== 'group'}
+          >
+            <View style={styles.headerTitleRow}>
+              <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+                {(() => {
+                  if (conversation.type === 'group') {
+                    return conversation.name || 'Group Chat';
+                  }
+                  const otherUser = conversation.participants?.find(p => p.id !== user?.id);
+                  return otherUser?.name || otherUser?.username || 'Chat';
+                })()}
               </Text>
-              <TouchableOpacity
-                style={styles.searchNavButton}
-                onPress={() => handleSearchNavigate('prev')}
-                disabled={searchResults.length === 0}
-              >
-                <Ionicons name="chevron-up" size={20} color={searchResults.length > 0 ? "#2563eb" : "#ccc"} />
+              {conversation.type === 'group' && (
+                <Ionicons name="people" size={16} color={colors.textSecondary} style={styles.groupIcon} />
+              )}
+              {conversation.type === 'direct' && (() => {
+                const otherUser = conversation.participants?.find(p => p.id !== user?.id);
+                return otherUser?.isOnline && (
+                  <OnlineStatusBadge isOnline={true} size={10} style={styles.onlineBadge} />
+                );
+              })()}
+            </View>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              {(() => {
+                const typingUserIds = typingUsers[conversationId] || [];
+                const otherTypingUsers = typingUserIds.filter(id => id !== user?.id);
+
+                if (otherTypingUsers.length > 0) {
+                  return 'typing...';
+                }
+
+                if (conversation.type === 'direct') {
+                  const otherUser = conversation.participants?.find(p => p.id !== user?.id);
+                  return otherUser?.isOnline ? 'online' : 'offline';
+                }
+
+                return `${conversation.participants?.length || 0} participants`;
+              })()}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.headerButton} onPress={handleSearchToggle}>
+            <Ionicons name="search" size={24} color={colors.primary} />
+          </TouchableOpacity>
+          {conversation.type === 'direct' && (
+            <>
+              <TouchableOpacity style={styles.headerButton} onPress={handleVoiceCall}>
+                <Ionicons name="call" size={24} color={colors.primary} />
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.searchNavButton}
-                onPress={() => handleSearchNavigate('next')}
-                disabled={searchResults.length === 0}
-              >
-                <Ionicons name="chevron-down" size={20} color={searchResults.length > 0 ? "#2563eb" : "#ccc"} />
+              <TouchableOpacity style={styles.headerButton} onPress={handleVideoCall}>
+                <Ionicons name="videocam" size={24} color={colors.primary} />
               </TouchableOpacity>
             </>
           )}
-          <TouchableOpacity style={styles.searchCloseButton} onPress={handleSearchToggle}>
-            <Ionicons name="close" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Messages */}
-      <FlatList
-        ref={flatListRef}
-        data={conversationMessages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.messagesContainer}
-        ListHeaderComponent={renderHeader}
-        ListFooterComponent={renderTypingIndicator}
-        onContentSizeChange={() => !isLoadingMore && flatListRef.current?.scrollToEnd({ animated: true })}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        onViewableItemsChanged={handleViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-      />
-
-      {/* Reply Bar */}
-      {replyToMessage && (
-        <View style={styles.replyInputBar}>
-          <View style={styles.replyBarContent}>
-            <Ionicons name="arrow-undo" size={20} color="#6b7280" />
-            <View style={styles.replyBarText}>
-              <Text style={styles.replyBarTitle}>Replying to</Text>
-              <Text style={styles.replyBarMessage} numberOfLines={1}>
-                {replyToMessage.content}
-              </Text>
-            </View>
-          </View>
-          <TouchableOpacity onPress={handleCancelReply}>
-            <Ionicons name="close" size={24} color="#6b7280" />
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Edit Bar */}
-      {editingMessage && (
-        <View style={styles.editBar}>
-          <View style={styles.editBarContent}>
-            <Ionicons name="create-outline" size={20} color={colors.primary} />
-            <Text style={styles.editBarText}>Editing message</Text>
-          </View>
-          <TouchableOpacity onPress={handleCancelEdit}>
-            <Ionicons name="close" size={24} color={colors.primary} />
-          </TouchableOpacity>
-        </View>
-      )}
-
-        {/* Message Input */}
-        <View style={styles.inputContainer}>
           <TouchableOpacity
-          style={styles.attachButton}
-          onPress={() => setShowAttachmentPicker(true)}
-        >
-          <Ionicons name="add" size={24} color={colors.textSecondary} />
-        </TouchableOpacity>
+            style={styles.headerButton}
+            onPress={() => setShowChatOptionsMenu(true)}
+          >
+            <Ionicons name="ellipsis-vertical" size={24} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
 
-        <TextInput
-          style={styles.textInput}
-          placeholder={editingMessage ? "Edit message..." : "Type a message..."}
-          value={messageText}
-          onChangeText={handleTextChange}
-          multiline
-          maxLength={1000}
-          textAlignVertical="top"
-          scrollEnabled
+        {/* Search Bar */}
+        {showSearch && (
+          <View style={[styles.searchBar, { backgroundColor: colors.searchBg, borderBottomColor: colors.border }]}>
+            <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
+            <TextInput
+              style={[styles.searchInput, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]}
+              placeholder="Search messages..."
+              value={searchQuery}
+              onChangeText={handleSearchChange}
+              autoFocus
+            />
+            {searchQuery.length > 0 && (
+              <>
+                <Text style={styles.searchCount}>
+                  {searchResults.length > 0
+                    ? `${currentSearchIndex + 1}/${searchResults.length}`
+                    : '0'}
+                </Text>
+                <TouchableOpacity
+                  style={styles.searchNavButton}
+                  onPress={() => handleSearchNavigate('prev')}
+                  disabled={searchResults.length === 0}
+                >
+                  <Ionicons name="chevron-up" size={20} color={searchResults.length > 0 ? "#2563eb" : "#ccc"} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.searchNavButton}
+                  onPress={() => handleSearchNavigate('next')}
+                  disabled={searchResults.length === 0}
+                >
+                  <Ionicons name="chevron-down" size={20} color={searchResults.length > 0 ? "#2563eb" : "#ccc"} />
+                </TouchableOpacity>
+              </>
+            )}
+            <TouchableOpacity style={styles.searchCloseButton} onPress={handleSearchToggle}>
+              <Ionicons name="close" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Messages */}
+        <FlatList
+          ref={flatListRef}
+          data={conversationMessages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.messagesContainer}
+          ListHeaderComponent={renderTypingIndicator}
+          ListFooterComponent={renderHeader}
+          inverted
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.1}
+          onViewableItemsChanged={handleViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          onScroll={(event) => {
+            // Track current scroll position
+            currentScrollOffset.current = event.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={400}
         />
 
-        {messageText.trim() ? (
-          <TouchableOpacity
-            style={[styles.sendButton, isSending && styles.sendButtonDisabled]}
-            onPress={handleSendMessage}
-            disabled={isSending}
-          >
-            {isSending ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Ionicons name="send" size={20} color="#fff" />
-            )}
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.micButton}>
-            <Ionicons name="mic" size={24} color={colors.textSecondary} />
-          </TouchableOpacity>
+        {/* Reply Bar */}
+        {replyToMessage && (
+          <View style={[
+            styles.replyInputBar,
+            {
+              backgroundColor: isDark ? '#2a2a2a' : '#f9fafb',
+              borderTopColor: colors.border
+            }
+          ]}>
+            <View style={styles.replyBarContent}>
+              <Ionicons name="arrow-undo" size={20} color={colors.textSecondary} />
+              <View style={styles.replyBarText}>
+                <Text style={[styles.replyBarTitle, { color: colors.textSecondary }]}>Replying to</Text>
+                <Text style={[styles.replyBarMessage, { color: colors.text }]} numberOfLines={1}>
+                  {replyToMessage.content}
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity onPress={handleCancelReply}>
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         )}
+
+        {/* Edit Bar */}
+        {editingMessage && (
+          <View style={[
+            styles.editBar,
+            {
+              backgroundColor: isDark ? '#1a2a3a' : '#eff6ff',
+              borderTopColor: isDark ? '#2a3a4a' : '#bfdbfe'
+            }
+          ]}>
+            <View style={styles.editBarContent}>
+              <Ionicons name="create-outline" size={20} color={colors.primary} />
+              <Text style={[styles.editBarText, { color: colors.primary }]}>Editing message</Text>
+            </View>
+            <TouchableOpacity onPress={handleCancelEdit}>
+              <Ionicons name="close" size={24} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Message Input */}
+        <View style={[
+          styles.inputContainer,
+          {
+            backgroundColor: colors.card,
+            borderTopColor: colors.border
+          }
+        ]}>
+          <TouchableOpacity
+            style={styles.attachButton}
+            onPress={() => setShowAttachmentPicker(true)}
+          >
+            <Ionicons name="add" size={24} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TextInput
+            style={[
+              styles.textInput,
+              {
+                borderColor: colors.border,
+                backgroundColor: colors.background,
+                color: colors.text
+              }
+            ]}
+            placeholder={editingMessage ? "Edit message..." : "Type a message..."}
+            placeholderTextColor={colors.textSecondary}
+            value={messageText}
+            onChangeText={handleTextChange}
+            multiline
+            maxLength={1000}
+            textAlignVertical="top"
+            scrollEnabled
+          />
+
+          {messageText.trim() ? (
+            <TouchableOpacity
+              style={[styles.sendButton, isSending && styles.sendButtonDisabled]}
+              onPress={handleSendMessage}
+              disabled={isSending}
+            >
+              {isSending ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name="send" size={20} color="#fff" />
+              )}
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.micButton}>
+              <Ionicons name="mic" size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
         </View>
       </KeyboardAvoidingView>
 
-      {/* Message Actions Sheet */}
-      <MessageActionsSheet
+      {/* Message Context Menu */}
+      <MessageContextMenu
         visible={showActionsModal}
         message={selectedMessage}
+        position={menuPosition}
         isOwnMessage={selectedMessage?.senderId === user?.id}
-        onClose={() => setShowActionsModal(false)}
+        onClose={() => {
+          setShowActionsModal(false);
+          setMenuPosition(null);
+        }}
         onEdit={selectedMessage ? () => handleEditMessage(selectedMessage) : undefined}
         onDelete={(deleteForEveryone) => selectedMessage && handleDeleteMessage(selectedMessage, deleteForEveryone)}
         onReply={() => selectedMessage && handleReplyMessage(selectedMessage)}
@@ -1226,6 +1549,14 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         onClose={() => setShowWhoReacted(false)}
         reactions={whoReactedMessage?.reactions || []}
         getUserName={getUserName}
+      />
+
+      {/* Chat Options Menu */}
+      <ChatOptionsMenu
+        visible={showChatOptionsMenu}
+        onClose={() => setShowChatOptionsMenu(false)}
+        actions={chatMenuActions}
+        isDark={isDark}
       />
     </SafeAreaView>
   );
@@ -1337,6 +1668,18 @@ const styles = StyleSheet.create({
   otherMessage: {
     justifyContent: 'flex-start',
   },
+  searchHighlight: {
+    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+    borderRadius: 8,
+    padding: 4,
+  },
+  replyHighlight: {
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    borderWidth: 2,
+    borderColor: 'rgba(34, 197, 94, 0.5)',
+    borderRadius: 8,
+    padding: 4,
+  },
   avatarContainer: {
     marginRight: 8,
   },
@@ -1346,6 +1689,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  messageAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  avatarPlaceholderTextSmall: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   messageBubble: {
     maxWidth: '75%',
@@ -1379,6 +1732,12 @@ const styles = StyleSheet.create({
   },
   replyContent: {
     flex: 1,
+  },
+  replySender: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 2,
   },
   replyText: {
     fontSize: 13,
@@ -1436,6 +1795,34 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     borderRadius: 12,
   },
+  fileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    gap: 12,
+    minWidth: 200,
+  },
+  fileIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fileInfo: {
+    flex: 1,
+  },
+  fileName: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  fileSize: {
+    fontSize: 12,
+  },
   typingBubble: {
     paddingVertical: 12,
     paddingHorizontal: 16,
@@ -1454,9 +1841,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 15,
     paddingVertical: 10,
-    backgroundColor: '#f9fafb',
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
   },
   replyBarContent: {
     flexDirection: 'row',
@@ -1469,12 +1854,10 @@ const styles = StyleSheet.create({
   },
   replyBarTitle: {
     fontSize: 12,
-    color: '#6b7280',
     fontWeight: '600',
   },
   replyBarMessage: {
     fontSize: 14,
-    color: '#1f2937',
   },
   editBar: {
     flexDirection: 'row',
@@ -1482,9 +1865,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 15,
     paddingVertical: 10,
-    backgroundColor: '#eff6ff',
     borderTopWidth: 1,
-    borderTopColor: '#bfdbfe',
   },
   editBarContent: {
     flexDirection: 'row',
@@ -1493,7 +1874,6 @@ const styles = StyleSheet.create({
   editBarText: {
     marginLeft: 10,
     fontSize: 14,
-    color: '#2563eb',
     fontWeight: '600',
   },
   inputContainer: {
@@ -1502,8 +1882,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    backgroundColor: '#fff',
   },
   attachButton: {
     marginRight: 10,
@@ -1512,7 +1890,6 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 20,
     paddingHorizontal: 15,
     paddingVertical: 10,
@@ -1580,6 +1957,24 @@ const styles = StyleSheet.create({
   addReactionIcon: {
     marginLeft: 8,
     opacity: 0.6,
+  },
+  swipeActionContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 60,
+    height: '100%',
+  },
+  swipeActionLeft: {
+    backgroundColor: '#2563eb',
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    marginRight: 8,
+  },
+  swipeActionRight: {
+    backgroundColor: '#2563eb',
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+    marginLeft: 8,
   },
 });
 

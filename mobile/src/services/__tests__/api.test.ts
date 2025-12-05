@@ -120,7 +120,7 @@ describe('API Service', () => {
 
   describe('Response Interceptor', () => {
     it('passes through successful responses', async () => {
-      const response = { data: 'test', status: 200 };
+      const response = { data: 'test', status: 200, config: { method: 'GET', url: '/test' } };
       const interceptor = mockAxiosInstance._responseInterceptor.fulfilled;
 
       const result = await interceptor(response);

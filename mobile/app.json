@@ -35,6 +35,7 @@
       "package": "com.logan27.minimessenger",
       "versionCode": 1,
       "googleServicesFile": "./google-services.json",
+      "softwareKeyboardLayoutMode": "pan",
       "permissions": [
         "CAMERA",
         "RECORD_AUDIO",
@@ -87,7 +88,8 @@
     "extra": {
       "eas": {
         "projectId": "messenger-mobile-app"
-      }
+      },
+      "mobileAppSecret": "dev_mobile_secret_change_in_production"
     }
   }
 }

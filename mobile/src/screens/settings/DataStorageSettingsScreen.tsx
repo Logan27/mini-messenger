@@ -11,9 +11,23 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 const DataStorageSettingsScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { appearance } = useSettingsStore();
+
+  // Resolve 'system' theme to actual light/dark
+  const isDark = appearance.theme === 'dark' || (appearance.theme === 'system' && false);
+  const colors = {
+    background: isDark ? '#1a1a1a' : '#f5f5f5',
+    card: isDark ? '#2a2a2a' : '#ffffff',
+    text: isDark ? '#ffffff' : '#000000',
+    textSecondary: isDark ? '#a0a0a0' : '#666666',
+    border: isDark ? '#3a3a3a' : '#f0f0f0',
+    primary: '#007AFF',
+    accent: isDark ? '#333333' : '#f0f8ff',
+  };
 
   // Storage preferences state
   const [autoDownloadPhotos, setAutoDownloadPhotos] = useState(true);
@@ -91,41 +105,32 @@ const DataStorageSettingsScreen: React.FC = () => {
   ];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Data & Storage</Text>
-        <View style={styles.headerRight} />
-      </View>
-
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView style={styles.content}>
         {/* Storage Overview */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>STORAGE USAGE</Text>
-          <View style={styles.storageCard}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>STORAGE USAGE</Text>
+          <View style={[styles.storageCard, { backgroundColor: colors.card }]}>
             <View style={styles.storageRow}>
               <View style={styles.storageItem}>
-                <Ionicons name="image-outline" size={24} color="#007AFF" />
-                <Text style={styles.storageLabel}>Photos</Text>
-                <Text style={styles.storageValue}>245 MB</Text>
+                <Ionicons name="image-outline" size={24} color={colors.primary} />
+                <Text style={[styles.storageLabel, { color: colors.textSecondary }]}>Photos</Text>
+                <Text style={[styles.storageValue, { color: colors.text }]}>245 MB</Text>
               </View>
               <View style={styles.storageItem}>
-                <Ionicons name="videocam-outline" size={24} color="#007AFF" />
-                <Text style={styles.storageLabel}>Videos</Text>
-                <Text style={styles.storageValue}>1.2 GB</Text>
+                <Ionicons name="videocam-outline" size={24} color={colors.primary} />
+                <Text style={[styles.storageLabel, { color: colors.textSecondary }]}>Videos</Text>
+                <Text style={[styles.storageValue, { color: colors.text }]}>1.2 GB</Text>
               </View>
               <View style={styles.storageItem}>
-                <Ionicons name="document-outline" size={24} color="#007AFF" />
-                <Text style={styles.storageLabel}>Files</Text>
-                <Text style={styles.storageValue}>87 MB</Text>
+                <Ionicons name="document-outline" size={24} color={colors.primary} />
+                <Text style={[styles.storageLabel, { color: colors.textSecondary }]}>Files</Text>
+                <Text style={[styles.storageValue, { color: colors.text }]}>87 MB</Text>
               </View>
             </View>
-            <View style={styles.storageTotalRow}>
-              <Text style={styles.storageTotalLabel}>Total Storage Used</Text>
-              <Text style={styles.storageTotalValue}>1.5 GB</Text>
+            <View style={[styles.storageTotalRow, { borderTopColor: colors.border }]}>
+              <Text style={[styles.storageTotalLabel, { color: colors.text }]}>Total Storage Used</Text>
+              <Text style={[styles.storageTotalValue, { color: colors.primary }]}>1.5 GB</Text>
             </View>
           </View>
         </View>
@@ -133,26 +138,27 @@ const DataStorageSettingsScreen: React.FC = () => {
         {/* Settings Sections */}
         {sections.map((section) => (
           <View key={section.title} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <View style={styles.sectionContent}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{section.title}</Text>
+            <View style={[styles.sectionContent, { backgroundColor: colors.card }]}>
               {section.items.map((item, index) => (
                 <View
                   key={item.label}
                   style={[
                     styles.settingItem,
+                    { borderBottomColor: colors.border },
                     index === section.items.length - 1 && styles.settingItemLast,
                   ]}
                 >
                   <View style={styles.settingItemLeft}>
-                    <Text style={styles.settingItemLabel}>{item.label}</Text>
+                    <Text style={[styles.settingItemLabel, { color: colors.text }]}>{item.label}</Text>
                     {item.subtitle && (
-                      <Text style={styles.settingItemSubtitle}>{item.subtitle}</Text>
+                      <Text style={[styles.settingItemSubtitle, { color: colors.textSecondary }]}>{item.subtitle}</Text>
                     )}
                   </View>
                   <Switch
                     value={item.value}
                     onValueChange={item.onValueChange}
-                    trackColor={{ false: '#e0e0e0', true: '#007AFF' }}
+                    trackColor={{ false: colors.border, true: colors.primary }}
                     thumbColor="#fff"
                   />
                 </View>
@@ -163,61 +169,61 @@ const DataStorageSettingsScreen: React.FC = () => {
 
         {/* Storage Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>STORAGE MANAGEMENT</Text>
-          <View style={styles.sectionContent}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>STORAGE MANAGEMENT</Text>
+          <View style={[styles.sectionContent, { backgroundColor: colors.card }]}>
             <TouchableOpacity
-              style={styles.actionItem}
+              style={[styles.actionItem, { borderBottomColor: colors.border }]}
               onPress={handleManageStorage}
             >
               <View style={styles.actionItemLeft}>
-                <View style={[styles.actionIcon, { backgroundColor: '#f0f8ff' }]}>
-                  <Ionicons name="folder-outline" size={20} color="#007AFF" />
+                <View style={[styles.actionIcon, { backgroundColor: colors.accent }]}>
+                  <Ionicons name="folder-outline" size={20} color={colors.primary} />
                 </View>
-                <Text style={styles.actionItemLabel}>Manage Storage</Text>
+                <Text style={[styles.actionItemLabel, { color: colors.text }]}>Manage Storage</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.actionItem, styles.settingItemLast]}
+              style={[styles.actionItem, { borderBottomColor: colors.border }, styles.settingItemLast]}
               onPress={handleClearCache}
             >
               <View style={styles.actionItemLeft}>
-                <View style={[styles.actionIcon, { backgroundColor: '#fff0f0' }]}>
+                <View style={[styles.actionIcon, { backgroundColor: isDark ? '#4a1a1a' : '#fff0f0' }]}>
                   <Ionicons name="trash-outline" size={20} color="#ff3b30" />
                 </View>
                 <View style={styles.actionItemContent}>
-                  <Text style={styles.actionItemLabel}>Clear Cache</Text>
-                  <Text style={styles.actionItemSubtitle}>Free up 142 MB</Text>
+                  <Text style={[styles.actionItemLabel, { color: colors.text }]}>Clear Cache</Text>
+                  <Text style={[styles.actionItemSubtitle, { color: colors.textSecondary }]}>Free up 142 MB</Text>
                 </View>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Network Usage */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>NETWORK USAGE</Text>
-          <View style={styles.networkCard}>
-            <View style={styles.networkRow}>
-              <Text style={styles.networkLabel}>Data Used (30 days)</Text>
-              <Text style={styles.networkValue}>487 MB</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>NETWORK USAGE</Text>
+          <View style={[styles.networkCard, { backgroundColor: colors.card }]}>
+            <View style={[styles.networkRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.networkLabel, { color: colors.textSecondary }]}>Data Used (30 days)</Text>
+              <Text style={[styles.networkValue, { color: colors.text }]}>487 MB</Text>
             </View>
-            <View style={styles.networkRow}>
-              <Text style={styles.networkLabel}>Messages Sent</Text>
-              <Text style={styles.networkValue}>1,234</Text>
+            <View style={[styles.networkRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.networkLabel, { color: colors.textSecondary }]}>Messages Sent</Text>
+              <Text style={[styles.networkValue, { color: colors.text }]}>1,234</Text>
             </View>
-            <View style={styles.networkRow}>
-              <Text style={styles.networkLabel}>Messages Received</Text>
-              <Text style={styles.networkValue}>2,456</Text>
+            <View style={[styles.networkRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.networkLabel, { color: colors.textSecondary }]}>Messages Received</Text>
+              <Text style={[styles.networkValue, { color: colors.text }]}>2,456</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.infoBox}>
-          <Ionicons name="information-circle-outline" size={20} color="#666" />
-          <Text style={styles.infoText}>
+        <View style={[styles.infoBox, { backgroundColor: colors.accent }]}>
+          <Ionicons name="information-circle-outline" size={20} color={colors.textSecondary} />
+          <Text style={[styles.infoText, { color: colors.textSecondary }]}>
             Storage and network usage data is approximate and updates periodically.
           </Text>
         </View>
@@ -229,7 +235,6 @@ const DataStorageSettingsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
     flexDirection: 'row',
@@ -262,16 +267,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#666',
     letterSpacing: 0.5,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   sectionContent: {
-    backgroundColor: '#fff',
   },
   storageCard: {
-    backgroundColor: '#fff',
     padding: 16,
   },
   storageRow: {
@@ -284,14 +286,12 @@ const styles = StyleSheet.create({
   },
   storageLabel: {
     fontSize: 13,
-    color: '#666',
     marginTop: 8,
     marginBottom: 4,
   },
   storageValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
   },
   storageTotalRow: {
     flexDirection: 'row',
@@ -299,17 +299,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
   },
   storageTotalLabel: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#000',
   },
   storageTotalValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#007AFF',
   },
   settingItem: {
     flexDirection: 'row',
@@ -318,7 +315,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   settingItemLast: {
     borderBottomWidth: 0,
@@ -330,12 +326,10 @@ const styles = StyleSheet.create({
   settingItemLabel: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#000',
     marginBottom: 2,
   },
   settingItemSubtitle: {
     fontSize: 13,
-    color: '#666',
   },
   actionItem: {
     flexDirection: 'row',
@@ -344,7 +338,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   actionItemLeft: {
     flexDirection: 'row',
@@ -365,15 +358,12 @@ const styles = StyleSheet.create({
   actionItemLabel: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#000',
   },
   actionItemSubtitle: {
     fontSize: 13,
-    color: '#666',
     marginTop: 2,
   },
   networkCard: {
-    backgroundColor: '#fff',
     padding: 16,
   },
   networkRow: {
@@ -382,21 +372,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   networkLabel: {
     fontSize: 15,
-    color: '#666',
   },
   networkValue: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#000',
   },
   infoBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#f0f8ff',
     padding: 16,
     marginHorizontal: 16,
     marginTop: 20,
@@ -407,7 +393,6 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 13,
-    color: '#666',
     lineHeight: 18,
   },
 });

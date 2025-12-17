@@ -39,7 +39,6 @@ const Call = sequelize.define(
     durationSeconds: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
-      field: 'durationSeconds', // Explicit field mapping
     },
     startedAt: {
       type: DataTypes.DATE,
@@ -50,9 +49,9 @@ const Call = sequelize.define(
   },
   {
     tableName: 'calls',
-    underscored: false, // Use camelCase for field names
+    underscored: true, // Use snake_case to match database schema
     timestamps: true, // Enable timestamps
-    createdAt: 'createdAt', // Use createdAt column
+    createdAt: 'created_at', // Use created_at column
     updatedAt: false, // Disable updatedAt - column doesn't exist in DB
     indexes: [
       {

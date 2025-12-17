@@ -31,22 +31,27 @@ const Index = () => {
   const { data: conversationsData } = useConversations();
 
   // Determine if active chat is a group to pass correct ID to useMessages
-  const isActiveGroup = conversationsData?.some((conv) => 
+  const isActiveGroup = conversationsData?.some((conv) =>
     conv.type === 'group' && conv.group?.id === activeChat
   );
 
   // Fetch messages for active chat with pagination
   const {
     data: messagesData,
-    isLoading: isLoadingMessages,
+    isLoading: isInitialLoading,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage
+    isFetchingNextPage,
+    isFetching // Add isFetching to detect background updates
   } = useMessages({
     recipientId: isActiveGroup ? undefined : (activeChat || undefined),
     groupId: isActiveGroup ? activeChat : undefined,
     limit: 20, // Load only 20 messages initially (one page)
   });
+
+  // Treat as loading if initial load OR fetching fresh data for active chat
+  // This prevents showing stale cached data at wrong scroll position
+  const isLoadingMessages = isInitialLoading || (isFetching && !isFetchingNextPage);
 
   // Listen for real-time updates and get connection status
   useMessageListener(activeChat || undefined);
@@ -78,7 +83,7 @@ const Index = () => {
 
   // OPTIMIZATION: Memoize directChats to prevent recalculation on every render
   const directChats: Chat[] = useMemo(() => {
-    return (contactsData?.map((contact: unknown) => {
+    return (contactsData?.map((contact: any) => {
       const userId = contact.user.id;
       const conversation = conversationMap.get(userId);
 
@@ -139,7 +144,7 @@ const Index = () => {
 
     // Backend returns newest first (DESC), reverse to show oldest-to-newest in chat
     return messagesData.pages.flatMap(page =>
-      page.map((msg: unknown) => ({
+      page.map((msg: any) => ({
         id: msg.id,
         senderId: msg.senderId, // IMPORTANT: Store senderId so isOwn filter works correctly
         text: msg.text || msg.content, // Handle both formats (optimistic has content, transformed has text)

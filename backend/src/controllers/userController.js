@@ -161,7 +161,7 @@ class UserController {
           },
           limit: BATCH_SIZE,
           offset: messageOffset,
-          order: [['createdAt', 'DESC']],
+          order: [['created_at', 'DESC']],
           attributes: [
             'id',
             'senderId',
@@ -199,7 +199,7 @@ class UserController {
           },
           limit: BATCH_SIZE,
           offset: callOffset,
-          order: [['createdAt', 'DESC']],
+          order: [['created_at', 'DESC']],
           attributes: [
             'id',
             'callerId',

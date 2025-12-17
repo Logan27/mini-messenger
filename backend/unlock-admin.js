@@ -13,14 +13,14 @@ async function unlockAdmin() {
   try {
     await pool.query(`
       UPDATE users
-      SET "failedLoginAttempts" = 0, "lockedUntil" = NULL
+      SET failed_login_attempts = 0, locked_until = NULL
       WHERE username = $1
     `, ['admin']);
 
     console.log('✅ Admin account unlocked successfully');
 
     const result = await pool.query(`
-      SELECT username, "failedLoginAttempts", "lockedUntil"
+      SELECT username, failed_login_attempts, locked_until
       FROM users
       WHERE username = $1
     `, ['admin']);

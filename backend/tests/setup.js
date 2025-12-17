@@ -5,6 +5,13 @@ import { testDatabaseSeeder } from './testDatabaseSeeder.js';
 import { messagingTestHelpers } from './messagingTestHelpers.js';
 import { testFactory } from './testFactory.js';
 
+// Mock isomorphic-dompurify to avoid parse5 ES module issues
+jest.unstable_mockModule('isomorphic-dompurify', () => ({
+  default: {
+    sanitize: (input) => input, // Pass-through sanitization for tests
+  },
+}));
+
 // Set test environment
 process.env.NODE_ENV = 'test';
 

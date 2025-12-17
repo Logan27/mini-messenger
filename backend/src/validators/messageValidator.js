@@ -11,15 +11,15 @@ const messageSchema = Joi.object({
   messageType: Joi.string().valid('text', 'file', 'image', 'video').default('text'),
   fileId: Joi.number().integer().positive().optional(),
   encrypted: Joi.boolean().default(false),
-  replyToId: Joi.number().integer().positive().optional()
+  replyToId: Joi.number().integer().positive().optional(),
 }).xor('recipientId', 'groupId'); // One of these must be present
 
 const messageUpdateSchema = Joi.object({
-  content: Joi.string().max(10000).required()
+  content: Joi.string().max(10000).required(),
 });
 
 const messageReactionSchema = Joi.object({
-  emoji: Joi.string().max(10).required()
+  emoji: Joi.string().max(10).required(),
 });
 
 /**
@@ -27,7 +27,7 @@ const messageReactionSchema = Joi.object({
  * @param {Object} data - Message data to validate
  * @returns {Object} Validation result
  */
-export const validateMessage = (data) => {
+export const validateMessage = data => {
   return messageSchema.validate(data, { abortEarly: false });
 };
 
@@ -36,7 +36,7 @@ export const validateMessage = (data) => {
  * @param {Object} data - Message update data to validate
  * @returns {Object} Validation result
  */
-export const validateMessageUpdate = (data) => {
+export const validateMessageUpdate = data => {
   return messageUpdateSchema.validate(data, { abortEarly: false });
 };
 
@@ -45,12 +45,12 @@ export const validateMessageUpdate = (data) => {
  * @param {Object} data - Reaction data to validate
  * @returns {Object} Validation result
  */
-export const validateMessageReaction = (data) => {
+export const validateMessageReaction = data => {
   return messageReactionSchema.validate(data, { abortEarly: false });
 };
 
 export default {
   validateMessage,
   validateMessageUpdate,
-  validateMessageReaction
+  validateMessageReaction,
 };

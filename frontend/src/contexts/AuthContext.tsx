@@ -69,9 +69,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (storedUser && token) {
       setUser(storedUser);
-      // Connect WebSocket (socket service has guards against duplicate connections)
+      // Connect WebSocket immediately on page load
       console.log('🟡 AuthContext: Connecting WebSocket...');
-      socketService.connect(token);
+
+      // Small delay to ensure DOM is ready and prevent race conditions
+      setTimeout(() => {
+        socketService.connect(token);
+      }, 100);
+
       // Request notification permission
       requestNotificationPermission();
     }

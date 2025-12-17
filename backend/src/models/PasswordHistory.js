@@ -38,17 +38,14 @@ export const PasswordHistory = sequelize.define(
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
-    },
-    updatedAt: {
-      type: DataTypes.DATE,
-      allowNull: false,
+      field: 'created_at',
     },
   },
   {
-    tableName: 'passwordHistory',
-    underscored: false, // Use camelCase for field names
-    timestamps: true, // Enable createdAt and updatedAt
-    paranoid: true, // Enable soft deletes (deletedAt)
+    tableName: 'password_history',
+    underscored: true, // Use snake_case to match database schema
+    timestamps: false, // Database only has created_at, no updated_at
+    paranoid: false, // No soft deletes in database
     indexes: [
       {
         fields: ['userId'],
@@ -73,7 +70,7 @@ PasswordHistory.addPasswordToHistory = async function (userId, passwordHash) {
   // Keep only last 3 passwords in history
   const passwords = await this.findAll({
     where: { userId },
-    order: [['createdAt', 'DESC']],
+    order: [['created_at', 'DESC']],
     limit: 3,
   });
 
@@ -92,7 +89,7 @@ PasswordHistory.addPasswordToHistory = async function (userId, passwordHash) {
 PasswordHistory.checkPasswordNotInHistory = async function (userId, passwordHash) {
   const passwords = await this.findAll({
     where: { userId },
-    order: [['createdAt', 'DESC']],
+    order: [['created_at', 'DESC']],
     limit: 3,
   });
 
@@ -110,7 +107,7 @@ PasswordHistory.checkPasswordNotInHistory = async function (userId, passwordHash
 PasswordHistory.getUserPasswordHistory = function (userId) {
   return this.findAll({
     where: { userId },
-    order: [['createdAt', 'DESC']],
+    order: [['created_at', 'DESC']],
     limit: 3,
   });
 };

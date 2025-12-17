@@ -18,7 +18,7 @@ export const startCallExpiryJob = () => {
       const expiredCalls = await Call.findAll({
         where: {
           status: 'calling',
-          createdAt: {
+          created_at: {
             [Op.lt]: new Date(Date.now() - CALL_TIMEOUT_SECONDS * 1000),
           },
         },

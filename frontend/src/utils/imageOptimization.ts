@@ -79,19 +79,31 @@ export const supportsWebP = (() => {
 const loadImage = (file: File): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const url = URL.createObjectURL(file);
+    const reader = new FileReader();
 
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(img);
+    reader.onload = (e) => {
+      if (!e.target?.result) {
+        reject(new Error('Failed to read image file'));
+        return;
+      }
+
+      img.onload = () => {
+        resolve(img);
+      };
+
+      img.onerror = () => {
+        reject(new Error('Failed to load image'));
+      };
+
+      // Use data URL instead of object URL (works in incognito mode)
+      img.src = e.target.result as string;
     };
 
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Failed to load image'));
+    reader.onerror = () => {
+      reject(new Error('Failed to read image file'));
     };
 
-    img.src = url;
+    reader.readAsDataURL(file);
   });
 };
 

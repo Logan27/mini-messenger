@@ -38,7 +38,7 @@ export const Announcement = sequelize.define(
   {
     tableName: 'announcements',
     timestamps: true,
-    underscored: false,
+    underscored: true,
   }
 );
 

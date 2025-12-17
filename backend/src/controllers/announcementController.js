@@ -20,7 +20,7 @@ class AnnouncementController {
   async getAllAnnouncements(req, res) {
     try {
       const announcements = await Announcement.findAll({
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
       });
       res.json({
         success: true,
@@ -64,7 +64,7 @@ class AnnouncementController {
             { expiresAt: { [Op.gt]: now } }, // Not yet expired
           ],
         },
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
         limit,
         offset,
       });

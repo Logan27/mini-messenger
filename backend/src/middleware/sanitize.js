@@ -1,5 +1,6 @@
-import validator from 'validator';
 import DOMPurify from 'isomorphic-dompurify';
+import validator from 'validator';
+
 import logger from '../utils/logger.js';
 
 /**
@@ -89,7 +90,7 @@ const sanitizeInput = (req, res, next) => {
       'privateKey',
       'signature',
       'signal', // WebRTC signaling data
-      'metadata' // File metadata (contains mimeType with slashes)
+      'metadata', // File metadata (contains mimeType with slashes)
     ];
 
     // Sanitize body
@@ -121,7 +122,7 @@ const sanitizeInput = (req, res, next) => {
  * @param {string} html - HTML content to sanitize
  * @returns {string} Sanitized HTML
  */
-const sanitizeHtml = (html) => {
+const sanitizeHtml = html => {
   if (typeof html !== 'string') {
     return html;
   }
@@ -129,7 +130,7 @@ const sanitizeHtml = (html) => {
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br'],
     ALLOWED_ATTR: ['href', 'target'],
-    ALLOW_DATA_ATTR: false
+    ALLOW_DATA_ATTR: false,
   });
 };
 
@@ -138,7 +139,7 @@ const sanitizeHtml = (html) => {
  * @param {string} email - Email to validate and sanitize
  * @returns {string|null} Sanitized email or null if invalid
  */
-const sanitizeEmail = (email) => {
+const sanitizeEmail = email => {
   if (typeof email !== 'string') {
     return null;
   }
@@ -157,17 +158,19 @@ const sanitizeEmail = (email) => {
  * @param {string} url - URL to validate and sanitize
  * @returns {string|null} Sanitized URL or null if invalid
  */
-const sanitizeUrl = (url) => {
+const sanitizeUrl = url => {
   if (typeof url !== 'string') {
     return null;
   }
 
   const trimmed = validator.trim(url);
 
-  if (!validator.isURL(trimmed, {
-    protocols: ['http', 'https'],
-    require_protocol: true
-  })) {
+  if (
+    !validator.isURL(trimmed, {
+      protocols: ['http', 'https'],
+      require_protocol: true,
+    })
+  ) {
     return null;
   }
 
@@ -176,11 +179,4 @@ const sanitizeUrl = (url) => {
 
 export default sanitizeInput;
 
-export {
-  sanitizeInput,
-  sanitizeString,
-  sanitizeObject,
-  sanitizeHtml,
-  sanitizeEmail,
-  sanitizeUrl
-};
+export { sanitizeInput, sanitizeString, sanitizeObject, sanitizeHtml, sanitizeEmail, sanitizeUrl };

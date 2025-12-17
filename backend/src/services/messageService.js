@@ -338,15 +338,21 @@ class MessageService {
       const wsService = getWebSocketService();
       logger.debug(`📖 Broadcasting read receipt to sender: ${message.senderId}`);
 
-      await wsService.broadcastToUser(message.senderId, WS_EVENTS.MESSAGE_READ, {
+      const readReceiptData = {
         messageId,
         readerId: userId,
         readerName: socket.username,
         timestamp: timestamp || new Date().toISOString(),
-      });
+      };
+
+      // Send to sender (original recipient of the read receipt)
+      await wsService.broadcastToUser(message.senderId, WS_EVENTS.MESSAGE_READ, readReceiptData);
+
+      // Also send back to the reader (for multi-device sync)
+      await wsService.broadcastToUser(userId, WS_EVENTS.MESSAGE_READ, readReceiptData);
 
       logger.info(
-        `👁️ Message read: ${messageId} by ${userId}, notified sender: ${message.senderId}`
+        `👁️ Message read: ${messageId} by ${userId}, notified sender: ${message.senderId} and reader: ${userId}`
       );
     } catch (error) {
       logger.error('❌ Error handling message read:', {
@@ -472,7 +478,9 @@ class MessageService {
         this.messageSequences.set(entries[i][0], entries[i][1]);
       }
 
-      logger.info(`🧹 Cleaned up sequence numbers: ${entries.length} -> ${this.messageSequences.size}`);
+      logger.info(
+        `🧹 Cleaned up sequence numbers: ${entries.length} -> ${this.messageSequences.size}`
+      );
     }
   }
 
@@ -702,7 +710,7 @@ class MessageService {
       // Validate message exists
       const message = await Message.findByPk(messageId, {
         raw: false, // Get Sequelize instance
-        attributes: ['id', 'senderId', 'recipientId', 'groupId', 'status', 'readAt'],
+        attributes: ['id', 'senderId', 'recipientId', 'groupId', 'status'],
       });
 
       if (!message) {
@@ -771,11 +779,9 @@ class MessageService {
 
       // Update message status to read
       logger.debug(`📖 Updating message ${messageId} to read status`);
-      const readAtTimestamp = timestamp || new Date();
       await Message.update(
         {
           status: 'read',
-          readAt: readAtTimestamp,
         },
         {
           where: { id: messageId },
@@ -784,7 +790,6 @@ class MessageService {
 
       // OPTIMIZATION: Update instance in-memory instead of reloading from database
       message.status = 'read';
-      message.readAt = readAtTimestamp;
 
       // Cache read status in Redis for 30 days
       if (this.redisClient) {

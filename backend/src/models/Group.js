@@ -118,7 +118,7 @@ export const Group = sequelize.define(
     tableName: 'groups',
     timestamps: true,
     paranoid: false, // No soft deletes
-    underscored: false, // camelCase columns
+    underscored: true, // camelCase columns
     indexes: [
       {
         fields: ['creatorId'],
@@ -330,7 +330,7 @@ Group.searchGroups = function (query, options = {}) {
         },
       ],
     },
-    order: [['createdAt', 'DESC']],
+    order: [['created_at', 'DESC']],
     ...options,
   });
 };

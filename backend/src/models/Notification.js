@@ -132,7 +132,7 @@ export const Notification = sequelize.define(
   },
   {
     tableName: 'notifications',
-    underscored: false,
+    underscored: true,
     timestamps: true,
     paranoid: true,
     indexes: [

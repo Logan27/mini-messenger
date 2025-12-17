@@ -13,20 +13,21 @@ const registerSchema = Joi.object({
     .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
     .required()
     .messages({
-      'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+      'string.pattern.base':
+        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
     }),
   profilePicture: Joi.string().uri().optional(),
-  bio: Joi.string().max(500).optional()
+  bio: Joi.string().max(500).optional(),
 });
 
 const loginSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
-  twoFactorToken: Joi.string().length(6).optional()
+  twoFactorToken: Joi.string().length(6).optional(),
 });
 
 const forgotPasswordSchema = Joi.object({
-  email: Joi.string().email().required()
+  email: Joi.string().email().required(),
 });
 
 const resetPasswordSchema = Joi.object({
@@ -37,12 +38,13 @@ const resetPasswordSchema = Joi.object({
     .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
     .required()
     .messages({
-      'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
-    })
+      'string.pattern.base':
+        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+    }),
 });
 
 const verifyEmailSchema = Joi.object({
-  token: Joi.string().required()
+  token: Joi.string().required(),
 });
 
 const changePasswordSchema = Joi.object({
@@ -53,8 +55,9 @@ const changePasswordSchema = Joi.object({
     .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
     .required()
     .messages({
-      'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
-    })
+      'string.pattern.base':
+        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+    }),
 });
 
 /**
@@ -62,7 +65,7 @@ const changePasswordSchema = Joi.object({
  * @param {Object} data - Registration data to validate
  * @returns {Object} Validation result
  */
-export const validateRegister = (data) => {
+export const validateRegister = data => {
   return registerSchema.validate(data, { abortEarly: false });
 };
 
@@ -71,7 +74,7 @@ export const validateRegister = (data) => {
  * @param {Object} data - Login data to validate
  * @returns {Object} Validation result
  */
-export const validateLogin = (data) => {
+export const validateLogin = data => {
   return loginSchema.validate(data, { abortEarly: false });
 };
 
@@ -80,7 +83,7 @@ export const validateLogin = (data) => {
  * @param {Object} data - Forgot password data to validate
  * @returns {Object} Validation result
  */
-export const validateForgotPassword = (data) => {
+export const validateForgotPassword = data => {
   return forgotPasswordSchema.validate(data, { abortEarly: false });
 };
 
@@ -89,7 +92,7 @@ export const validateForgotPassword = (data) => {
  * @param {Object} data - Reset password data to validate
  * @returns {Object} Validation result
  */
-export const validateResetPassword = (data) => {
+export const validateResetPassword = data => {
   return resetPasswordSchema.validate(data, { abortEarly: false });
 };
 
@@ -98,7 +101,7 @@ export const validateResetPassword = (data) => {
  * @param {Object} data - Email verification data to validate
  * @returns {Object} Validation result
  */
-export const validateVerifyEmail = (data) => {
+export const validateVerifyEmail = data => {
   return verifyEmailSchema.validate(data, { abortEarly: false });
 };
 
@@ -107,7 +110,7 @@ export const validateVerifyEmail = (data) => {
  * @param {Object} data - Password change data to validate
  * @returns {Object} Validation result
  */
-export const validateChangePassword = (data) => {
+export const validateChangePassword = data => {
   return changePasswordSchema.validate(data, { abortEarly: false });
 };
 
@@ -117,5 +120,5 @@ export default {
   validateForgotPassword,
   validateResetPassword,
   validateVerifyEmail,
-  validateChangePassword
+  validateChangePassword,
 };

@@ -112,5 +112,5 @@ export {
   BadRequestError,
   InternalServerError,
   TooManyRequestsError,
-  ServiceUnavailableError
+  ServiceUnavailableError,
 };

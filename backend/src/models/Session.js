@@ -26,19 +26,6 @@ export const Session = sequelize.define(
         },
       },
     },
-    token: {
-      type: DataTypes.STRING(500),
-      allowNull: false,
-      unique: {
-        name: 'unique_session_token',
-        msg: 'Session token already exists',
-      },
-      validate: {
-        notEmpty: {
-          msg: 'Token is required',
-        },
-      },
-    },
     refreshToken: {
       type: DataTypes.STRING(500),
       allowNull: false,
@@ -52,17 +39,12 @@ export const Session = sequelize.define(
         },
       },
     },
-    ipAddress: {
-      type: DataTypes.STRING(45),
+    deviceInfo: {
+      type: DataTypes.JSONB,
       allowNull: true,
-      validate: {
-        isIP: {
-          msg: 'Please provide a valid IP address',
-        },
-      },
     },
-    userAgent: {
-      type: DataTypes.TEXT,
+    ipAddress: {
+      type: DataTypes.INET,
       allowNull: true,
     },
     expiresAt: {
@@ -78,48 +60,26 @@ export const Session = sequelize.define(
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: DataTypes.NOW, // Add default value since timestamps are disabled
-    },
-    lastAccessedAt: {
-      type: DataTypes.DATE,
-      allowNull: false,
       defaultValue: DataTypes.NOW,
     },
   },
   {
-    tableName: 'sessions',
-    underscored: false, // Use camelCase to match existing database schema
-    timestamps: false, // Disable automatic timestamps since they don't exist in DB
+    tableName: 'user_sessions',
+    underscored: true, // Use snake_case to match database schema
+    timestamps: false, // Disable automatic timestamps
     indexes: [
       {
         unique: true,
-        fields: ['token'],
-        name: 'idx_sessions_token_unique',
-      },
-      {
-        unique: true,
         fields: ['refreshToken'],
-        name: 'idx_sessions_refresh_token_unique',
+        name: 'idx_user_sessions_refresh_token',
       },
       {
         fields: ['userId'],
-        name: 'idx_sessions_user_id',
+        name: 'idx_user_sessions_user_id',
       },
       {
         fields: ['expiresAt'],
-        name: 'idx_sessions_expires_at',
-      },
-      {
-        fields: ['lastAccessedAt'],
-        name: 'idx_sessions_last_accessed_at',
-      },
-      {
-        fields: ['createdAt'],
-        name: 'idx_sessions_created_at',
-      },
-      {
-        fields: ['userId', 'expiresAt'],
-        name: 'idx_sessions_user_expires',
+        name: 'idx_user_sessions_expires_at',
       },
     ],
   }
@@ -130,51 +90,7 @@ Session.prototype.isExpired = function () {
   return this.expiresAt < new Date();
 };
 
-Session.prototype.updateLastAccessed = async function () {
-  this.lastAccessedAt = new Date();
-  await this.save();
-};
-
-Session.prototype.updateActivity = async function () {
-  this.lastAccessedAt = new Date();
-  await this.save();
-};
-
-Session.prototype.isInactive = function (timeoutMinutes = 30) {
-  const timeoutMs = timeoutMinutes * 60 * 1000;
-  return new Date() - this.lastAccessedAt > timeoutMs;
-};
-
-Session.expireInactiveSessions = function (timeoutMinutes = 30) {
-  const timeoutDate = new Date(Date.now() - timeoutMinutes * 60 * 1000);
-  return this.update(
-    {
-      expiresAt: new Date(),
-    },
-    {
-      where: {
-        lastAccessedAt: {
-          [Op.lt]: timeoutDate,
-        },
-        expiresAt: {
-          [Op.gt]: new Date(),
-        },
-      },
-    }
-  );
-};
-
 // Static methods
-Session.findByToken = function (token) {
-  return this.findOne({
-    where: {
-      token,
-      expiresAt: {
-        [Op.gt]: new Date(),
-      },
-    },
-  });
-};
 
 Session.findByRefreshToken = function (refreshToken) {
   return this.findOne({
@@ -195,7 +111,7 @@ Session.findValidSessionsByUserId = function (userId) {
         [Op.gt]: new Date(),
       },
     },
-    order: [['lastAccessedAt', 'DESC']],
+    order: [['created_at', 'DESC']],
   });
 };
 
@@ -226,11 +142,6 @@ Session.cleanupExpiredSessions = function () {
   });
 };
 
-// Hooks
-Session.beforeCreate(session => {
-  if (!session.lastAccessedAt) {
-    session.lastAccessedAt = new Date();
-  }
-});
+// Hooks removed - no longer needed
 
 export default Session;

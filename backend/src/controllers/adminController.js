@@ -734,20 +734,20 @@ class AdminController {
       const storageByType = await File.findAll({
         attributes: [
           'mimeType',
-          [File.sequelize.fn('SUM', File.sequelize.col('fileSize')), 'totalSize'],
+          [File.sequelize.fn('SUM', File.sequelize.col('file_size')), 'totalSize'],
           [File.sequelize.fn('COUNT', File.sequelize.col('id')), 'count'],
         ],
-        group: ['mimeType'],
+        group: ['mime_type'],
         raw: true,
       });
 
       const storageByUser = await File.findAll({
         attributes: [
           'uploaderId',
-          [File.sequelize.fn('SUM', File.sequelize.col('fileSize')), 'totalSize'],
+          [File.sequelize.fn('SUM', File.sequelize.col('file_size')), 'totalSize'],
         ],
-        group: ['uploaderId'],
-        order: [[File.sequelize.fn('SUM', File.sequelize.col('fileSize')), 'DESC']],
+        group: ['uploader_id'],
+        order: [[File.sequelize.fn('SUM', File.sequelize.col('file_size')), 'DESC']],
         limit: 10,
         raw: true,
       });
@@ -756,12 +756,24 @@ class AdminController {
       const totalMessages = await Message.count();
       const last24hMessages = await Message.count({
         where: {
-          createdAt: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          [Op.and]: [
+            sequelize.where(
+              sequelize.col('created_at'),
+              Op.gte,
+              new Date(Date.now() - 24 * 60 * 60 * 1000)
+            ),
+          ],
         },
       });
       const last7dMessages = await Message.count({
         where: {
-          createdAt: { [Op.gte]: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+          [Op.and]: [
+            sequelize.where(
+              sequelize.col('created_at'),
+              Op.gte,
+              new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+            ),
+          ],
         },
       });
 
@@ -784,12 +796,14 @@ class AdminController {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const dailyMessages = await Message.findAll({
         attributes: [
-          [Message.sequelize.fn('DATE', Message.sequelize.col('createdAt')), 'date'],
+          [Message.sequelize.fn('DATE', Message.sequelize.col('created_at')), 'date'],
           [Message.sequelize.fn('COUNT', Message.sequelize.col('id')), 'count'],
         ],
-        where: { createdAt: { [Op.gte]: thirtyDaysAgo } },
-        group: [Message.sequelize.fn('DATE', Message.sequelize.col('createdAt'))],
-        order: [[Message.sequelize.fn('DATE', Message.sequelize.col('createdAt')), 'ASC']],
+        where: {
+          [Op.and]: [sequelize.where(sequelize.col('created_at'), Op.gte, thirtyDaysAgo)],
+        },
+        group: [sequelize.literal('DATE("Message"."created_at")')],
+        order: [[sequelize.literal('DATE("Message"."created_at")'), 'ASC']],
         raw: true,
       });
 
@@ -1481,7 +1495,7 @@ class AdminController {
         ],
         limit,
         offset,
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
       });
 
       const totalPages = Math.ceil(totalLogs / limit);
@@ -1596,7 +1610,7 @@ class AdminController {
         ],
         limit,
         offset,
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
       });
 
       const totalPages = Math.ceil(totalReports / limit);

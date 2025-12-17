@@ -1,6 +1,12 @@
-import { validateRegister, validateLogin, validateForgotPassword, validateResetPassword, validateVerifyEmail } from '../validators/authValidator.js';
 import authService from '../services/authService.js';
 import logger from '../utils/logger.js';
+import {
+  validateRegister,
+  validateLogin,
+  validateForgotPassword,
+  validateResetPassword,
+  validateVerifyEmail,
+} from '../validators/authValidator.js';
 
 /**
  * Authentication Controller
@@ -22,7 +28,7 @@ class AuthController {
           error: {
             type: 'VALIDATION_ERROR',
             message: error.details.map(d => d.message).join(', '),
-            details: error.details
+            details: error.details,
           },
         });
       }
@@ -57,7 +63,7 @@ class AuthController {
           error: {
             type: 'VALIDATION_ERROR',
             message: error.details.map(d => d.message).join(', '),
-            details: error.details
+            details: error.details,
           },
         });
       }
@@ -162,11 +168,7 @@ class AuthController {
       }
 
       const ipAddress = req.ip || req.connection?.remoteAddress;
-      const result = await authService.resetPassword(
-        req.body.token,
-        req.body.password,
-        ipAddress
-      );
+      const result = await authService.resetPassword(req.body.token, req.body.password, ipAddress);
 
       return res.status(200).json({
         success: true,

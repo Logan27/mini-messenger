@@ -255,6 +255,7 @@ export const User = sequelize.define(
   },
   {
     tableName: 'users',
+    underscored: true, // Use snake_case to match database schema
     indexes: [
       {
         unique: true,
@@ -330,7 +331,7 @@ User.prototype.isPasswordInHistory = async function (password) {
   const { default: bcrypt } = await import('bcryptjs');
   const passwords = await PasswordHistory.findAll({
     where: { userId: this.id },
-    order: [['createdAt', 'DESC']],
+    order: [['created_at', 'DESC']],
     limit: 3,
   });
 

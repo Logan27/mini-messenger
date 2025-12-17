@@ -92,7 +92,7 @@ export const Contact = sequelize.define(
   },
   {
     tableName: 'contacts',
-    underscored: false, // Table uses camelCase columns
+    underscored: true, // Table uses camelCase columns
     timestamps: true,
     paranoid: true,
     indexes: [
@@ -149,7 +149,7 @@ export const Contact = sequelize.define(
         where: {
           status: 'pending',
         },
-        order: [['createdAt', 'ASC']],
+        order: [['created_at', 'ASC']],
       },
     ],
   }
@@ -255,7 +255,7 @@ Contact.findPendingRequests = function (userId, options = {}) {
       contactUserId: userId,
       status: 'pending',
     },
-    order: [['createdAt', 'ASC']],
+    order: [['created_at', 'ASC']],
     ...options,
   });
 };

@@ -113,7 +113,7 @@ class ExportService {
           },
         ],
         limit: filters.limit || 1000,
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
       });
 
       const csvData = logs.map(log => ({
@@ -170,7 +170,7 @@ class ExportService {
           },
         ],
         limit: filters.limit || 1000,
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
       });
 
       const pdfData = logs.map(log => ({
@@ -236,7 +236,7 @@ class ExportService {
           },
         ],
         limit: filters.limit || 1000,
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
       });
 
       const csvData = reports.map(report => ({
@@ -304,7 +304,7 @@ class ExportService {
           },
         ],
         limit: filters.limit || 1000,
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
       });
 
       const pdfData = reports.map(report => ({

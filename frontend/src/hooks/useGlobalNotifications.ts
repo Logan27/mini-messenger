@@ -110,11 +110,11 @@ export function useGlobalNotifications() {
           const senderName = data.from?.username || 'Someone';
           const notification = new Notification(`New contact request from ${senderName}`, {
             body: `${senderName} wants to add you as a contact`,
-            icon: data.from?.avatar || '/icon.png',
+            icon: data.from?.avatar || '/favicon.ico',
             tag: data.contactId,
             requireInteraction: true, // Keep notification until user interacts
             silent: false,
-            badge: '/icon.png',
+            badge: '/favicon.ico',
           });
 
           console.log('✅ Contact request notification created');
@@ -156,11 +156,11 @@ export function useGlobalNotifications() {
           const acceptorName = data.acceptedBy?.username || 'Someone';
           const notification = new Notification(`Contact request accepted`, {
             body: `${acceptorName} accepted your contact request`,
-            icon: data.acceptedBy?.avatar || '/icon.png',
+            icon: data.acceptedBy?.avatar || '/favicon.ico',
             tag: data.contactId,
             requireInteraction: false,
             silent: false,
-            badge: '/icon.png',
+            badge: '/favicon.ico',
           });
 
           setTimeout(() => notification.close(), 5000);
@@ -197,11 +197,11 @@ export function useGlobalNotifications() {
 
           const notification = new Notification(`Incoming ${callType} Call`, {
             body: `${callerName} is calling you`,
-            icon: call.caller?.avatar || '/icon.png',
+            icon: call.caller?.avatar || '/favicon.ico',
             tag: call.id,
             requireInteraction: true, // Keep notification until user interacts
             silent: false,
-            badge: '/icon.png',
+            badge: '/favicon.ico',
           });
 
           console.log('✅ Call notification created');
@@ -311,11 +311,11 @@ export function useGlobalNotifications() {
 
           const notification = new Notification(`New message from ${senderName}`, {
             body: notificationBody,
-            icon: newMessage.senderAvatar || newMessage.sender?.avatar || '/icon.png',
+            icon: newMessage.senderAvatar || newMessage.sender?.avatar || '/favicon.ico',
             tag: newMessage.id, // Prevent duplicate notifications
             requireInteraction: false,
             silent: false,
-            badge: '/icon.png',
+            badge: '/favicon.ico',
           });
 
           console.log('✅ Notification object created:', notification);

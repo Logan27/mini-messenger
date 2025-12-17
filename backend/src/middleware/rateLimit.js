@@ -21,7 +21,7 @@ export const apiRateLimit = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => {
+  skip: req => {
     // Skip rate limiting in test environment
     return config.nodeEnv === 'test';
   },
@@ -61,7 +61,7 @@ export const authRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful logins
-  skip: (req) => {
+  skip: req => {
     // Skip rate limiting in test environment
     return config.nodeEnv === 'test';
   },
@@ -100,7 +100,7 @@ export const registerRateLimit = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => {
+  skip: req => {
     // Skip rate limiting in test environment
     return config.nodeEnv === 'test';
   },

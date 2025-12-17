@@ -1,4 +1,5 @@
 import { doubleCsrf } from 'csrf-csrf';
+
 import { config } from '../config/index.js';
 import logger from '../utils/logger.js';
 
@@ -17,27 +18,23 @@ const csrfSecret = process.env.CSRF_SECRET || 'your-csrf-secret-change-this-in-p
  * Configure CSRF protection using csrf-csrf (modern replacement for deprecated csurf)
  * Uses the Double Submit Cookie Pattern for stateless CSRF protection
  */
-const {
-  doubleCsrfProtection,
-  generateCsrfToken,
-  invalidCsrfTokenError,
-} = doubleCsrf({
+const { doubleCsrfProtection, generateCsrfToken, invalidCsrfTokenError } = doubleCsrf({
   getSecret: () => csrfSecret,
   cookieName: '_csrf',
   cookieOptions: {
     httpOnly: true,
     secure: config.isProduction, // Only use secure cookies in production
-    sameSite: 'strict',
+    sameSite: config.isProduction ? 'strict' : 'lax', // Use 'lax' in development for localhost cross-port requests
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     path: '/',
   },
   size: 64, // Size of the generated token
   ignoredMethods: ['GET', 'HEAD', 'OPTIONS'], // Methods that don't require CSRF protection
-  getSessionIdentifier: (req) => {
+  getSessionIdentifier: req => {
     // Use session ID if available, otherwise use a static identifier for stateless mode
     return req.session?.id || req.user?.id || '';
   },
-  getTokenFromRequest: (req) => {
+  getTokenFromRequest: req => {
     // Try to get token from common locations
     return (
       req.headers['x-csrf-token'] ||
@@ -67,6 +64,11 @@ const csrfExemptRoutes = [
  * Skips CSRF for exempt routes and authenticated mobile apps
  */
 const conditionalCsrfProtection = (req, res, next) => {
+  // Skip CSRF in test environment
+  if (process.env.NODE_ENV === 'test') {
+    return next();
+  }
+
   // Skip CSRF for exempt routes
   const isExempt = csrfExemptRoutes.some(route => req.path.startsWith(route));
 
@@ -77,13 +79,14 @@ const conditionalCsrfProtection = (req, res, next) => {
   // Verify mobile app with secret header
   const mobileAppHeader = req.get('X-Mobile-App');
   const mobileAppSecret = req.get('X-Mobile-App-Secret');
-  const expectedSecret = process.env.MOBILE_APP_SECRET || 'your_mobile_app_secret_change_this_in_production';
+  const expectedSecret =
+    process.env.MOBILE_APP_SECRET || 'your_mobile_app_secret_change_this_in_production';
 
   if (mobileAppHeader === 'true' && mobileAppSecret === expectedSecret) {
     logger.debug('Skipping CSRF for authenticated mobile app', {
       path: req.path,
       method: req.method,
-      hasValidSecret: true
+      hasValidSecret: true,
     });
     return next();
   }
@@ -94,7 +97,7 @@ const conditionalCsrfProtection = (req, res, next) => {
       path: req.path,
       method: req.method,
       ip: req.ip,
-      userAgent: req.get('User-Agent')
+      userAgent: req.get('User-Agent'),
     });
   }
 

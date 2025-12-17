@@ -252,17 +252,17 @@ export const Message = sequelize.define(
       {
         fields: ['recipientId', 'createdAt'],
         name: 'idx_messages_recipient_created_desc',
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
       },
       {
         fields: ['senderId', 'createdAt'],
         name: 'idx_messages_sender_created_desc',
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
       },
       {
         fields: ['groupId', 'createdAt'],
         name: 'idx_messages_group_created_desc',
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
       },
       {
         fields: ['status'],
@@ -279,7 +279,7 @@ export const Message = sequelize.define(
       {
         fields: ['senderId', 'recipientId', 'createdAt'],
         name: 'idx_messages_conversation_desc',
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
       },
       {
         fields: ['content'],
@@ -295,7 +295,7 @@ export const Message = sequelize.define(
             [Op.ne]: 'read',
           },
         },
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
       },
       {
         fields: ['deletedAt'],
@@ -313,7 +313,7 @@ export const Message = sequelize.define(
       {
         fields: ['isEncrypted', 'createdAt'],
         name: 'idx_messages_encrypted_created_desc',
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
       },
     ],
   }
@@ -475,7 +475,7 @@ Message.findConversation = function (userId1, userId2, options = {}) {
 
   return this.findAll({
     where: whereCondition,
-    order: [['createdAt', 'ASC']],
+    order: [['created_at', 'ASC']],
     ...options,
   });
 };
@@ -492,7 +492,7 @@ Message.findGroupMessages = function (groupId, options = {}) {
 
   return this.findAll({
     where: whereCondition,
-    order: [['createdAt', 'ASC']],
+    order: [['created_at', 'ASC']],
     ...options,
   });
 };
@@ -505,7 +505,7 @@ Message.findUnreadMessages = function (userId) {
         [Op.ne]: 'read',
       },
     },
-    order: [['createdAt', 'ASC']],
+    order: [['created_at', 'ASC']],
   });
 };
 

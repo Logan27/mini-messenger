@@ -470,7 +470,11 @@ router.get('/:id', downloadRateLimit, downloadValidation, async (req, res) => {
       } else if (!message) {
         // Message not loaded - deny access for safety
         return res.status(403).json({ error: 'Access denied to file' });
-      } else if (message.recipientId && message.recipientId !== userId && message.senderId !== userId) {
+      } else if (
+        message.recipientId &&
+        message.recipientId !== userId &&
+        message.senderId !== userId
+      ) {
         return res.status(403).json({ error: 'Access denied to file' });
       } else if (message.groupId) {
         const { GroupMember } = await import('../models/index.js');
@@ -729,7 +733,7 @@ router.get('/', async (req, res) => {
 
     const { count, rows: files } = await File.findAndCountAll({
       where: whereCondition,
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
       limit: parseInt(limit),
       offset: parseInt(offset),
       attributes: [

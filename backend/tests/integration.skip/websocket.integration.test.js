@@ -599,21 +599,21 @@ describe('WebSocket Integration Tests', () => {
       expect(messageEvent.timestamp).toBeInstanceOf(Date);
 
       // Validate message data structure
-      const messageData = messageEvent.data[0];
-      expect(messageData).toHaveProperty('id');
-      expect(messageData).toHaveProperty('content');
-      expect(messageData).toHaveProperty('senderId');
-      expect(messageData).toHaveProperty('recipientId');
-      expect(messageData).toHaveProperty('createdAt');
-      expect(messageData).toHaveProperty('messageType');
+      const receivedMessage = messageEvent.data[0];
+      expect(receivedMessage).toHaveProperty('id');
+      expect(receivedMessage).toHaveProperty('content');
+      expect(receivedMessage).toHaveProperty('senderId');
+      expect(receivedMessage).toHaveProperty('recipientId');
+      expect(receivedMessage).toHaveProperty('createdAt');
+      expect(receivedMessage).toHaveProperty('messageType');
 
       // Validate data types
-      expect(typeof messageData.id).toBe('string');
-      expect(typeof messageData.content).toBe('string');
-      expect(typeof messageData.senderId).toBe('string');
-      expect(typeof messageData.recipientId).toBe('string');
-      expect(messageData.createdAt).toBeInstanceOf(Date);
-      expect(typeof messageData.messageType).toBe('string');
+      expect(typeof receivedMessage.id).toBe('string');
+      expect(typeof receivedMessage.content).toBe('string');
+      expect(typeof receivedMessage.senderId).toBe('string');
+      expect(typeof receivedMessage.recipientId).toBe('string');
+      expect(receivedMessage.createdAt).toBeInstanceOf(Date);
+      expect(typeof receivedMessage.messageType).toBe('string');
     });
 
     it('should handle partial WebSocket disconnections gracefully', async () => {

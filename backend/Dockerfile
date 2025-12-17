@@ -22,9 +22,10 @@ COPY . .
 # Production stage
 FROM node:20-alpine AS production
 
-# Install dumb-init and security packages
+# Install dumb-init, curl, and security packages
 RUN apk add --no-cache \
     dumb-init \
+    curl \
     clamav \
     clamav-daemon \
     su-exec \
@@ -62,11 +63,11 @@ RUN chmod +x /app/docker/scripts/*.sh 2>/dev/null || true
 USER nextjs
 
 # Expose port
-EXPOSE 3000
+EXPOSE 4000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
+    CMD curl -f http://localhost:4000/health || exit 1
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]

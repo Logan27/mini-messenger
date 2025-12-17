@@ -149,8 +149,8 @@ export const NotificationSettings = sequelize.define(
     },
   },
   {
-    tableName: 'notificationSettings',
-    underscored: false, // Table uses camelCase columns
+    tableName: 'notification_settings',
+    underscored: true, // Use snake_case to match database schema
     timestamps: true,
     paranoid: false, // Explicitly disable soft deletes
     indexes: [

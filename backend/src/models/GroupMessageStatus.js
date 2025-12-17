@@ -57,10 +57,10 @@ export const GroupMessageStatus = sequelize.define(
     },
   },
   {
-    tableName: 'groupMessageStatus',
+    tableName: 'group_message_status',
     timestamps: true,
     paranoid: false, // Override global paranoid setting - status tracking doesn't need soft deletes
-    underscored: false,
+    underscored: true, // Use snake_case to match database schema
     indexes: [
       {
         fields: ['messageId'],
@@ -138,7 +138,7 @@ GroupMessageStatus.getMessageStatusForGroup = async function (messageId) {
         attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
       },
     ],
-    order: [['createdAt', 'ASC']],
+    order: [['created_at', 'ASC']],
   });
 };
 
@@ -179,7 +179,7 @@ GroupMessageStatus.getUnreadMessagesForUser = async function (userId) {
         ],
       },
     ],
-    order: [['createdAt', 'DESC']],
+    order: [['created_at', 'DESC']],
   });
 };
 

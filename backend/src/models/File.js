@@ -154,10 +154,10 @@ export const File = sequelize.define(
     },
   },
   {
-    tableName: 'files',
+    tableName: 'file_uploads',
     timestamps: true,
     paranoid: false, // No soft deletes
-    underscored: false, // camelCase columns
+    underscored: true, // Use snake_case to match database schema
     indexes: [
       {
         fields: ['uploaderId'],
@@ -186,7 +186,7 @@ export const File = sequelize.define(
       {
         fields: ['uploaderId', 'createdAt'],
         name: 'idx_files_uploader_created_desc',
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
       },
       {
         fields: ['fileSize'],
@@ -234,7 +234,7 @@ File.prototype.canBeDownloadedBy = function (userId) {
 File.findByUploader = function (uploaderId, options = {}) {
   return this.findAll({
     where: { uploaderId },
-    order: [['createdAt', 'DESC']],
+    order: [['created_at', 'DESC']],
     ...options,
   });
 };
@@ -242,7 +242,7 @@ File.findByUploader = function (uploaderId, options = {}) {
 File.findByMessage = function (messageId, options = {}) {
   return this.findAll({
     where: { messageId },
-    order: [['createdAt', 'ASC']],
+    order: [['created_at', 'ASC']],
     ...options,
   });
 };

@@ -12,20 +12,42 @@ CREATE TYPE message_type AS ENUM ('text', 'image', 'file', 'system');
 CREATE TYPE call_type AS ENUM ('video', 'audio');
 CREATE TYPE call_status AS ENUM ('initiated', 'ringing', 'connected', 'ended', 'missed', 'cancelled');
 
--- Create users table
+-- Create users table (matching Sequelize User model with underscored: true)
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     first_name VARCHAR(100),
     last_name VARCHAR(100),
-    avatar_url VARCHAR(500),
+    avatar VARCHAR(500),
+    bio TEXT,
+    phone VARCHAR(20),
+    status VARCHAR(20) DEFAULT 'offline',
     role user_role DEFAULT 'user',
-    is_active BOOLEAN DEFAULT false,
-    is_verified BOOLEAN DEFAULT false,
+    approval_status VARCHAR(20) DEFAULT 'approved',
+    approved_by UUID REFERENCES users(id),
+    approved_at TIMESTAMP WITH TIME ZONE,
+    rejection_reason TEXT,
+    email_verified BOOLEAN DEFAULT false,
+    email_verification_token VARCHAR(255) UNIQUE,
+    password_reset_token VARCHAR(255) UNIQUE,
+    password_reset_expires TIMESTAMP WITH TIME ZONE,
+    failed_login_attempts INTEGER DEFAULT 0,
+    locked_until TIMESTAMP WITH TIME ZONE,
     last_login_at TIMESTAMP WITH TIME ZONE,
+    public_key TEXT,
+    read_receipts_enabled BOOLEAN DEFAULT true,
+    terms_accepted_at TIMESTAMP WITH TIME ZONE,
+    privacy_accepted_at TIMESTAMP WITH TIME ZONE,
+    terms_version VARCHAR(20) DEFAULT '1.0',
+    privacy_version VARCHAR(20) DEFAULT '1.0',
+    two_factor_secret VARCHAR(255),
+    two_factor_enabled BOOLEAN DEFAULT false,
+    two_factor_backup_codes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP WITH TIME ZONE,
 
     CONSTRAINT proper_email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
@@ -160,7 +182,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
 CREATE INDEX IF NOT EXISTS idx_audit_log_resource ON audit_log(resource);
 CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_messages_sender_created ON messages(sender_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_messages_recipient_created ON messages(recipient_id, created_at DESC) WHERE recipient_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_messages_cleanup ON messages(expires_at) WHERE expires_at IS NOT NULL AND is_deleted = false;
@@ -180,23 +202,23 @@ CREATE TRIGGER update_groups_updated_at BEFORE UPDATE ON groups FOR EACH ROW EXE
 
 -- Insert default admin user (password: 'admin_password' - CHANGE THIS!)
 -- Password hash generated with bcryptjs (rounds: 12)
-INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, is_verified)
+INSERT INTO users (username, email, password_hash, first_name, last_name, role, email_verified)
 VALUES (
+    'admin',
     'admin@messenger.local',
     '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeehPCtcxN.wd0xC3W',
     'System',
     'Administrator',
     'admin',
-    true,
     true
 ) ON CONFLICT (email) DO NOTHING;
 
 -- Create some test users for development
-INSERT INTO users (email, password_hash, first_name, last_name, is_active, is_verified)
+INSERT INTO users (username, email, password_hash, first_name, last_name, email_verified)
 VALUES
-    ('test1@messenger.local', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeehPCtcxN.wd0xC3W', 'Test', 'User1', true, true),
-    ('test2@messenger.local', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeehPCtcxN.wd0xC3W', 'Test', 'User2', true, true),
-    ('test3@messenger.local', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeehPCtcxN.wd0xC3W', 'Test', 'User3', true, true)
+    ('test1', 'test1@messenger.local', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeehPCtcxN.wd0xC3W', 'Test', 'User1', true),
+    ('test2', 'test2@messenger.local', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeehPCtcxN.wd0xC3W', 'Test', 'User2', true),
+    ('test3', 'test3@messenger.local', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeehPCtcxN.wd0xC3W', 'Test', 'User3', true)
 ON CONFLICT (email) DO NOTHING;
 
 -- Create cleanup function for expired messages

@@ -613,19 +613,19 @@ router.get('/search', authenticate, async (req, res) => {
             (
               to_tsvector('english',
                 COALESCE("username", '') || ' ' ||
-                COALESCE("firstName", '') || ' ' ||
-                COALESCE("lastName", '') || ' ' ||
+                COALESCE("first_name", '') || ' ' ||
+                COALESCE("last_name", '') || ' ' ||
                 COALESCE("email", '')
               ) @@
               plainto_tsquery('english', '${searchTerm.replace(/'/g, "''")}')
               OR
-              ("username" || ' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '') || ' ' || "email") % '${searchTerm.replace(/'/g, "''")}'
+              ("username" || ' ' || COALESCE("first_name", '') || ' ' || COALESCE("last_name", '') || ' ' || "email") % '${searchTerm.replace(/'/g, "''")}'
               OR
               "username" ILIKE '${searchTerm.replace(/'/g, "''")}%'
               OR
-              COALESCE("firstName", '') ILIKE '${searchTerm.replace(/'/g, "''")}%'
+              COALESCE("first_name", '') ILIKE '${searchTerm.replace(/'/g, "''")}%'
               OR
-              COALESCE("lastName", '') ILIKE '${searchTerm.replace(/'/g, "''")}%'
+              COALESCE("last_name", '') ILIKE '${searchTerm.replace(/'/g, "''")}%'
               OR
               "email" ILIKE '${searchTerm.replace(/'/g, "''")}%'
             )
@@ -660,15 +660,15 @@ router.get('/search', authenticate, async (req, res) => {
           (
             GREATEST(
               SIMILARITY(COALESCE("username", ''), '${searchTerm.replace(/'/g, "''")}'),
-              SIMILARITY(COALESCE("firstName", ''), '${searchTerm.replace(/'/g, "''")}'),
-              SIMILARITY(COALESCE("lastName", ''), '${searchTerm.replace(/'/g, "''")}'),
+              SIMILARITY(COALESCE("first_name", ''), '${searchTerm.replace(/'/g, "''")}'),
+              SIMILARITY(COALESCE("last_name", ''), '${searchTerm.replace(/'/g, "''")}'),
               SIMILARITY(COALESCE("email", ''), '${searchTerm.replace(/'/g, "''")}')
             ) * 0.4 +
             ts_rank(
               to_tsvector('english',
                 COALESCE("username", '') || ' ' ||
-                COALESCE("firstName", '') || ' ' ||
-                COALESCE("lastName", '') || ' ' ||
+                COALESCE("first_name", '') || ' ' ||
+                COALESCE("last_name", '') || ' ' ||
                 COALESCE("email", '')
               ),
               plainto_tsquery('english', '${searchTerm.replace(/'/g, "''")}')
@@ -677,7 +677,7 @@ router.get('/search', authenticate, async (req, res) => {
         `),
           'DESC',
         ],
-        ['createdAt', 'DESC'],
+        [sequelize.literal('"User"."created_at"'), 'DESC'],
       ],
     });
 
@@ -928,7 +928,7 @@ router.get('/', async (req, res) => {
       },
       limit,
       offset,
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
     });
 
     const totalPages = Math.ceil(totalUsers / limit);

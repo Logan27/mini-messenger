@@ -1,14 +1,22 @@
 import crypto from 'crypto';
+
 import { Op } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
+
 import { sequelize } from '../config/database.js';
 import { getRedisClient } from '../config/redis.js';
 import { User, Session, PasswordHistory } from '../models/index.js';
-import auditService from './auditService.js';
-import emailService from './emailService.js';
+import {
+  UnauthorizedError,
+  ValidationError,
+  ConflictError,
+  NotFoundError,
+} from '../utils/errors.js';
 import { generateTokens, hashPassword, comparePassword } from '../utils/jwt.js';
 import logger from '../utils/logger.js';
-import { UnauthorizedError, ValidationError, ConflictError, NotFoundError } from '../utils/errors.js';
+
+import auditService from './auditService.js';
+import emailService from './emailService.js';
 
 /**
  * Authentication service
@@ -37,7 +45,7 @@ class AuthService {
         where: {
           [Op.or]: [{ username }, { email }],
         },
-        transaction
+        transaction,
       });
 
       if (existingUser) {
@@ -55,20 +63,23 @@ class AuthService {
       const emailVerificationToken = autoVerifyEmail ? null : uuidv4().replace(/-/g, '');
 
       // Create user
-      const user = await User.create({
-        username,
-        email,
-        passwordHash: password,
-        firstName,
-        lastName,
-        avatar,
-        emailVerified,
-        emailVerificationToken,
-        termsAcceptedAt: new Date(),
-        privacyAcceptedAt: new Date(),
-        termsVersion: '1.0',
-        privacyVersion: '1.0',
-      }, { transaction });
+      const user = await User.create(
+        {
+          username,
+          email,
+          passwordHash: password,
+          firstName,
+          lastName,
+          avatar,
+          emailVerified,
+          emailVerificationToken,
+          termsAcceptedAt: new Date(),
+          privacyAcceptedAt: new Date(),
+          termsVersion: '1.0',
+          privacyVersion: '1.0',
+        },
+        { transaction }
+      );
 
       await transaction.commit();
 
@@ -94,7 +105,7 @@ class AuthService {
           emailVerified: user.emailVerified,
           createdAt: user.createdAt,
         },
-        message: successMessage
+        message: successMessage,
       };
     } catch (error) {
       await transaction.rollback();
@@ -198,7 +209,7 @@ class AuthService {
       return {
         requiresTwoFactor: true,
         userId: user.id,
-        message: 'Two-factor authentication required'
+        message: 'Two-factor authentication required',
       };
     }
 
@@ -226,20 +237,26 @@ class AuthService {
       const { accessToken, refreshToken } = generateTokens(user);
 
       // Create session record
-      const session = await Session.create({
-        userId: user.id,
-        token: refreshToken,
-        ipAddress,
-        userAgent,
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-        lastActivity: new Date(),
-      }, { transaction });
+      const session = await Session.create(
+        {
+          userId: user.id,
+          token: refreshToken,
+          ipAddress,
+          userAgent,
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+          lastActivity: new Date(),
+        },
+        { transaction }
+      );
 
       // Update user's last login
-      await user.update({
-        lastLoginAt: new Date(),
-        lastLoginIp: ipAddress,
-      }, { transaction });
+      await user.update(
+        {
+          lastLoginAt: new Date(),
+          lastLoginIp: ipAddress,
+        },
+        { transaction }
+      );
 
       // Cache user session in Redis
       const redis = getRedisClient();
@@ -307,7 +324,7 @@ class AuthService {
           userId,
           token: refreshToken,
         },
-        transaction
+        transaction,
       });
 
       if (session) {
@@ -348,14 +365,14 @@ class AuthService {
     try {
       const user = await User.findOne({
         where: { email },
-        transaction
+        transaction,
       });
 
       if (!user) {
         // Don't reveal if email exists
         logger.warn(`Password reset requested for non-existent email: ${email}`);
         return {
-          message: 'If an account with that email exists, a password reset link has been sent.'
+          message: 'If an account with that email exists, a password reset link has been sent.',
         };
       }
 
@@ -364,10 +381,13 @@ class AuthService {
       const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
       // Save hashed token to user
-      await user.update({
-        passwordResetToken: hashedToken,
-        passwordResetExpires: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
-      }, { transaction });
+      await user.update(
+        {
+          passwordResetToken: hashedToken,
+          passwordResetExpires: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+        },
+        { transaction }
+      );
 
       await transaction.commit();
 
@@ -390,7 +410,7 @@ class AuthService {
       });
 
       return {
-        message: 'If an account with that email exists, a password reset link has been sent.'
+        message: 'If an account with that email exists, a password reset link has been sent.',
       };
     } catch (error) {
       await transaction.rollback();
@@ -417,7 +437,7 @@ class AuthService {
           passwordResetToken: hashedToken,
           passwordResetExpires: { [Op.gt]: new Date() },
         },
-        transaction
+        transaction,
       });
 
       if (!user) {
@@ -427,9 +447,9 @@ class AuthService {
       // Check password history to prevent reuse
       const passwordHistory = await PasswordHistory.findAll({
         where: { userId: user.id },
-        order: [['createdAt', 'DESC']],
+        order: [['created_at', 'DESC']],
         limit: 3,
-        transaction
+        transaction,
       });
 
       for (const history of passwordHistory) {
@@ -443,23 +463,29 @@ class AuthService {
 
       // Update password
       const hashedPassword = await hashPassword(newPassword);
-      await user.update({
-        passwordHash: hashedPassword,
-        passwordResetToken: null,
-        passwordResetExpires: null,
-        passwordChangedAt: new Date(),
-      }, { transaction });
+      await user.update(
+        {
+          passwordHash: hashedPassword,
+          passwordResetToken: null,
+          passwordResetExpires: null,
+          passwordChangedAt: new Date(),
+        },
+        { transaction }
+      );
 
       // Save to password history
-      await PasswordHistory.create({
-        userId: user.id,
-        passwordHash: hashedPassword,
-      }, { transaction });
+      await PasswordHistory.create(
+        {
+          userId: user.id,
+          passwordHash: hashedPassword,
+        },
+        { transaction }
+      );
 
       // Invalidate all existing sessions
       await Session.destroy({
         where: { userId: user.id },
-        transaction
+        transaction,
       });
 
       await transaction.commit();
@@ -477,7 +503,7 @@ class AuthService {
       logger.info(`Password reset completed for user ${user.id}`);
 
       return {
-        message: 'Password has been reset successfully. Please log in with your new password.'
+        message: 'Password has been reset successfully. Please log in with your new password.',
       };
     } catch (error) {
       await transaction.rollback();
@@ -498,7 +524,7 @@ class AuthService {
           emailVerificationToken: token,
           emailVerified: false,
         },
-        transaction
+        transaction,
       });
 
       if (!user) {
@@ -506,11 +532,14 @@ class AuthService {
       }
 
       // Mark email as verified
-      await user.update({
-        emailVerified: true,
-        emailVerificationToken: null,
-        emailVerifiedAt: new Date(),
-      }, { transaction });
+      await user.update(
+        {
+          emailVerified: true,
+          emailVerificationToken: null,
+          emailVerifiedAt: new Date(),
+        },
+        { transaction }
+      );
 
       await transaction.commit();
 
@@ -531,7 +560,7 @@ class AuthService {
           id: user.id,
           username: user.username,
           email: user.email,
-        }
+        },
       };
     } catch (error) {
       await transaction.rollback();
@@ -545,19 +574,20 @@ class AuthService {
    */
   async resendVerification(email) {
     const user = await User.findOne({
-      where: { email }
+      where: { email },
     });
 
     if (!user) {
       // Don't reveal if email exists
       return {
-        message: 'If an account with that email exists and is not verified, a verification email has been sent.'
+        message:
+          'If an account with that email exists and is not verified, a verification email has been sent.',
       };
     }
 
     if (user.emailVerified) {
       return {
-        message: 'This email address is already verified.'
+        message: 'This email address is already verified.',
       };
     }
 
@@ -565,7 +595,7 @@ class AuthService {
     if (!user.emailVerificationToken) {
       const newToken = uuidv4().replace(/-/g, '');
       await user.update({
-        emailVerificationToken: newToken
+        emailVerificationToken: newToken,
       });
     }
 
@@ -578,7 +608,8 @@ class AuthService {
     }
 
     return {
-      message: 'If an account with that email exists and is not verified, a verification email has been sent.'
+      message:
+        'If an account with that email exists and is not verified, a verification email has been sent.',
     };
   }
 
@@ -594,7 +625,7 @@ class AuthService {
         token: refreshToken,
         expiresAt: { [Op.gt]: new Date() },
       },
-      include: [{ model: User, as: 'user' }]
+      include: [{ model: User, as: 'user' }],
     });
 
     if (!session) {
@@ -603,7 +634,7 @@ class AuthService {
 
     // Update last activity
     await session.update({
-      lastActivity: new Date()
+      lastActivity: new Date(),
     });
 
     // Generate new access token
@@ -616,7 +647,7 @@ class AuthService {
         username: session.user.username,
         email: session.user.email,
         role: session.user.role,
-      }
+      },
     };
   }
 }

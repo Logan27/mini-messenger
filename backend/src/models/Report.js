@@ -111,7 +111,7 @@ const Report = sequelize.define(
   },
   {
     tableName: 'reports',
-    underscored: false, // Use camelCase for field names
+    underscored: true, // Use camelCase for field names
     timestamps: true,
     indexes: [
       { fields: ['reporterId'] },

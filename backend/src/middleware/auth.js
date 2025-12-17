@@ -50,19 +50,6 @@ export const authenticate = async (req, res, next) => {
 
     const decoded = tokenResult.decoded;
 
-    // Check if session exists in database (additional security)
-    const session = await Session.findByToken(token);
-
-    if (!session || session.isExpired()) {
-      return res.status(401).json({
-        success: false,
-        error: {
-          type: 'SESSION_EXPIRED',
-          message: 'Session has expired or is invalid',
-        },
-      });
-    }
-
     // Find user
     const user = await User.findByPk(decoded.userId);
 
@@ -87,12 +74,8 @@ export const authenticate = async (req, res, next) => {
       });
     }
 
-    // Update session last accessed time
-    await session.updateLastAccessed();
-
-    // Attach user and session to request object
+    // Attach user and token to request object
     req.user = user;
-    req.session = session || null;
     req.token = token;
 
     // Debug logging

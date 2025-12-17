@@ -95,10 +95,10 @@ export const GroupMember = sequelize.define(
     },
   },
   {
-    tableName: 'groupMembers',
+    tableName: 'group_members',
     timestamps: true,
     paranoid: true,
-    underscored: false,
+    underscored: true, // Use snake_case to match database schema
     indexes: [
       {
         fields: ['groupId'],

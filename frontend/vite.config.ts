@@ -50,9 +50,9 @@ export default defineConfig(({ mode }) => ({
         skipWaiting: true,
         clientsClaim: true,
 
-        // Navigation fallback for offline support
-        navigateFallback: '/offline.html',
-        navigateFallbackDenylist: [/^\/api\//],
+        // Don't use navigation fallback - it causes false offline detection during reload
+        // navigateFallback: '/offline.html',
+        // navigateFallbackDenylist: [/^\/api\//],
 
         // Runtime caching strategies
         runtimeCaching: [
@@ -66,7 +66,7 @@ export default defineConfig(({ mode }) => ({
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 5, // 5 minutes
               },
-              networkTimeoutSeconds: 10,
+              networkTimeoutSeconds: 30, // Increased timeout to prevent false offline detection
               cacheableResponse: {
                 statuses: [0, 200],
               },
@@ -130,39 +130,11 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         // Manual chunk splitting strategy for better caching
-        manualChunks: (id) => {
-          // Vendor chunks - split large dependencies into separate bundles
-          if (id.includes("node_modules")) {
-            // React core libraries
-            if (id.includes("react") || id.includes("react-dom") || id.includes("react-router")) {
-              return "vendor-react";
-            }
-            // UI component libraries
-            if (id.includes("@radix-ui") || id.includes("lucide-react")) {
-              return "vendor-ui";
-            }
-            // React Query and data fetching
-            if (id.includes("@tanstack/react-query")) {
-              return "vendor-query";
-            }
-            // All other node_modules
-            return "vendor-misc";
-          }
-
-          // Admin panel - separate chunk for admin-only features
-          if (id.includes("/pages/admin/")) {
-            return "admin-panel";
-          }
-
-          // WebRTC and calling features - heavy component
-          if (id.includes("ActiveCall") || id.includes("IncomingCall") || id.includes("OutgoingCall")) {
-            return "calling-features";
-          }
-
-          // File preview and gallery - heavy component
-          if (id.includes("FilePreview") || id.includes("FileGallery")) {
-            return "file-features";
-          }
+        manualChunks: {
+          // React core - highest priority, loaded first
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // UI libraries that depend on React
+          'vendor-ui': ['@radix-ui/react-toast', '@radix-ui/react-slot', '@radix-ui/react-tooltip', 'lucide-react'],
         },
       },
     },

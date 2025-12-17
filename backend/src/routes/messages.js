@@ -266,23 +266,24 @@ router.post(
               messageType: messageWithSender.messageType,
               status: messageWithSender.status,
               isRead: messageWithSender.status === 'read',
-              isDelivered: messageWithSender.status === 'delivered' || messageWithSender.status === 'read',
+              isDelivered:
+                messageWithSender.status === 'delivered' || messageWithSender.status === 'read',
               replyToId: messageWithSender.replyToId,
               replyTo: messageWithSender.replyTo
                 ? {
-                  id: messageWithSender.replyTo.id,
-                  content: messageWithSender.replyTo.content,
-                  senderId: messageWithSender.replyTo.senderId,
-                  messageType: messageWithSender.replyTo.messageType,
-                  sender: messageWithSender.replyTo.sender
-                    ? {
-                      id: messageWithSender.replyTo.sender.id,
-                      username: messageWithSender.replyTo.sender.username,
-                      firstName: messageWithSender.replyTo.sender.firstName,
-                      lastName: messageWithSender.replyTo.sender.lastName,
-                    }
-                    : null,
-                }
+                    id: messageWithSender.replyTo.id,
+                    content: messageWithSender.replyTo.content,
+                    senderId: messageWithSender.replyTo.senderId,
+                    messageType: messageWithSender.replyTo.messageType,
+                    sender: messageWithSender.replyTo.sender
+                      ? {
+                          id: messageWithSender.replyTo.sender.id,
+                          username: messageWithSender.replyTo.sender.username,
+                          firstName: messageWithSender.replyTo.sender.firstName,
+                          lastName: messageWithSender.replyTo.sender.lastName,
+                        }
+                      : null,
+                  }
                 : null,
               metadata: messageWithSender.metadata,
               reactions: messageWithSender.reactions || {},
@@ -297,11 +298,11 @@ router.post(
                 : null,
               sender: messageWithSender.sender
                 ? {
-                  id: messageWithSender.sender.id,
-                  username: messageWithSender.sender.username,
-                  firstName: messageWithSender.sender.firstName,
-                  lastName: messageWithSender.sender.lastName,
-                }
+                    id: messageWithSender.sender.id,
+                    username: messageWithSender.sender.username,
+                    firstName: messageWithSender.sender.firstName,
+                    lastName: messageWithSender.sender.lastName,
+                  }
                 : null,
             };
 
@@ -347,23 +348,24 @@ router.post(
             messageType: messageWithSender.messageType,
             status: messageWithSender.status,
             isRead: messageWithSender.status === 'read',
-            isDelivered: messageWithSender.status === 'delivered' || messageWithSender.status === 'read',
+            isDelivered:
+              messageWithSender.status === 'delivered' || messageWithSender.status === 'read',
             replyToId: messageWithSender.replyToId,
             replyTo: messageWithSender.replyTo
               ? {
-                id: messageWithSender.replyTo.id,
-                content: messageWithSender.replyTo.content,
-                senderId: messageWithSender.replyTo.senderId,
-                messageType: messageWithSender.replyTo.messageType,
-                sender: messageWithSender.replyTo.sender
-                  ? {
-                    id: messageWithSender.replyTo.sender.id,
-                    username: messageWithSender.replyTo.sender.username,
-                    firstName: messageWithSender.replyTo.sender.firstName,
-                    lastName: messageWithSender.replyTo.sender.lastName,
-                  }
-                  : null,
-              }
+                  id: messageWithSender.replyTo.id,
+                  content: messageWithSender.replyTo.content,
+                  senderId: messageWithSender.replyTo.senderId,
+                  messageType: messageWithSender.replyTo.messageType,
+                  sender: messageWithSender.replyTo.sender
+                    ? {
+                        id: messageWithSender.replyTo.sender.id,
+                        username: messageWithSender.replyTo.sender.username,
+                        firstName: messageWithSender.replyTo.sender.firstName,
+                        lastName: messageWithSender.replyTo.sender.lastName,
+                      }
+                    : null,
+                }
               : null,
             metadata: messageWithSender.metadata,
             reactions: messageWithSender.reactions || {},
@@ -379,11 +381,11 @@ router.post(
               : null,
             sender: messageWithSender.sender
               ? {
-                id: messageWithSender.sender.id,
-                username: messageWithSender.sender.username,
-                firstName: messageWithSender.sender.firstName,
-                lastName: messageWithSender.sender.lastName,
-              }
+                  id: messageWithSender.sender.id,
+                  username: messageWithSender.sender.username,
+                  firstName: messageWithSender.sender.firstName,
+                  lastName: messageWithSender.sender.lastName,
+                }
               : null,
           },
         });
@@ -650,7 +652,7 @@ router.get(
       const { count, rows: messages } = await Message.findAndCountAll({
         where: whereCondition,
         include,
-        order: [['createdAt', 'DESC']], // Newest first (will be reversed on client for chat display)
+        order: [['created_at', 'DESC']], // Newest first (will be reversed on client for chat display)
         limit: parseInt(limit),
         offset: offset,
       });
@@ -674,19 +676,19 @@ router.get(
           replyToId: message.replyToId,
           replyTo: message.replyTo
             ? {
-              id: message.replyTo.id,
-              content: message.replyTo.content,
-              senderId: message.replyTo.senderId,
-              messageType: message.replyTo.messageType,
-              sender: message.replyTo.sender
-                ? {
-                  id: message.replyTo.sender.id,
-                  username: message.replyTo.sender.username,
-                  firstName: message.replyTo.sender.firstName,
-                  lastName: message.replyTo.sender.lastName,
-                }
-                : null,
-            }
+                id: message.replyTo.id,
+                content: message.replyTo.content,
+                senderId: message.replyTo.senderId,
+                messageType: message.replyTo.messageType,
+                sender: message.replyTo.sender
+                  ? {
+                      id: message.replyTo.sender.id,
+                      username: message.replyTo.sender.username,
+                      firstName: message.replyTo.sender.firstName,
+                      lastName: message.replyTo.sender.lastName,
+                    }
+                  : null,
+              }
             : null,
           metadata: message.metadata,
           reactions: message.reactions || {},
@@ -701,18 +703,18 @@ router.get(
           fileUrl: message.metadata?.fileId ? `/api/files/${message.metadata.fileId}` : null,
           sender: message.sender
             ? {
-              id: message.sender.id,
-              username: message.sender.username,
-              firstName: message.sender.firstName,
-              lastName: message.sender.lastName,
-            }
+                id: message.sender.id,
+                username: message.sender.username,
+                firstName: message.sender.firstName,
+                lastName: message.sender.lastName,
+              }
             : null,
           group: message.group
             ? {
-              id: message.group.id,
-              name: message.group.name,
-              description: message.group.description,
-            }
+                id: message.group.id,
+                name: message.group.name,
+                description: message.group.description,
+              }
             : null,
         })),
         pagination: {
@@ -1026,11 +1028,11 @@ router.put(
           updatedAt: message.updatedAt,
           sender: message.sender
             ? {
-              id: message.sender.id,
-              username: message.sender.username,
-              firstName: message.sender.firstName,
-              lastName: message.sender.lastName,
-            }
+                id: message.sender.id,
+                username: message.sender.username,
+                firstName: message.sender.firstName,
+                lastName: message.sender.lastName,
+              }
             : null,
         },
       });
@@ -1345,11 +1347,11 @@ router.get(
           editedAt: edit.editedAt,
           editor: edit.editor
             ? {
-              id: edit.editor.id,
-              username: edit.editor.username,
-              firstName: edit.editor.firstName,
-              lastName: edit.editor.lastName,
-            }
+                id: edit.editor.id,
+                username: edit.editor.username,
+                firstName: edit.editor.firstName,
+                lastName: edit.editor.lastName,
+              }
             : null,
         })),
       });
@@ -1686,18 +1688,18 @@ router.get(
         updatedAt: message.updatedAt,
         sender: message.sender
           ? {
-            id: message.sender.id,
-            username: message.sender.username,
-            firstName: message.sender.firstName,
-            lastName: message.sender.lastName,
-          }
+              id: message.sender.id,
+              username: message.sender.username,
+              firstName: message.sender.firstName,
+              lastName: message.sender.lastName,
+            }
           : null,
         group: message.Group
           ? {
-            id: message.Group.id,
-            name: message.Group.name,
-            description: message.Group.description,
-          }
+              id: message.Group.id,
+              name: message.Group.name,
+              description: message.Group.description,
+            }
           : null,
       }));
 
@@ -1803,16 +1805,16 @@ router.get(
         `
         SELECT
           CASE
-            WHEN "senderId" = :userId THEN "recipientId"
-            ELSE "senderId"
+            WHEN sender_id = :userId THEN recipient_id
+            ELSE sender_id
           END as "otherUserId",
-          MAX("createdAt") as "lastMessageAt",
+          MAX(created_at) as "lastMessageAt",
           COUNT(*) as "messageCount",
-          SUM(CASE WHEN "recipientId" = :userId AND "status" != 'read' THEN 1 ELSE 0 END) as "unreadCount"
+          SUM(CASE WHEN recipient_id = :userId AND status != 'read' THEN 1 ELSE 0 END) as "unreadCount"
         FROM messages
-        WHERE ("senderId" = :userId OR "recipientId" = :userId)
-          AND "recipientId" IS NOT NULL
-          AND "deletedAt" IS NULL
+        WHERE (sender_id = :userId OR recipient_id = :userId)
+          AND recipient_id IS NOT NULL
+          AND deleted_at IS NULL
         GROUP BY "otherUserId"
         ORDER BY "lastMessageAt" DESC
         LIMIT :limit
@@ -1853,7 +1855,7 @@ router.get(
               ],
               deletedAt: null,
             },
-            order: [['createdAt', 'DESC']],
+            order: [['created_at', 'DESC']],
             attributes: ['id', 'content', 'messageType', 'createdAt', 'senderId'],
           });
 
@@ -1861,22 +1863,22 @@ router.get(
             type: 'direct',
             user: otherUser
               ? {
-                id: otherUser.id,
-                username: otherUser.username,
-                firstName: otherUser.firstName,
-                lastName: otherUser.lastName,
-                profilePicture: otherUser.avatar,
-                onlineStatus: otherUser.status,
-              }
+                  id: otherUser.id,
+                  username: otherUser.username,
+                  firstName: otherUser.firstName,
+                  lastName: otherUser.lastName,
+                  profilePicture: otherUser.avatar,
+                  onlineStatus: otherUser.status,
+                }
               : null,
             lastMessage: lastMessage
               ? {
-                id: lastMessage.id,
-                content: lastMessage.content,
-                type: lastMessage.messageType,
-                createdAt: lastMessage.createdAt,
-                isOwn: lastMessage.senderId === userId,
-              }
+                  id: lastMessage.id,
+                  content: lastMessage.content,
+                  type: lastMessage.messageType,
+                  createdAt: lastMessage.createdAt,
+                  isOwn: lastMessage.senderId === userId,
+                }
               : null,
             messageCount: parseInt(dm.messageCount),
             unreadCount: parseInt(dm.unreadCount || 0),
@@ -1908,7 +1910,7 @@ router.get(
               groupId: gm.groupId,
               deletedAt: null,
             },
-            order: [['createdAt', 'DESC']],
+            order: [['created_at', 'DESC']],
             include: [
               {
                 model: User,
@@ -1931,28 +1933,28 @@ router.get(
             type: 'group',
             group: gm.group
               ? {
-                id: gm.group.id,
-                name: gm.group.name,
-                description: gm.group.description,
-                avatar: gm.group.avatar,
-                creatorId: gm.group.creatorId,
-              }
+                  id: gm.group.id,
+                  name: gm.group.name,
+                  description: gm.group.description,
+                  avatar: gm.group.avatar,
+                  creatorId: gm.group.creatorId,
+                }
               : null,
             userRole: gm.role, // Include user's role in the group (admin, member, etc.)
             lastMessage: lastMessage
               ? {
-                id: lastMessage.id,
-                content: lastMessage.content,
-                type: lastMessage.messageType,
-                createdAt: lastMessage.createdAt,
-                sender: lastMessage.sender
-                  ? {
-                    id: lastMessage.sender.id,
-                    username: lastMessage.sender.username,
-                  }
-                  : null,
-                isOwn: lastMessage.senderId === userId,
-              }
+                  id: lastMessage.id,
+                  content: lastMessage.content,
+                  type: lastMessage.messageType,
+                  createdAt: lastMessage.createdAt,
+                  sender: lastMessage.sender
+                    ? {
+                        id: lastMessage.sender.id,
+                        username: lastMessage.sender.username,
+                      }
+                    : null,
+                  isOwn: lastMessage.senderId === userId,
+                }
               : null,
             unreadCount,
             lastMessageAt: lastMessage ? lastMessage.createdAt : gm.joinedAt,
@@ -2123,6 +2125,57 @@ router.post(
     }
   }
 );
+
+/**
+ * Mark messages as read
+ * POST /api/messages/read
+ */
+router.post('/read', [body('messageIds').isArray()], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: errors.array()[0].msg,
+      });
+    }
+
+    const { messageIds } = req.body;
+    const userId = req.user.id;
+
+    if (!Array.isArray(messageIds) || messageIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'messageIds must be a non-empty array',
+      });
+    }
+
+    // Mark all messages as read
+    const results = await Promise.all(
+      messageIds.map(async messageId => {
+        try {
+          const result = await messageService.markAsRead(messageId, userId);
+          return { messageId, success: true, ...result };
+        } catch (error) {
+          logger.error(`Failed to mark message ${messageId} as read:`, error);
+          return { messageId, success: false, error: error.message };
+        }
+      })
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Messages marked as read',
+      data: results,
+    });
+  } catch (error) {
+    logger.error('Mark as read error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to mark messages as read',
+    });
+  }
+});
 
 /**
  * Get reactions for a message

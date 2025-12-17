@@ -1,8 +1,9 @@
 import Queue from 'bull';
 import { Op } from 'sequelize';
+
 import { config } from '../config/index.js';
-import logger from '../utils/logger.js';
 import { Message } from '../models/index.js';
+import logger from '../utils/logger.js';
 
 const redisConfig = {
   redis: config.redis.url,
@@ -46,7 +47,7 @@ export const notificationQueue = new Queue('notifications', redisConfig);
 /**
  * Email Queue Processor
  */
-emailQueue.process(async (job) => {
+emailQueue.process(async job => {
   const { to, subject, html, text, template, data } = job.data;
 
   try {
@@ -71,7 +72,7 @@ emailQueue.process(async (job) => {
 /**
  * File Processing Queue Processor
  */
-fileQueue.process(async (job) => {
+fileQueue.process(async job => {
   const { fileId, filePath, operation, options } = job.data;
 
   try {
@@ -100,7 +101,7 @@ fileQueue.process(async (job) => {
  * Message Cleanup Queue Processor
  * Deletes messages older than the retention period
  */
-messageCleanupQueue.process(async (job) => {
+messageCleanupQueue.process(async job => {
   const { days = 30 } = job.data;
 
   try {
@@ -127,7 +128,7 @@ messageCleanupQueue.process(async (job) => {
 /**
  * Notification Queue Processor
  */
-notificationQueue.process(async (job) => {
+notificationQueue.process(async job => {
   const { userId, title, body, data, tokens } = job.data;
 
   try {
@@ -157,11 +158,11 @@ const setupQueueListeners = (queue, queueName) => {
     });
   });
 
-  queue.on('error', (error) => {
+  queue.on('error', error => {
     logger.error(`${queueName} queue error`, { error: error.message });
   });
 
-  queue.on('stalled', (job) => {
+  queue.on('stalled', job => {
     logger.warn(`${queueName} job ${job.id} stalled`);
   });
 };

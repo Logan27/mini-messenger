@@ -7,7 +7,7 @@ import Joi from 'joi';
 const fileUploadSchema = Joi.object({
   messageId: Joi.number().integer().positive().optional(),
   recipientId: Joi.number().integer().positive().optional(),
-  groupId: Joi.number().integer().positive().optional()
+  groupId: Joi.number().integer().positive().optional(),
 }).or('messageId', 'recipientId', 'groupId');
 
 /**
@@ -15,10 +15,10 @@ const fileUploadSchema = Joi.object({
  * @param {Object} data - File metadata to validate
  * @returns {Object} Validation result
  */
-export const validateFileUpload = (data) => {
+export const validateFileUpload = data => {
   return fileUploadSchema.validate(data, { abortEarly: false });
 };
 
 export default {
-  validateFileUpload
+  validateFileUpload,
 };

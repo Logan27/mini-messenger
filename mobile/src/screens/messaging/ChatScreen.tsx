@@ -150,9 +150,12 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationMessages.length, conversationId]);
 
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
   useEffect(() => {
     const initializeConversation = async () => {
       if (conversationId) {
+        setIsInitialLoading(true);
         // Clear tracking refs when changing conversations
         markedAsReadRef.current.clear();
         processedLinkPreviewIds.current.clear();
@@ -179,6 +182,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
           setMessageText(draft);
         }
         hasLoadedDraft.current = true;
+        setIsInitialLoading(false);
       }
     };
 
@@ -993,9 +997,9 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
             const reactionsArray = Array.isArray(message.reactions)
               ? message.reactions
               : Object.entries(message.reactions || {}).map(([emoji, users]) => ({
-                  emoji,
-                  users: Array.isArray(users) ? users : [users],
-                }));
+                emoji,
+                users: Array.isArray(users) ? users : [users],
+              }));
 
             // Filter out any empty or invalid reactions
             const validReactions = reactionsArray.filter(r => r.emoji && r.users && r.users.length > 0);
@@ -1007,27 +1011,27 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
                 {validReactions.map((reaction, idx) => {
                   const userHasReacted = reaction.users.includes(user!.id);
                   return (
-                  <TouchableOpacity
-                    key={`${message.id}-${reaction.emoji}`}
-                    style={[
-                      styles.reactionBubble,
-                      userHasReacted && styles.reactionBubbleActive,
-                    ]}
-                    onPress={() => handleToggleReaction(message, reaction.emoji)}
-                    onLongPress={() => handleShowWhoReacted(message)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
-                    <Text style={[
-                      styles.reactionCount,
-                      userHasReacted && styles.reactionCountActive,
-                    ]}>
-                      {reaction.users.length}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                    <TouchableOpacity
+                      key={`${message.id}-${reaction.emoji}`}
+                      style={[
+                        styles.reactionBubble,
+                        userHasReacted && styles.reactionBubbleActive,
+                      ]}
+                      onPress={() => handleToggleReaction(message, reaction.emoji)}
+                      onLongPress={() => handleShowWhoReacted(message)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
+                      <Text style={[
+                        styles.reactionCount,
+                        userHasReacted && styles.reactionCountActive,
+                      ]}>
+                        {reaction.users.length}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             );
           })()}
         </View>
@@ -1388,25 +1392,32 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         )}
 
         {/* Messages */}
-        <FlatList
-          ref={flatListRef}
-          data={conversationMessages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.messagesContainer}
-          ListHeaderComponent={renderTypingIndicator}
-          ListFooterComponent={renderHeader}
-          inverted
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.1}
-          onViewableItemsChanged={handleViewableItemsChanged}
-          viewabilityConfig={viewabilityConfig}
-          onScroll={(event) => {
-            // Track current scroll position
-            currentScrollOffset.current = event.nativeEvent.contentOffset.y;
-          }}
-          scrollEventThrottle={400}
-        />
+        {isInitialLoading ? (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={conversationMessages}
+            renderItem={renderMessage}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.messagesContainer}
+            ListHeaderComponent={renderTypingIndicator}
+            ListFooterComponent={renderHeader}
+            inverted
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.1}
+            onViewableItemsChanged={handleViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig}
+            onScroll={(event) => {
+              // Track current scroll position
+              currentScrollOffset.current = event.nativeEvent.contentOffset.y;
+            }}
+            scrollEventThrottle={400}
+            initialNumToRender={20}
+          />
+        )}
 
         {/* Reply Bar */}
         {replyToMessage && (

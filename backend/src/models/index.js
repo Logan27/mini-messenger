@@ -16,7 +16,9 @@ import NotificationSettings from './NotificationSettings.js';
 import PasswordHistory from './PasswordHistory.js';
 import Report from './Report.js';
 import Session from './Session.js';
-import SystemSetting from './systemSetting.js';
+import SystemSettings from './SystemSettings.js';
+// Alias for backward compatibility
+const SystemSetting = SystemSettings;
 import User from './User.js';
 
 // Define model associations
@@ -31,6 +33,12 @@ User.hasMany(Session, {
 User.hasMany(Device, {
   foreignKey: 'userId',
   as: 'devices',
+  onDelete: 'CASCADE',
+});
+
+Device.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user',
   onDelete: 'CASCADE',
 });
 
@@ -296,7 +304,8 @@ export {
   NotificationSettings,
   PasswordHistory,
   Report,
-  SystemSetting,
+  SystemSettings,
+  SystemSetting, // Alias for backward compatibility
   Announcement,
 };
 
@@ -319,6 +328,7 @@ export default {
   NotificationSettings,
   PasswordHistory,
   Report,
-  SystemSetting,
+  SystemSettings,
+  SystemSetting, // Alias for backward compatibility
   Announcement,
 };

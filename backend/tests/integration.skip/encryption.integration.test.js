@@ -1,7 +1,7 @@
 import { apiTestUtils } from '../apiTestUtils.js';
 import { messagingTestHelpers } from '../messagingTestHelpers.js';
 import { Message, User } from '../../src/models/index.js';
-import { encryptionService } from '../../src/services/encryptionService.js';
+import encryptionService from '../../src/services/encryptionService.js';
 
 describe('E2E Encryption Integration Tests', () => {
   let testData;

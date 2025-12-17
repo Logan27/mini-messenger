@@ -221,13 +221,15 @@ class AuthController {
 
       const { accessToken, refreshToken } = generateTokens(user);
 
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days for refresh token
       const session = await Session.create({
         userId: user.id,
-        token: accessToken,
         refreshToken,
+        deviceInfo: {
+          userAgent: req.get('User-Agent'),
+          platform: req.get('User-Agent')?.includes('Mobile') ? 'mobile' : 'desktop',
+        },
         ipAddress: req.ip || req.connection?.remoteAddress,
-        userAgent: req.get('User-Agent'),
         expiresAt,
       });
 
@@ -971,7 +973,19 @@ class AuthController {
       const sessions = await Session.findValidSessionsByUserId(userId);
 
       const formattedSessions = sessions.map(session => {
-        const { deviceType, browser, os } = AuthController.parseUserAgent(session.userAgent);
+        // Extract userAgent from deviceInfo JSONB, fallback to req userAgent if null
+        const userAgent =
+          session.deviceInfo?.userAgent || session.userAgent || req.get('User-Agent') || '';
+        const { deviceType, browser, os } = AuthController.parseUserAgent(userAgent);
+
+        // Log for debugging if all values are "Unknown"
+        if (browser === 'Unknown' && os === 'Unknown') {
+          logger.debug('Session with unknown device info:', {
+            sessionId: session.id,
+            deviceInfo: session.deviceInfo,
+            userAgent: userAgent.substring(0, 50),
+          });
+        }
 
         return {
           id: session.id,
@@ -980,8 +994,8 @@ class AuthController {
           os,
           ip: session.ipAddress || 'Unknown',
           location: 'Unknown', // Could integrate with IP geolocation service
-          lastActivity: session.lastAccessedAt,
-          isCurrent: session.token === currentToken,
+          lastActivity: session.createdAt, // Use createdAt since lastAccessedAt doesn't exist
+          isCurrent: session.refreshToken === currentToken,
         };
       });
 

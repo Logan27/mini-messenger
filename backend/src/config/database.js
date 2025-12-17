@@ -24,7 +24,7 @@ const getDatabaseConfig = url => {
     },
     define: {
       timestamps: true,
-      underscored: false, // Use camelCase consistently
+      underscored: true, // Use snake_case to match init.sql schema
       paranoid: true,
     },
     retry: {
@@ -64,10 +64,9 @@ export const initializeDatabase = async () => {
     console.log('✅ Database connection established successfully.');
 
     if (config.env === 'development') {
-      // Temporarily disabled sync - models have naming inconsistencies
-      console.log('⚠️  Database sync disabled (models have naming inconsistencies)');
-      // await sequelize.sync({ alter: true });
-      // console.log('✅ Database synchronized successfully.');
+      // Database sync temporarily disabled due to Sequelize bugs
+      // Tables will be created by init.sql or manual migrations
+      console.log('⚠️  Database sync disabled - using init.sql for schema');
     }
 
     return sequelize;

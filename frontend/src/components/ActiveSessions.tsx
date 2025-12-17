@@ -16,12 +16,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { formatDistanceToNow } from 'date-fns';
-import axios from 'axios';
+import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-
-// Remove /api from paths since VITE_API_URL already includes it
-const API_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:4000';
 
 interface Session {
   id: string;
@@ -45,13 +42,7 @@ export default function ActiveSessions() {
   const fetchSessions = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) return;
-
-      const response = await axios.get(`${API_URL}/api/auth/sessions`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      const response = await apiClient.get('/auth/sessions');
       setSessions(response.data.data?.sessions || []);
     } catch (error) {
       console.error('Failed to fetch sessions:', error);
@@ -80,12 +71,7 @@ export default function ActiveSessions() {
   const handleRevokeSession = async (session: Session) => {
     setIsRevoking(true);
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) return;
-
-      await axios.delete(`${API_URL}/api/auth/sessions/${session.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await apiClient.delete(`/auth/sessions/${session.id}`);
 
       setSessions((prev) => prev.filter((s) => s.id !== session.id));
       toast.success('Session revoked successfully');
@@ -102,12 +88,7 @@ export default function ActiveSessions() {
   const handleRevokeAllOthers = async () => {
     setIsRevoking(true);
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) return;
-
-      await axios.delete(`${API_URL}/api/auth/sessions`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await apiClient.delete('/auth/sessions');
 
       // Keep only current session
       setSessions((prev) => prev.filter((s) => s.isCurrent));
@@ -205,9 +186,11 @@ export default function ActiveSessions() {
                         <Clock className="h-3.5 w-3.5" />
                         <span>
                           Last active{' '}
-                          {formatDistanceToNow(new Date(session.lastActivity), {
-                            addSuffix: true,
-                          })}
+                          {session.lastActivity
+                            ? formatDistanceToNow(new Date(session.lastActivity), {
+                                addSuffix: true,
+                              })
+                            : 'Unknown'}
                         </span>
                       </div>
                     </div>

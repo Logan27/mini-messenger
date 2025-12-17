@@ -60,8 +60,17 @@ class SocketService {
       console.log('❌ WebSocket disconnected:', reason);
       this.isConnecting = false;
       this.connectionPromise = null;
-      this.lastConnectionToken = null;
-      this.emit('connection.status', { connected: false, reconnecting: false });
+
+      // Only clear token if it's a client-initiated disconnect or auth error
+      // Keep token for automatic reconnection on page reload or network issues
+      if (reason === 'io client disconnect' || reason === 'unauthorized') {
+        this.lastConnectionToken = null;
+        this.emit('connection.status', { connected: false, reconnecting: false });
+      } else {
+        // For other reasons (page reload, network issues), allow Socket.IO to reconnect
+        console.log('🔄 Will attempt automatic reconnection...');
+        this.emit('connection.status', { connected: false, reconnecting: true });
+      }
     });
 
     this.socket.on('reconnect_attempt', () => {
@@ -229,6 +238,7 @@ class SocketService {
   // Emit events to server
   send(event: string, data: unknown) {
     if (this.socket?.connected) {
+      console.log(`➡️ Emitting WebSocket event: ${event}`, data);
       this.socket.emit(event, data);
     } else {
       console.warn('❌ Socket not connected, cannot send event:', event);
@@ -247,6 +257,7 @@ class SocketService {
 
   // Mark message as read
   markAsRead(messageId: string) {
+    console.log(`🔵 Sending mark-as-read for message: ${messageId}`);
     this.send('message_read', { messageId, timestamp: new Date().toISOString() });
   }
 

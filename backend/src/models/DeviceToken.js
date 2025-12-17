@@ -71,7 +71,9 @@ export const DeviceToken = sequelize.define(
   },
   {
     tableName: 'device_tokens',
+    underscored: true, // Use snake_case to match database schema
     timestamps: true,
+    paranoid: false, // No soft deletes - table doesn't have deleted_at column
     indexes: [
       {
         fields: ['userId'],
@@ -112,7 +114,7 @@ DeviceToken.findByUserId = function (userId) {
       userId,
       isActive: true,
     },
-    order: [['createdAt', 'DESC']],
+    order: [['created_at', 'DESC']],
   });
 };
 

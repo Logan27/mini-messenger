@@ -5,7 +5,7 @@ import Joi from 'joi';
  */
 
 const contactRequestSchema = Joi.object({
-  contactUserId: Joi.number().integer().positive().required()
+  contactUserId: Joi.number().integer().positive().required(),
 });
 
 /**
@@ -13,10 +13,10 @@ const contactRequestSchema = Joi.object({
  * @param {Object} data - Contact request data to validate
  * @returns {Object} Validation result
  */
-export const validateContactRequest = (data) => {
+export const validateContactRequest = data => {
   return contactRequestSchema.validate(data, { abortEarly: false });
 };
 
 export default {
-  validateContactRequest
+  validateContactRequest,
 };

@@ -10,35 +10,47 @@ const AuditLog = sequelize.define(
   'AuditLog',
   {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
+      allowNull: false,
     },
     userId: {
       type: DataTypes.UUID,
       allowNull: true,
       comment: 'User who performed the action (null for system actions)',
+      references: {
+        model: 'users',
+        key: 'id',
+      },
+      onDelete: 'SET NULL',
     },
     action: {
       type: DataTypes.STRING(100),
       allowNull: false,
       comment: 'Action type (e.g., user_login, user_deactivate, message_delete)',
     },
-    resourceType: {
-      type: DataTypes.STRING(50),
+    resource: {
+      type: DataTypes.STRING(100),
       allowNull: true,
       comment: 'Type of resource affected (user, message, file, etc.)',
     },
     resourceId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: true,
       comment: 'ID of the affected resource',
     },
-    details: {
+    oldValues: {
       type: DataTypes.JSONB,
       allowNull: true,
-      defaultValue: {},
-      comment: 'Additional details about the action',
+      defaultValue: null,
+      comment: 'Previous values before the change',
+    },
+    newValues: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: null,
+      comment: 'New values after the change',
     },
     ipAddress: {
       type: DataTypes.INET,
@@ -50,23 +62,6 @@ const AuditLog = sequelize.define(
       allowNull: true,
       comment: 'User agent string',
     },
-    severity: {
-      type: DataTypes.ENUM('low', 'medium', 'high', 'critical'),
-      allowNull: false,
-      defaultValue: 'low',
-      comment: 'Severity level of the action',
-    },
-    status: {
-      type: DataTypes.ENUM('success', 'failure', 'pending'),
-      allowNull: false,
-      defaultValue: 'success',
-      comment: 'Status of the action',
-    },
-    errorMessage: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-      comment: 'Error message if action failed',
-    },
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -74,17 +69,14 @@ const AuditLog = sequelize.define(
     },
   },
   {
-    tableName: 'auditLogs',
-    underscored: false, // Use camelCase for field names
-    timestamps: false,
+    tableName: 'audit_log',
+    underscored: true, // Use snake_case to match database schema
+    timestamps: false, // Only createdAt, no updatedAt
     indexes: [
-      { fields: ['userId'] },
+      { fields: ['user_id'] },
       { fields: ['action'] },
-      { fields: ['resourceType', 'resourceId'] },
-      { fields: ['createdAt'] },
-      { fields: ['severity'] },
-      { fields: ['status'] },
-      { fields: ['ipAddress'] },
+      { fields: ['resource'] },
+      { fields: ['created_at'] },
     ],
   }
 );

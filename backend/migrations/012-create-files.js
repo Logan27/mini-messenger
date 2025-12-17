@@ -3,14 +3,14 @@
 /** @type {import('sequelize-cli').Migration} */
 export default {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('files', {
+    await queryInterface.createTable('file_uploads', {
       id: {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
         allowNull: false,
       },
-      uploaderId: {
+      uploader_id: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {
@@ -20,7 +20,7 @@ export default {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
-      messageId: {
+      message_id: {
         type: Sequelize.UUID,
         allowNull: true,
         references: {
@@ -30,7 +30,7 @@ export default {
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL',
       },
-      filename: {
+      file_name: {
         type: Sequelize.STRING(255),
         allowNull: false,
         validate: {
@@ -43,7 +43,7 @@ export default {
           },
         },
       },
-      originalName: {
+      original_name: {
         type: Sequelize.STRING(255),
         allowNull: false,
         validate: {
@@ -56,7 +56,7 @@ export default {
           },
         },
       },
-      filePath: {
+      file_path: {
         type: Sequelize.STRING(500),
         allowNull: false,
         validate: {
@@ -69,7 +69,7 @@ export default {
           },
         },
       },
-      fileSize: {
+      file_size: {
         type: Sequelize.INTEGER,
         allowNull: false,
         validate: {
@@ -83,7 +83,7 @@ export default {
           },
         },
       },
-      mimeType: {
+      mime_type: {
         type: Sequelize.STRING(100),
         allowNull: false,
         validate: {
@@ -96,7 +96,7 @@ export default {
           },
         },
       },
-      fileType: {
+      file_type: {
         type: Sequelize.ENUM('image', 'document', 'video', 'audio'),
         allowNull: false,
         validate: {
@@ -106,7 +106,7 @@ export default {
           },
         },
       },
-      isImage: {
+      is_image: {
         type: Sequelize.BOOLEAN,
         allowNull: false,
         defaultValue: false,
@@ -131,7 +131,7 @@ export default {
           },
         },
       },
-      thumbnailPath: {
+      thumbnail_path: {
         type: Sequelize.STRING(500),
         allowNull: true,
         validate: {
@@ -141,7 +141,7 @@ export default {
           },
         },
       },
-      virusScanStatus: {
+      virus_scan_status: {
         type: Sequelize.ENUM('pending', 'scanning', 'clean', 'infected', 'error'),
         allowNull: false,
         defaultValue: 'pending',
@@ -152,12 +152,12 @@ export default {
           },
         },
       },
-      virusScanResult: {
+      virus_scan_result: {
         type: Sequelize.JSONB,
         allowNull: true,
         defaultValue: null,
       },
-      downloadCount: {
+      download_count: {
         type: Sequelize.INTEGER,
         allowNull: false,
         defaultValue: 0,
@@ -168,17 +168,17 @@ export default {
           },
         },
       },
-      expiresAt: {
+      expires_at: {
         type: Sequelize.DATE,
         allowNull: true,
         defaultValue: null,
       },
-      createdAt: {
+      created_at: {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.NOW,
       },
-      updatedAt: {
+      updated_at: {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.NOW,
@@ -186,45 +186,45 @@ export default {
     });
 
     // Add indexes
-    await queryInterface.addIndex('files', ['uploaderId'], {
-      name: 'idx_files_uploader_id',
+    await queryInterface.addIndex('file_uploads', ['uploader_id'], {
+      name: 'idx_file_uploads_uploader_id',
     });
 
-    await queryInterface.addIndex('files', ['messageId'], {
-      name: 'idx_files_message_id',
+    await queryInterface.addIndex('file_uploads', ['message_id'], {
+      name: 'idx_file_uploads_message_id',
     });
 
-    await queryInterface.addIndex('files', ['fileType'], {
-      name: 'idx_files_type',
+    await queryInterface.addIndex('file_uploads', ['file_type'], {
+      name: 'idx_file_uploads_type',
     });
 
-    await queryInterface.addIndex('files', ['virusScanStatus'], {
-      name: 'idx_files_virus_scan_status',
+    await queryInterface.addIndex('file_uploads', ['virus_scan_status'], {
+      name: 'idx_file_uploads_virus_scan_status',
     });
 
-    await queryInterface.addIndex('files', ['expiresAt'], {
-      name: 'idx_files_expires_at',
+    await queryInterface.addIndex('file_uploads', ['expires_at'], {
+      name: 'idx_file_uploads_expires_at',
     });
 
-    await queryInterface.addIndex('files', ['createdAt'], {
-      name: 'idx_files_created_at',
+    await queryInterface.addIndex('file_uploads', ['created_at'], {
+      name: 'idx_file_uploads_created_at',
     });
 
-    await queryInterface.addIndex('files', ['uploaderId', 'createdAt'], {
-      name: 'idx_files_uploader_created_desc',
-      order: [['createdAt', 'DESC']],
+    await queryInterface.addIndex('file_uploads', ['uploader_id', 'created_at'], {
+      name: 'idx_file_uploads_uploader_created_desc',
+      order: [['created_at', 'DESC']],
     });
 
-    await queryInterface.addIndex('files', ['fileSize'], {
-      name: 'idx_files_size',
+    await queryInterface.addIndex('file_uploads', ['file_size'], {
+      name: 'idx_file_uploads_size',
     });
 
-    await queryInterface.addIndex('files', ['mimeType'], {
-      name: 'idx_files_mime_type',
+    await queryInterface.addIndex('file_uploads', ['mime_type'], {
+      name: 'idx_file_uploads_mime_type',
     });
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('files');
+    await queryInterface.dropTable('file_uploads');
   }
 };

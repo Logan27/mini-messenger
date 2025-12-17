@@ -248,6 +248,7 @@ export const Message = sequelize.define(
   },
   {
     tableName: 'messages',
+    underscored: true,
     indexes: [
       {
         fields: ['recipientId', 'createdAt'],

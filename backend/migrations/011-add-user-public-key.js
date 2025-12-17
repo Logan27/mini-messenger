@@ -2,7 +2,7 @@
 
 /** @type {import('sequelize-cli').Migration} */
 export async function up(queryInterface, Sequelize) {
-  await queryInterface.addColumn('users', 'publicKey', {
+  await queryInterface.addColumn('users', 'public_key', {
     type: Sequelize.TEXT,
     allowNull: true,
     comment: 'Base64-encoded public key for E2E encryption (libsodium)',
@@ -10,5 +10,5 @@ export async function up(queryInterface, Sequelize) {
 }
 
 export async function down(queryInterface, Sequelize) {
-  await queryInterface.removeColumn('users', 'publicKey');
+  await queryInterface.removeColumn('users', 'public_key');
 }

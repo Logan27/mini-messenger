@@ -9,7 +9,7 @@ export default {
         primaryKey: true,
         allowNull: false,
       },
-      userId: {
+      user_id: {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
@@ -18,26 +18,26 @@ export default {
         },
         onDelete: 'CASCADE',
       },
-      passwordHash: {
+      password_hash: {
         type: DataTypes.STRING(255),
         allowNull: false,
       },
-      createdAt: {
+      created_at: {
         type: DataTypes.DATE,
         allowNull: false,
       },
-      updatedAt: {
+      updated_at: {
         type: DataTypes.DATE,
         allowNull: false,
       },
     });
 
     // Add indexes for better performance
-    await queryInterface.addIndex('password_history', ['userId'], {
+    await queryInterface.addIndex('password_history', ['user_id'], {
       name: 'idx_password_history_user_id',
     });
 
-    await queryInterface.addIndex('password_history', ['userId', 'createdAt'], {
+    await queryInterface.addIndex('password_history', ['user_id', 'created_at'], {
       name: 'idx_password_history_user_created',
     });
   },

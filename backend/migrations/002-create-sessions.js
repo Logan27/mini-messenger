@@ -9,7 +9,7 @@ export async function up(queryInterface, Sequelize) {
       primaryKey: true,
       allowNull: false,
     },
-    userId: {
+    user_id: {
       type: Sequelize.UUID,
       allowNull: false,
       references: {
@@ -29,7 +29,7 @@ export async function up(queryInterface, Sequelize) {
         notEmpty: true,
       },
     },
-    refreshToken: {
+    refresh_token: {
       type: Sequelize.STRING(500),
       allowNull: false,
       unique: true,
@@ -37,29 +37,29 @@ export async function up(queryInterface, Sequelize) {
         notEmpty: true,
       },
     },
-    ipAddress: {
+    ip_address: {
       type: Sequelize.STRING(45),
       allowNull: true,
       validate: {
         isIP: true,
       },
     },
-    userAgent: {
+    user_agent: {
       type: Sequelize.TEXT,
       allowNull: true,
     },
-    expiresAt: {
+    expires_at: {
       type: Sequelize.DATE,
       allowNull: false,
       validate: {
         isAfter: new Date().toISOString(),
       },
     },
-    createdAt: {
+    created_at: {
       type: Sequelize.DATE,
       allowNull: false,
     },
-    lastAccessedAt: {
+    last_accessed_at: {
       type: Sequelize.DATE,
       allowNull: false,
       defaultValue: Sequelize.NOW,
@@ -72,28 +72,28 @@ export async function up(queryInterface, Sequelize) {
     unique: true,
   });
 
-  await queryInterface.addIndex('sessions', ['refreshToken'], {
+  await queryInterface.addIndex('sessions', ['refresh_token'], {
     name: 'idx_sessions_refresh_token_unique',
     unique: true,
   });
 
-  await queryInterface.addIndex('sessions', ['userId'], {
+  await queryInterface.addIndex('sessions', ['user_id'], {
     name: 'idx_sessions_user_id',
   });
 
-  await queryInterface.addIndex('sessions', ['expiresAt'], {
+  await queryInterface.addIndex('sessions', ['expires_at'], {
     name: 'idx_sessions_expires_at',
   });
 
-  await queryInterface.addIndex('sessions', ['lastAccessedAt'], {
+  await queryInterface.addIndex('sessions', ['last_accessed_at'], {
     name: 'idx_sessions_last_accessed_at',
   });
 
-  await queryInterface.addIndex('sessions', ['createdAt'], {
+  await queryInterface.addIndex('sessions', ['created_at'], {
     name: 'idx_sessions_created_at',
   });
 
-  await queryInterface.addIndex('sessions', ['userId', 'expiresAt'], {
+  await queryInterface.addIndex('sessions', ['user_id', 'expires_at'], {
     name: 'idx_sessions_user_expires',
   });
 }

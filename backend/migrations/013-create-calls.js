@@ -10,7 +10,7 @@ export default {
         primaryKey: true,
         allowNull: false,
       },
-      callerId: {
+      caller_id: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {
@@ -20,7 +20,7 @@ export default {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
-      recipientId: {
+      recipient_id: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {
@@ -30,7 +30,7 @@ export default {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
-      callType: {
+      call_type: {
         type: Sequelize.ENUM('audio', 'video'),
         allowNull: false,
       },
@@ -42,24 +42,24 @@ export default {
         type: Sequelize.INTEGER,
         defaultValue: 0,
       },
-      startedAt: {
+      started_at: {
         type: Sequelize.DATE,
       },
-      endedAt: {
+      ended_at: {
         type: Sequelize.DATE,
       },
-      createdAt: {
+      created_at: {
         type: Sequelize.DATE,
         allowNull: false,
       },
-      updatedAt: {
+      updated_at: {
         type: Sequelize.DATE,
         allowNull: false,
       },
     });
 
-    await queryInterface.addIndex('calls', ['callerId', 'createdAt']);
-    await queryInterface.addIndex('calls', ['recipientId', 'createdAt']);
+    await queryInterface.addIndex('calls', ['caller_id', 'created_at']);
+    await queryInterface.addIndex('calls', ['recipient_id', 'created_at']);
     await queryInterface.addIndex('calls', ['status']);
   },
 

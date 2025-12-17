@@ -29,21 +29,21 @@ export async function up(queryInterface, Sequelize) {
         len: [0, 255],
       },
     },
-    passwordHash: {
+    password_hash: {
       type: Sequelize.STRING(255),
       allowNull: false,
       validate: {
         notEmpty: true,
       },
     },
-    firstName: {
+    first_name: {
       type: Sequelize.STRING(100),
       allowNull: true,
       validate: {
         len: [0, 100],
       },
     },
-    lastName: {
+    last_name: {
       type: Sequelize.STRING(100),
       allowNull: true,
       validate: {
@@ -62,26 +62,26 @@ export async function up(queryInterface, Sequelize) {
       defaultValue: 'offline',
       allowNull: false,
     },
-    emailVerified: {
+    email_verified: {
       type: Sequelize.BOOLEAN,
       defaultValue: false,
       allowNull: false,
     },
-    emailVerificationToken: {
+    email_verification_token: {
       type: Sequelize.STRING(255),
       allowNull: true,
       unique: true,
     },
-    passwordResetToken: {
+    password_reset_token: {
       type: Sequelize.STRING(255),
       allowNull: true,
       unique: true,
     },
-    passwordResetExpires: {
+    password_reset_expires: {
       type: Sequelize.DATE,
       allowNull: true,
     },
-    failedLoginAttempts: {
+    failed_login_attempts: {
       type: Sequelize.INTEGER,
       defaultValue: 0,
       allowNull: false,
@@ -90,23 +90,23 @@ export async function up(queryInterface, Sequelize) {
         max: 10,
       },
     },
-    lockedUntil: {
+    locked_until: {
       type: Sequelize.DATE,
       allowNull: true,
     },
-    lastLoginAt: {
+    last_login_at: {
       type: Sequelize.DATE,
       allowNull: true,
     },
-    createdAt: {
+    created_at: {
       type: Sequelize.DATE,
       allowNull: false,
     },
-    updatedAt: {
+    updated_at: {
       type: Sequelize.DATE,
       allowNull: false,
     },
-    deletedAt: {
+    deleted_at: {
       type: Sequelize.DATE,
       allowNull: true,
     },
@@ -127,15 +127,15 @@ export async function up(queryInterface, Sequelize) {
     name: 'idx_users_status',
   });
 
-  await queryInterface.addIndex('users', ['emailVerified'], {
+  await queryInterface.addIndex('users', ['email_verified'], {
     name: 'idx_users_email_verified',
   });
 
-  await queryInterface.addIndex('users', ['createdAt'], {
+  await queryInterface.addIndex('users', ['created_at'], {
     name: 'idx_users_created_at',
   });
 
-  await queryInterface.addIndex('users', ['lastLoginAt'], {
+  await queryInterface.addIndex('users', ['last_login_at'], {
     name: 'idx_users_last_login_at',
   });
 }

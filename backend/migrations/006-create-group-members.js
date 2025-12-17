@@ -2,14 +2,14 @@
 
 /** @type {import('sequelize-cli').Migration} */
 export async function up(queryInterface, Sequelize) {
-  await queryInterface.createTable('groupMembers', {
+  await queryInterface.createTable('group_members', {
     id: {
       type: Sequelize.UUID,
       defaultValue: Sequelize.UUIDV4,
       primaryKey: true,
       allowNull: false,
     },
-    groupId: {
+    group_id: {
       type: Sequelize.UUID,
       allowNull: false,
       references: {
@@ -19,7 +19,7 @@ export async function up(queryInterface, Sequelize) {
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE',
     },
-    userId: {
+    user_id: {
       type: Sequelize.UUID,
       allowNull: false,
       references: {
@@ -34,21 +34,21 @@ export async function up(queryInterface, Sequelize) {
       defaultValue: 'member',
       allowNull: false,
     },
-    joinedAt: {
+    joined_at: {
       type: Sequelize.DATE,
       allowNull: false,
       defaultValue: Sequelize.NOW,
     },
-    leftAt: {
+    left_at: {
       type: Sequelize.DATE,
       allowNull: true,
     },
-    isActive: {
+    is_active: {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
       allowNull: false,
     },
-    invitedBy: {
+    invited_by: {
       type: Sequelize.UUID,
       allowNull: true,
       references: {
@@ -69,76 +69,76 @@ export async function up(queryInterface, Sequelize) {
         canDeleteMessages: false,
       },
     },
-    lastSeenAt: {
+    last_seen_at: {
       type: Sequelize.DATE,
       allowNull: true,
     },
-    createdAt: {
+    created_at: {
       type: Sequelize.DATE,
       allowNull: false,
     },
-    updatedAt: {
+    updated_at: {
       type: Sequelize.DATE,
       allowNull: false,
     },
   });
 
   // Create optimized indexes for performance
-  await queryInterface.addIndex('groupMembers', ['groupId'], {
+  await queryInterface.addIndex('group_members', ['group_id'], {
     name: 'idx_group_members_group',
   });
 
-  await queryInterface.addIndex('groupMembers', ['userId'], {
+  await queryInterface.addIndex('group_members', ['user_id'], {
     name: 'idx_group_members_user',
   });
 
-  await queryInterface.addIndex('groupMembers', ['groupId', 'isActive'], {
+  await queryInterface.addIndex('group_members', ['group_id', 'is_active'], {
     name: 'idx_group_members_group_active',
   });
 
-  await queryInterface.addIndex('groupMembers', ['userId', 'isActive'], {
+  await queryInterface.addIndex('group_members', ['user_id', 'is_active'], {
     name: 'idx_group_members_user_active',
   });
 
-  await queryInterface.addIndex('groupMembers', ['role'], {
+  await queryInterface.addIndex('group_members', ['role'], {
     name: 'idx_group_members_role',
   });
 
-  await queryInterface.addIndex('groupMembers', ['joinedAt'], {
+  await queryInterface.addIndex('group_members', ['joined_at'], {
     name: 'idx_group_members_joined_at',
   });
 
-  await queryInterface.addIndex('groupMembers', ['leftAt'], {
+  await queryInterface.addIndex('group_members', ['left_at'], {
     name: 'idx_group_members_left_at',
   });
 
   // Composite unique constraint for user-group pairs (one user can only be in a group once)
-  await queryInterface.addIndex('groupMembers', ['groupId', 'userId'], {
+  await queryInterface.addIndex('group_members', ['group_id', 'user_id'], {
     name: 'idx_group_members_unique_user_group',
     unique: true,
   });
 
   // Index for finding active members in a group
-  await queryInterface.addIndex('groupMembers',
-    ['groupId', 'isActive', 'joinedAt'],
+  await queryInterface.addIndex('group_members',
+    ['group_id', 'is_active', 'joined_at'],
     {
       name: 'idx_group_members_active_sorted',
       where: {
-        isActive: true,
+        is_active: true,
       },
-      order: [['joinedAt', 'ASC']],
+      order: [['joined_at', 'ASC']],
     }
   );
 
   // Index for finding groups a user is member of
-  await queryInterface.addIndex('groupMembers',
-    ['userId', 'isActive', 'lastSeenAt'],
+  await queryInterface.addIndex('group_members',
+    ['user_id', 'is_active', 'last_seen_at'],
     {
       name: 'idx_group_members_user_groups',
       where: {
-        isActive: true,
+        is_active: true,
       },
-      order: [['lastSeenAt', 'DESC']],
+      order: [['last_seen_at', 'DESC']],
     }
   );
 }

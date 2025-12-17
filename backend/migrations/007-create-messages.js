@@ -9,7 +9,7 @@ export async function up(queryInterface, Sequelize) {
       primaryKey: true,
       allowNull: false,
     },
-    senderId: {
+    sender_id: {
       type: Sequelize.UUID,
       allowNull: false,
       references: {
@@ -19,7 +19,7 @@ export async function up(queryInterface, Sequelize) {
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE',
     },
-    recipientId: {
+    recipient_id: {
       type: Sequelize.UUID,
       allowNull: true,
       references: {
@@ -29,7 +29,7 @@ export async function up(queryInterface, Sequelize) {
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL',
     },
-    groupId: {
+    group_id: {
       type: Sequelize.UUID,
       allowNull: true,
       references: {
@@ -47,11 +47,11 @@ export async function up(queryInterface, Sequelize) {
         len: [1, 10000],
       },
     },
-    encryptedContent: {
+    encrypted_content: {
       type: Sequelize.TEXT,
       allowNull: true,
     },
-    messageType: {
+    message_type: {
       type: Sequelize.ENUM('text', 'image', 'file', 'system', 'call', 'location'),
       defaultValue: 'text',
       allowNull: false,
@@ -61,15 +61,15 @@ export async function up(queryInterface, Sequelize) {
       defaultValue: 'sent',
       allowNull: false,
     },
-    editedAt: {
+    edited_at: {
       type: Sequelize.DATE,
       allowNull: true,
     },
-    deletedAt: {
+    deleted_at: {
       type: Sequelize.DATE,
       allowNull: true,
     },
-    replyToId: {
+    reply_to_id: {
       type: Sequelize.UUID,
       allowNull: true,
       references: {
@@ -84,11 +84,11 @@ export async function up(queryInterface, Sequelize) {
       allowNull: true,
       defaultValue: {},
     },
-    fileName: {
+    file_name: {
       type: Sequelize.STRING(255),
       allowNull: true,
     },
-    fileSize: {
+    file_size: {
       type: Sequelize.INTEGER,
       allowNull: true,
       validate: {
@@ -96,52 +96,52 @@ export async function up(queryInterface, Sequelize) {
         max: 100 * 1024 * 1024, // 100MB max
       },
     },
-    mimeType: {
+    mime_type: {
       type: Sequelize.STRING(100),
       allowNull: true,
     },
-    createdAt: {
+    created_at: {
       type: Sequelize.DATE,
       allowNull: false,
     },
-    updatedAt: {
+    updated_at: {
       type: Sequelize.DATE,
       allowNull: false,
     },
   });
 
   // Create optimized indexes for performance
-  await queryInterface.addIndex('messages', ['recipientId', 'createdAt'], {
+  await queryInterface.addIndex('messages', ['recipient_id', 'created_at'], {
     name: 'idx_messages_recipient_created_desc',
-    order: [['createdAt', 'DESC']],
+    order: [['created_at', 'DESC']],
   });
 
-  await queryInterface.addIndex('messages', ['senderId', 'createdAt'], {
+  await queryInterface.addIndex('messages', ['sender_id', 'created_at'], {
     name: 'idx_messages_sender_created_desc',
-    order: [['createdAt', 'DESC']],
+    order: [['created_at', 'DESC']],
   });
 
-  await queryInterface.addIndex('messages', ['groupId', 'createdAt'], {
+  await queryInterface.addIndex('messages', ['group_id', 'created_at'], {
     name: 'idx_messages_group_created_desc',
-    order: [['createdAt', 'DESC']],
+    order: [['created_at', 'DESC']],
   });
 
   await queryInterface.addIndex('messages', ['status'], {
     name: 'idx_messages_status',
   });
 
-  await queryInterface.addIndex('messages', ['messageType'], {
+  await queryInterface.addIndex('messages', ['message_type'], {
     name: 'idx_messages_type',
   });
 
-  await queryInterface.addIndex('messages', ['replyToId'], {
+  await queryInterface.addIndex('messages', ['reply_to_id'], {
     name: 'idx_messages_reply_to',
   });
 
   // Composite index for conversation queries (sender-recipient pairs)
-  await queryInterface.addIndex('messages', ['senderId', 'recipientId', 'createdAt'], {
+  await queryInterface.addIndex('messages', ['sender_id', 'recipient_id', 'created_at'], {
     name: 'idx_messages_conversation_desc',
-    order: [['createdAt', 'DESC']],
+    order: [['created_at', 'DESC']],
   });
 
   // Full-text search index for message content
@@ -153,7 +153,7 @@ export async function up(queryInterface, Sequelize) {
 
   // Partial index for unread messages (status != 'read')
   await queryInterface.addIndex('messages',
-    ['recipientId', 'status', 'createdAt'],
+    ['recipient_id', 'status', 'created_at'],
     {
       name: 'idx_messages_unread',
       where: {
@@ -161,15 +161,15 @@ export async function up(queryInterface, Sequelize) {
           [Sequelize.Op.ne]: 'read'
         }
       },
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
     }
   );
 
   // Index for deleted messages cleanup
-  await queryInterface.addIndex('messages', ['deletedAt'], {
+  await queryInterface.addIndex('messages', ['deleted_at'], {
     name: 'idx_messages_deleted_cleanup',
     where: {
-      deletedAt: {
+      deleted_at: {
         [Sequelize.Op.ne]: null
       }
     },

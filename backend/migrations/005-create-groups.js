@@ -24,7 +24,7 @@ export async function up(queryInterface, Sequelize) {
         len: [0, 1000],
       },
     },
-    creatorId: {
+    created_by: {
       type: Sequelize.UUID,
       allowNull: false,
       references: {
@@ -34,12 +34,12 @@ export async function up(queryInterface, Sequelize) {
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE',
     },
-    isActive: {
+    is_active: {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
       allowNull: false,
     },
-    maxMembers: {
+    max_members: {
       type: Sequelize.INTEGER,
       defaultValue: 100,
       allowNull: false,
@@ -48,7 +48,7 @@ export async function up(queryInterface, Sequelize) {
         max: 1000,
       },
     },
-    groupType: {
+    group_type: {
       type: Sequelize.ENUM('private', 'public'),
       defaultValue: 'private',
       allowNull: false,
@@ -60,7 +60,7 @@ export async function up(queryInterface, Sequelize) {
         isUrl: true,
       },
     },
-    lastMessageAt: {
+    last_message_at: {
       type: Sequelize.DATE,
       allowNull: true,
     },
@@ -73,38 +73,38 @@ export async function up(queryInterface, Sequelize) {
         messageRetention: 30, // days
       },
     },
-    createdAt: {
+    created_at: {
       type: Sequelize.DATE,
       allowNull: false,
     },
-    updatedAt: {
+    updated_at: {
       type: Sequelize.DATE,
       allowNull: false,
     },
-    deletedAt: {
+    deleted_at: {
       type: Sequelize.DATE,
       allowNull: true,
     },
   });
 
   // Create optimized indexes for performance
-  await queryInterface.addIndex('groups', ['creatorId'], {
+  await queryInterface.addIndex('groups', ['created_by'], {
     name: 'idx_groups_creator_uuid',
   });
 
-  await queryInterface.addIndex('groups', ['isActive'], {
+  await queryInterface.addIndex('groups', ['is_active'], {
     name: 'idx_groups_is_active',
   });
 
-  await queryInterface.addIndex('groups', ['groupType'], {
+  await queryInterface.addIndex('groups', ['group_type'], {
     name: 'idx_groups_group_type',
   });
 
-  await queryInterface.addIndex('groups', ['createdAt'], {
+  await queryInterface.addIndex('groups', ['created_at'], {
     name: 'idx_groups_created_at_idx',
   });
 
-  await queryInterface.addIndex('groups', ['lastMessageAt'], {
+  await queryInterface.addIndex('groups', ['last_message_at'], {
     name: 'idx_groups_last_message_at',
   });
 

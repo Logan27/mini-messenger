@@ -10,14 +10,14 @@ export async function up(queryInterface, Sequelize) {
   });
 
   // Add approval status field
-  await queryInterface.addColumn('users', 'approvalStatus', {
+  await queryInterface.addColumn('users', 'approval_status', {
     type: Sequelize.ENUM('pending', 'approved', 'rejected'),
     defaultValue: 'pending',
     allowNull: false,
   });
 
   // Add approved by field (references users table)
-  await queryInterface.addColumn('users', 'approvedBy', {
+  await queryInterface.addColumn('users', 'approved_by', {
     type: Sequelize.UUID,
     allowNull: true,
     references: {
@@ -29,13 +29,13 @@ export async function up(queryInterface, Sequelize) {
   });
 
   // Add approved at timestamp
-  await queryInterface.addColumn('users', 'approvedAt', {
+  await queryInterface.addColumn('users', 'approved_at', {
     type: Sequelize.DATE,
     allowNull: true,
   });
 
   // Add rejection reason field
-  await queryInterface.addColumn('users', 'rejectionReason', {
+  await queryInterface.addColumn('users', 'rejection_reason', {
     type: Sequelize.TEXT,
     allowNull: true,
   });
@@ -45,7 +45,7 @@ export async function up(queryInterface, Sequelize) {
     name: 'idx_users_role',
   });
 
-  await queryInterface.addIndex('users', ['approvalStatus'], {
+  await queryInterface.addIndex('users', ['approval_status'], {
     name: 'idx_users_approval_status',
   });
 }
@@ -56,13 +56,13 @@ export async function down(queryInterface, Sequelize) {
   await queryInterface.removeIndex('users', 'idx_users_approval_status');
 
   // Remove columns in reverse order
-  await queryInterface.removeColumn('users', 'rejectionReason');
-  await queryInterface.removeColumn('users', 'approvedAt');
-  await queryInterface.removeColumn('users', 'approvedBy');
-  await queryInterface.removeColumn('users', 'approvalStatus');
+  await queryInterface.removeColumn('users', 'rejection_reason');
+  await queryInterface.removeColumn('users', 'approved_at');
+  await queryInterface.removeColumn('users', 'approved_by');
+  await queryInterface.removeColumn('users', 'approval_status');
   await queryInterface.removeColumn('users', 'role');
 
   // Drop the ENUM types if needed
   await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_users_role";');
-  await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_users_approvalStatus";');
+  await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_users_approval_status";');
 }

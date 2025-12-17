@@ -9,7 +9,7 @@ export async function up(queryInterface, Sequelize) {
       primaryKey: true,
       allowNull: false,
     },
-    userId: {
+    user_id: {
       type: Sequelize.UUID,
       allowNull: false,
       references: {
@@ -19,7 +19,7 @@ export async function up(queryInterface, Sequelize) {
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE',
     },
-    contactUserId: {
+    contact_user_id: {
       type: Sequelize.UUID,
       allowNull: false,
       references: {
@@ -34,7 +34,7 @@ export async function up(queryInterface, Sequelize) {
       defaultValue: 'pending',
       allowNull: false,
     },
-    blockedAt: {
+    blocked_at: {
       type: Sequelize.DATE,
       allowNull: true,
     },
@@ -52,31 +52,31 @@ export async function up(queryInterface, Sequelize) {
         len: [0, 500],
       },
     },
-    isFavorite: {
+    is_favorite: {
       type: Sequelize.BOOLEAN,
       defaultValue: false,
       allowNull: false,
     },
-    lastContactAt: {
+    last_contact_at: {
       type: Sequelize.DATE,
       allowNull: true,
     },
-    createdAt: {
+    created_at: {
       type: Sequelize.DATE,
       allowNull: false,
     },
-    updatedAt: {
+    updated_at: {
       type: Sequelize.DATE,
       allowNull: false,
     },
   });
 
   // Create optimized indexes for performance
-  await queryInterface.addIndex('contacts', ['userId'], {
+  await queryInterface.addIndex('contacts', ['user_id'], {
     name: 'idx_contacts_user',
   });
 
-  await queryInterface.addIndex('contacts', ['contactUserId'], {
+  await queryInterface.addIndex('contacts', ['contact_user_id'], {
     name: 'idx_contacts_contact_user',
   });
 
@@ -84,39 +84,39 @@ export async function up(queryInterface, Sequelize) {
     name: 'idx_contacts_status',
   });
 
-  await queryInterface.addIndex('contacts', ['isFavorite'], {
+  await queryInterface.addIndex('contacts', ['is_favorite'], {
     name: 'idx_contacts_favorite',
   });
 
-  await queryInterface.addIndex('contacts', ['createdAt'], {
+  await queryInterface.addIndex('contacts', ['created_at'], {
     name: 'idx_contacts_created_at',
   });
 
-  await queryInterface.addIndex('contacts', ['lastContactAt'], {
+  await queryInterface.addIndex('contacts', ['last_contact_at'], {
     name: 'idx_contacts_last_contact',
   });
 
   // Composite unique constraint for user-contact pairs
-  await queryInterface.addIndex('contacts', ['userId', 'contactUserId'], {
+  await queryInterface.addIndex('contacts', ['user_id', 'contact_user_id'], {
     name: 'idx_contacts_unique_user_contact',
     unique: true,
   });
 
   // Index for finding active contacts (accepted status)
   await queryInterface.addIndex('contacts',
-    ['userId', 'status', 'isFavorite', 'lastContactAt'],
+    ['user_id', 'status', 'is_favorite', 'last_contact_at'],
     {
       name: 'idx_contacts_user_accepted',
       where: {
         status: 'accepted',
       },
-      order: [['isFavorite', 'DESC'], ['lastContactAt', 'DESC']],
+      order: [['is_favorite', 'DESC'], ['last_contact_at', 'DESC']],
     }
   );
 
   // Index for finding blocked contacts
   await queryInterface.addIndex('contacts',
-    ['userId', 'status'],
+    ['user_id', 'status'],
     {
       name: 'idx_contacts_user_blocked',
       where: {
@@ -127,13 +127,13 @@ export async function up(queryInterface, Sequelize) {
 
   // Index for pending contact requests
   await queryInterface.addIndex('contacts',
-    ['contactUserId', 'status', 'createdAt'],
+    ['contact_user_id', 'status', 'created_at'],
     {
       name: 'idx_contacts_pending_requests',
       where: {
         status: 'pending',
       },
-      order: [['createdAt', 'ASC']],
+      order: [['created_at', 'ASC']],
     }
   );
 }

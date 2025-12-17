@@ -12,8 +12,8 @@ export async function up(queryInterface, Sequelize) {
     USING GIN (
       to_tsvector('english',
         COALESCE(username, '') || ' ' ||
-        COALESCE("firstName", '') || ' ' ||
-        COALESCE("lastName", '') || ' ' ||
+        COALESCE("first_name", '') || ' ' ||
+        COALESCE("last_name", '') || ' ' ||
         COALESCE(email, '')
       )
     );
@@ -24,17 +24,17 @@ export async function up(queryInterface, Sequelize) {
     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_search_trgm
     ON users
     USING GIN (
-      (username || ' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '') || ' ' || email) gin_trgm_ops
+      (username || ' ' || COALESCE("first_name", '') || ' ' || COALESCE("last_name", '') || ' ' || email) gin_trgm_ops
     );
   `);
 
   // Create composite index for search filtering and ordering
   await queryInterface.addIndex('users',
-    ['approvalStatus', 'id'],
+    ['approval_status', 'id'],
     {
       name: 'idx_users_search_filter',
       where: {
-        approvalStatus: 'approved',
+        approval_status: 'approved',
       }
     }
   );

@@ -9,7 +9,7 @@ export async function up(queryInterface, Sequelize) {
       primaryKey: true,
       allowNull: false,
     },
-    userId: {
+    user_id: {
       type: Sequelize.UUID,
       allowNull: false,
       references: {
@@ -19,22 +19,22 @@ export async function up(queryInterface, Sequelize) {
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE',
     },
-    inAppEnabled: {
+    in_app_enabled: {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
       allowNull: false,
     },
-    emailEnabled: {
+    email_enabled: {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
       allowNull: false,
     },
-    pushEnabled: {
+    push_enabled: {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
       allowNull: false,
     },
-    quietHoursStart: {
+    quiet_hours_start: {
       type: Sequelize.TIME,
       allowNull: true,
       validate: {
@@ -44,7 +44,7 @@ export async function up(queryInterface, Sequelize) {
         },
       },
     },
-    quietHoursEnd: {
+    quiet_hours_end: {
       type: Sequelize.TIME,
       allowNull: true,
       validate: {
@@ -54,79 +54,79 @@ export async function up(queryInterface, Sequelize) {
         },
       },
     },
-    doNotDisturb: {
+    do_not_disturb: {
       type: Sequelize.BOOLEAN,
       defaultValue: false,
       allowNull: false,
     },
-    messageNotifications: {
+    message_notifications: {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
       allowNull: false,
     },
-    callNotifications: {
+    call_notifications: {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
       allowNull: false,
     },
-    mentionNotifications: {
+    mention_notifications: {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
       allowNull: false,
     },
-    adminNotifications: {
+    admin_notifications: {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
       allowNull: false,
     },
-    systemNotifications: {
+    system_notifications: {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
       allowNull: false,
     },
-    createdAt: {
+    created_at: {
       type: Sequelize.DATE,
       allowNull: false,
     },
-    updatedAt: {
+    updated_at: {
       type: Sequelize.DATE,
       allowNull: false,
     },
   });
 
   // Create optimized indexes for performance
-  await queryInterface.addIndex('notification_settings', ['userId'], {
+  await queryInterface.addIndex('notification_settings', ['user_id'], {
     name: 'idx_notification_settings_user_id_unique',
     unique: true,
   });
 
   // Index for quick lookups by notification preferences
-  await queryInterface.addIndex('notification_settings', ['inAppEnabled'], {
+  await queryInterface.addIndex('notification_settings', ['in_app_enabled'], {
     name: 'idx_notification_settings_in_app_enabled',
   });
 
-  await queryInterface.addIndex('notification_settings', ['emailEnabled'], {
+  await queryInterface.addIndex('notification_settings', ['email_enabled'], {
     name: 'idx_notification_settings_email_enabled',
   });
 
-  await queryInterface.addIndex('notification_settings', ['pushEnabled'], {
+  await queryInterface.addIndex('notification_settings', ['push_enabled'], {
     name: 'idx_notification_settings_push_enabled',
   });
 
-  await queryInterface.addIndex('notification_settings', ['doNotDisturb'], {
+  await queryInterface.addIndex('notification_settings', ['do_not_disturb'], {
     name: 'idx_notification_settings_dnd',
   });
 
   // Composite index for quiet hours queries
   await queryInterface.addIndex('notification_settings',
-    ['quietHoursStart', 'quietHoursEnd'],
+    ['quiet_hours_start', 'quiet_hours_end'],
     {
       name: 'idx_notification_settings_quiet_hours',
     }
   );
 
   // Index for settings updated timestamp for cache invalidation
-  await queryInterface.addIndex('notification_settings', ['updatedAt'], {
+  await queryInterface.addIndex('notification_settings', ['updated_at'], {
     name: 'idx_notification_settings_updated_at',
   });
 }

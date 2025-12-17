@@ -10,7 +10,7 @@ export default {
         primaryKey: true,
         allowNull: false,
       },
-      userId: {
+      user_id: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {
@@ -25,17 +25,17 @@ export default {
         allowNull: false,
         unique: true,
       },
-      createdAt: {
+      created_at: {
         type: Sequelize.DATE,
         allowNull: false,
       },
-      updatedAt: {
+      updated_at: {
         type: Sequelize.DATE,
         allowNull: false,
       },
     });
 
-    await queryInterface.addIndex('devices', ['userId']);
+    await queryInterface.addIndex('devices', ['user_id']);
   },
 
   async down(queryInterface, Sequelize) {

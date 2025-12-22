@@ -185,7 +185,7 @@ class GroupsController {
           message: 'Group created successfully',
         });
       } catch (error) {
-        if (transaction) await transaction.rollback();
+        if (transaction && !transaction.finished) await transaction.rollback();
         throw error;
       }
     } catch (error) {

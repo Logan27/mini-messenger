@@ -102,6 +102,7 @@ services:
       FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
       MAX_FILE_SIZE: ${MAX_FILE_SIZE:-10485760}
       AUTO_VERIFY_EMAIL: ${AUTO_VERIFY_EMAIL:-true}
+      TRUST_PROXY: "true"
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/logs:/app/logs

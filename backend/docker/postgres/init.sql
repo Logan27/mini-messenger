@@ -232,80 +232,79 @@ BEGIN
     AND expires_at < CURRENT_TIMESTAMP
     AND is_deleted = false;
 END;
-$$ LANGUAGE plpgsql;- -   C r e a t e   c o n t a c t s   t a b l e  
- C R E A T E   T A B L E   I F   N O T   E X I S T S   c o n t a c t s   (  
-         i d   U U I D   P R I M A R Y   K E Y   D E F A U L T   u u i d _ g e n e r a t e _ v 4 ( ) ,  
-         u s e r _ i d   U U I D   N O T   N U L L   R E F E R E N C E S   u s e r s ( i d )   O N   D E L E T E   C A S C A D E ,  
-         c o n t a c t _ u s e r _ i d   U U I D   N O T   N U L L   R E F E R E N C E S   u s e r s ( i d )   O N   D E L E T E   C A S C A D E ,  
-         s t a t u s   V A R C H A R ( 2 5 5 )   N O T   N U L L   D E F A U L T   ' p e n d i n g ' ,  
-         b l o c k e d _ a t   T I M E S T A M P   W I T H   T I M E   Z O N E ,  
-         n i c k n a m e   V A R C H A R ( 1 0 0 ) ,  
-         n o t e s   T E X T ,  
-         i s _ f a v o r i t e   B O O L E A N   D E F A U L T   f a l s e ,  
-         l a s t _ c o n t a c t _ a t   T I M E S T A M P   W I T H   T I M E   Z O N E ,  
-         c r e a t e d _ a t   T I M E S T A M P   W I T H   T I M E   Z O N E   D E F A U L T   C U R R E N T _ T I M E S T A M P ,  
-         u p d a t e d _ a t   T I M E S T A M P   W I T H   T I M E   Z O N E   D E F A U L T   C U R R E N T _ T I M E S T A M P  
- ) ;  
-  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ c o n t a c t s _ u s e r   O N   c o n t a c t s ( u s e r _ i d ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ c o n t a c t s _ c o n t a c t _ u s e r   O N   c o n t a c t s ( c o n t a c t _ u s e r _ i d ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ c o n t a c t s _ s t a t u s   O N   c o n t a c t s ( s t a t u s ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ c o n t a c t s _ f a v o r i t e   O N   c o n t a c t s ( i s _ f a v o r i t e ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ c o n t a c t s _ c r e a t e d _ a t   O N   c o n t a c t s ( c r e a t e d _ a t ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ c o n t a c t s _ l a s t _ c o n t a c t   O N   c o n t a c t s ( l a s t _ c o n t a c t _ a t ) ;  
- C R E A T E   U N I Q U E   I N D E X   I F   N O T   E X I S T S   i d x _ c o n t a c t s _ u n i q u e _ u s e r _ c o n t a c t   O N   c o n t a c t s ( u s e r _ i d ,   c o n t a c t _ u s e r _ i d ) ;  
-  
-  
- - -   C r e a t e   n o t i f i c a t i o n _ s e t t i n g s   t a b l e  
- C R E A T E   T A B L E   I F   N O T   E X I S T S   n o t i f i c a t i o n _ s e t t i n g s   (  
-         i d   U U I D   P R I M A R Y   K E Y   D E F A U L T   u u i d _ g e n e r a t e _ v 4 ( ) ,  
-         u s e r _ i d   U U I D   N O T   N U L L   R E F E R E N C E S   u s e r s ( i d )   O N   D E L E T E   C A S C A D E ,  
-         i n _ a p p _ e n a b l e d   B O O L E A N   D E F A U L T   t r u e ,  
-         e m a i l _ e n a b l e d   B O O L E A N   D E F A U L T   t r u e ,  
-         p u s h _ e n a b l e d   B O O L E A N   D E F A U L T   t r u e ,  
-         q u i e t _ h o u r s _ s t a r t   T I M E ,  
-         q u i e t _ h o u r s _ e n d   T I M E ,  
-         d o _ n o t _ d i s t u r b   B O O L E A N   D E F A U L T   f a l s e ,  
-         m e s s a g e _ n o t i f i c a t i o n s   B O O L E A N   D E F A U L T   t r u e ,  
-         c a l l _ n o t i f i c a t i o n s   B O O L E A N   D E F A U L T   t r u e ,  
-         m e n t i o n _ n o t i f i c a t i o n s   B O O L E A N   D E F A U L T   t r u e ,  
-         a d m i n _ n o t i f i c a t i o n s   B O O L E A N   D E F A U L T   t r u e ,  
-         s y s t e m _ n o t i f i c a t i o n s   B O O L E A N   D E F A U L T   t r u e ,  
-         c r e a t e d _ a t   T I M E S T A M P   W I T H   T I M E   Z O N E   D E F A U L T   C U R R E N T _ T I M E S T A M P ,  
-         u p d a t e d _ a t   T I M E S T A M P   W I T H   T I M E   Z O N E   D E F A U L T   C U R R E N T _ T I M E S T A M P  
- ) ;  
-  
- C R E A T E   U N I Q U E   I N D E X   I F   N O T   E X I S T S   i d x _ n o t i f i c a t i o n _ s e t t i n g s _ u s e r _ i d _ u n i q u e   O N   n o t i f i c a t i o n _ s e t t i n g s ( u s e r _ i d ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ n o t i f i c a t i o n _ s e t t i n g s _ i n _ a p p _ e n a b l e d   O N   n o t i f i c a t i o n _ s e t t i n g s ( i n _ a p p _ e n a b l e d ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ n o t i f i c a t i o n _ s e t t i n g s _ e m a i l _ e n a b l e d   O N   n o t i f i c a t i o n _ s e t t i n g s ( e m a i l _ e n a b l e d ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ n o t i f i c a t i o n _ s e t t i n g s _ p u s h _ e n a b l e d   O N   n o t i f i c a t i o n _ s e t t i n g s ( p u s h _ e n a b l e d ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ n o t i f i c a t i o n _ s e t t i n g s _ d n d   O N   n o t i f i c a t i o n _ s e t t i n g s ( d o _ n o t _ d i s t u r b ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ n o t i f i c a t i o n _ s e t t i n g s _ q u i e t _ h o u r s   O N   n o t i f i c a t i o n _ s e t t i n g s ( q u i e t _ h o u r s _ s t a r t ,   q u i e t _ h o u r s _ e n d ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ n o t i f i c a t i o n _ s e t t i n g s _ u p d a t e d _ a t   O N   n o t i f i c a t i o n _ s e t t i n g s ( u p d a t e d _ a t ) ;  
-  
- - -   C r e a t e   g r o u p _ m e s s a g e _ s t a t u s   t a b l e  
- D O   $ $   B E G I N  
-         C R E A T E   T Y P E   g r o u p _ m e s s a g e _ s t a t u s _ e n u m   A S   E N U M   ( ' s e n t ' ,   ' d e l i v e r e d ' ,   ' r e a d ' ) ;  
- E X C E P T I O N  
-         W H E N   d u p l i c a t e _ o b j e c t   T H E N   n u l l ;  
- E N D   $ $ ;  
-  
- C R E A T E   T A B L E   I F   N O T   E X I S T S   g r o u p _ m e s s a g e _ s t a t u s   (  
-         i d   U U I D   P R I M A R Y   K E Y   D E F A U L T   u u i d _ g e n e r a t e _ v 4 ( ) ,  
-         m e s s a g e _ i d   U U I D   N O T   N U L L   R E F E R E N C E S   m e s s a g e s ( i d )   O N   D E L E T E   C A S C A D E ,  
-         u s e r _ i d   U U I D   N O T   N U L L   R E F E R E N C E S   u s e r s ( i d )   O N   D E L E T E   C A S C A D E ,  
-         s t a t u s   g r o u p _ m e s s a g e _ s t a t u s _ e n u m   N O T   N U L L   D E F A U L T   ' s e n t ' ,  
-         d e l i v e r e d _ a t   T I M E S T A M P   W I T H   T I M E   Z O N E ,  
-         r e a d _ a t   T I M E S T A M P   W I T H   T I M E   Z O N E ,  
-         c r e a t e d _ a t   T I M E S T A M P   W I T H   T I M E   Z O N E   D E F A U L T   C U R R E N T _ T I M E S T A M P ,  
-         u p d a t e d _ a t   T I M E S T A M P   W I T H   T I M E   Z O N E   D E F A U L T   C U R R E N T _ T I M E S T A M P  
- ) ;  
-  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ g r o u p _ m e s s a g e _ s t a t u s _ m e s s a g e   O N   g r o u p _ m e s s a g e _ s t a t u s ( m e s s a g e _ i d ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ g r o u p _ m e s s a g e _ s t a t u s _ u s e r   O N   g r o u p _ m e s s a g e _ s t a t u s ( u s e r _ i d ) ;  
- C R E A T E   U N I Q U E   I N D E X   I F   N O T   E X I S T S   i d x _ g r o u p _ m e s s a g e _ s t a t u s _ u n i q u e   O N   g r o u p _ m e s s a g e _ s t a t u s ( m e s s a g e _ i d ,   u s e r _ i d ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ g r o u p _ m e s s a g e _ s t a t u s _ s t a t u s   O N   g r o u p _ m e s s a g e _ s t a t u s ( s t a t u s ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ g r o u p _ m e s s a g e _ s t a t u s _ d e l i v e r e d   O N   g r o u p _ m e s s a g e _ s t a t u s ( d e l i v e r e d _ a t ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ g r o u p _ m e s s a g e _ s t a t u s _ r e a d   O N   g r o u p _ m e s s a g e _ s t a t u s ( r e a d _ a t ) ;  
-  
- 
+$$ LANGUAGE plpgsql;-- Create contacts table
+CREATE TABLE IF NOT EXISTS contacts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    contact_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(255) NOT NULL DEFAULT 'pending',
+    blocked_at TIMESTAMP WITH TIME ZONE,
+    nickname VARCHAR(100),
+    notes TEXT,
+    is_favorite BOOLEAN DEFAULT false,
+    last_contact_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_contacts_user ON contacts(user_id);
+CREATE INDEX IF NOT EXISTS idx_contacts_contact_user ON contacts(contact_user_id);
+CREATE INDEX IF NOT EXISTS idx_contacts_status ON contacts(status);
+CREATE INDEX IF NOT EXISTS idx_contacts_favorite ON contacts(is_favorite);
+CREATE INDEX IF NOT EXISTS idx_contacts_created_at ON contacts(created_at);
+CREATE INDEX IF NOT EXISTS idx_contacts_last_contact ON contacts(last_contact_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_contacts_unique_user_contact ON contacts(user_id, contact_user_id);
+
+
+-- Create notification_settings table
+CREATE TABLE IF NOT EXISTS notification_settings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    in_app_enabled BOOLEAN DEFAULT true,
+    email_enabled BOOLEAN DEFAULT true,
+    push_enabled BOOLEAN DEFAULT true,
+    quiet_hours_start TIME,
+    quiet_hours_end TIME,
+    do_not_disturb BOOLEAN DEFAULT false,
+    message_notifications BOOLEAN DEFAULT true,
+    call_notifications BOOLEAN DEFAULT true,
+    mention_notifications BOOLEAN DEFAULT true,
+    admin_notifications BOOLEAN DEFAULT true,
+    system_notifications BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_notification_settings_user_id_unique ON notification_settings(user_id);
+CREATE INDEX IF NOT EXISTS idx_notification_settings_in_app_enabled ON notification_settings(in_app_enabled);
+CREATE INDEX IF NOT EXISTS idx_notification_settings_email_enabled ON notification_settings(email_enabled);
+CREATE INDEX IF NOT EXISTS idx_notification_settings_push_enabled ON notification_settings(push_enabled);
+CREATE INDEX IF NOT EXISTS idx_notification_settings_dnd ON notification_settings(do_not_disturb);
+CREATE INDEX IF NOT EXISTS idx_notification_settings_quiet_hours ON notification_settings(quiet_hours_start, quiet_hours_end);
+CREATE INDEX IF NOT EXISTS idx_notification_settings_updated_at ON notification_settings(updated_at);
+
+-- Create group_message_status table
+DO $$ BEGIN
+    CREATE TYPE group_message_status_enum AS ENUM ('sent', 'delivered', 'read');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+CREATE TABLE IF NOT EXISTS group_message_status (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status group_message_status_enum NOT NULL DEFAULT 'sent',
+    delivered_at TIMESTAMP WITH TIME ZONE,
+    read_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_group_message_status_message ON group_message_status(message_id);
+CREATE INDEX IF NOT EXISTS idx_group_message_status_user ON group_message_status(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_group_message_status_unique ON group_message_status(message_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_group_message_status_status ON group_message_status(status);
+CREATE INDEX IF NOT EXISTS idx_group_message_status_delivered ON group_message_status(delivered_at);
+CREATE INDEX IF NOT EXISTS idx_group_message_status_read ON group_message_status(read_at);
+

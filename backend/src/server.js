@@ -1,5 +1,5 @@
 import cluster from 'cluster';
-import { os } from 'os';
+import os from 'os';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 

@@ -123,6 +123,7 @@ CREATE TABLE IF NOT EXISTS calls (
     ended_at TIMESTAMP WITH TIME ZONE,
     duration_seconds INTEGER,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP WITH TIME ZONE,
 
     CONSTRAINT calls_recipient_or_group CHECK (
         (recipient_id IS NOT NULL AND group_id IS NULL) OR

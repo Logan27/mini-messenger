@@ -15,7 +15,8 @@ import { getAvatarUrl } from "@/lib/avatar-utils";
 import { safeParseDate } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import { MessageSquare } from "lucide-react";
-import type { Chat } from "@/types/chat";
+import type { Chat, Message as FrontendMessage } from "@/types/chat";
+import type { Contact } from "@/services/contact.service";
 
 const Index = () => {
   const { chatId } = useParams<{ chatId?: string }>();
@@ -74,16 +75,16 @@ const Index = () => {
 
   // Transform contacts to Chat format with unread counts from conversations
   // Create a map of userId/groupId -> conversation data for quick lookup
-  const conversationMap = new Map(
+  const conversationMap = useMemo(() => new Map(
     conversationsData?.map((conv) => [
       conv.type === 'direct' ? conv.user?.id : conv.group?.id,
       conv
     ]) || []
-  );
+  ), [conversationsData]);
 
   // OPTIMIZATION: Memoize directChats to prevent recalculation on every render
   const directChats: Chat[] = useMemo(() => {
-    return (contactsData?.map((contact: any) => {
+    return (contactsData?.map((contact: Contact) => {
       const userId = contact.user.id;
       const conversation = conversationMap.get(userId);
 
@@ -92,12 +93,16 @@ const Index = () => {
         name: contact.nickname || contact.user.username,
         avatar: getAvatarUrl(contact.user.profilePicture || contact.user.avatar),
         lastMessage: conversation?.lastMessage?.content || "",
-        timestamp: safeParseDate(conversation?.lastMessageAt) || new Date(0),
+        timestamp: conversation?.lastMessageAt ? (safeParseDate(conversation.lastMessageAt) || new Date(0)) : new Date(0),
         unreadCount: conversation?.unreadCount || 0,
         isOnline: contact.user.onlineStatus === 'online',
         lastSeen: safeParseDate(contact.user.lastSeen) || undefined,
         isTyping: typingUsers[userId] || false,
         isMuted: conversation?.isMuted || false,
+        lastMessageIsEncrypted: conversation?.lastMessage?.isEncrypted,
+        lastMessageEncryptedContent: conversation?.lastMessage?.encryptedContent,
+        lastMessageEncryptionMetadata: conversation?.lastMessage?.encryptionMetadata,
+        lastMessageMetadata: conversation?.lastMessage?.metadata,
       };
     }) || []);
   }, [contactsData, conversationMap, typingUsers]);
@@ -113,12 +118,16 @@ const Index = () => {
           name: group.name,
           avatar: getAvatarUrl(group.avatar),
           lastMessage: conv.lastMessage?.content || "",
-          timestamp: safeParseDate(conv.lastMessageAt) || new Date(0),
+          timestamp: conv.lastMessageAt ? (safeParseDate(conv.lastMessageAt) || new Date(0)) : new Date(0),
           unreadCount: conv.unreadCount || 0,
           isOnline: false, // Groups don't have online status
           lastSeen: undefined,
           isTyping: false, // TODO: Add group typing indicators
           isMuted: conv.isMuted || false,
+          lastMessageIsEncrypted: conv.lastMessage?.isEncrypted,
+          lastMessageEncryptedContent: conv.lastMessage?.encryptedContent,
+          lastMessageEncryptionMetadata: conv.lastMessage?.encryptionMetadata,
+          lastMessageMetadata: conv.lastMessage?.metadata,
         };
       }) || []);
   }, [conversationsData]);
@@ -144,7 +153,7 @@ const Index = () => {
 
     // Backend returns newest first (DESC), reverse to show oldest-to-newest in chat
     return messagesData.pages.flatMap(page =>
-      page.map((msg: any) => ({
+      page.map((msg: FrontendMessage) => ({
         id: msg.id,
         senderId: msg.senderId, // IMPORTANT: Store senderId so isOwn filter works correctly
         text: msg.text || msg.content, // Handle both formats (optimistic has content, transformed has text)
@@ -165,6 +174,12 @@ const Index = () => {
         callType: msg.metadata?.callType,
         callStatus: msg.metadata?.callStatus,
         callDuration: msg.metadata?.callDuration,
+        // Encryption fields
+        isEncrypted: msg.isEncrypted,
+        encryptedContent: msg.encryptedContent,
+        encryptionMetadata: msg.encryptionMetadata,
+        encryptionAlgorithm: msg.encryptionAlgorithm,
+        metadata: msg.metadata, // Contains dual encryption data (encryptedContentOwner, nonceOwner)
         replyTo: msg.replyTo ? {
           id: msg.replyTo.id,
           text: msg.replyTo.content || (msg.replyTo.messageType !== 'text' ? `[${msg.replyTo.messageType}]` : ''),

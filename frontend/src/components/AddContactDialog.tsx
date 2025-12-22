@@ -34,6 +34,7 @@ export function AddContactDialog({ open, onOpenChange }: AddContactDialogProps) 
     queryKey: ['users', 'search', debouncedQuery],
     queryFn: () => userService.searchUsers(debouncedQuery, 1, 10),
     enabled: debouncedQuery.length >= 2,
+    refetchOnMount: true,
   });
 
   const handleAddContact = async (userId: string, username: string) => {

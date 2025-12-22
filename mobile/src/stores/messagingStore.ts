@@ -24,7 +24,7 @@ interface MessagingState {
   setConversations: (conversations: Conversation[]) => void;
   loadMessages: (conversationId: string) => Promise<void>;
   loadOlderMessages: (conversationId: string, page: number) => Promise<{ messages: Message[]; hasMore: boolean }>;
-  sendMessage: (conversationId: string, content: string, replyTo?: string, file?: any) => Promise<void>;
+  sendMessage: (conversationId: string, content: string, replyTo?: string, file?: any, encryption?: any) => Promise<void>;
   editMessage: (conversationId: string, messageId: string, content: string) => Promise<void>;
   deleteMessage: (conversationId: string, messageId: string, deleteForEveryone?: boolean) => Promise<void>;
   markAsRead: (conversationId: string, messageId: string) => Promise<void>;
@@ -271,7 +271,7 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
     }
   },
 
-  sendMessage: async (conversationId: string, content: string, replyTo?: string, file?: any) => {
+  sendMessage: async (conversationId: string, content: string, replyTo?: string, file?: any, encryption?: any) => {
     try {
       console.log('[MessagingStore] Sending message', {
         conversationId,
@@ -287,7 +287,7 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
       // 2. A local file object: { uri, type, name }
       const type = file ? (
         file.mimeType?.startsWith('image/') ||
-        file.type?.startsWith('image/') ? 'image' : 'file'
+          file.type?.startsWith('image/') ? 'image' : 'file'
       ) : 'text';
 
       console.log('[MessagingStore] File details', {
@@ -295,7 +295,7 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
         fileData: file
       });
 
-      const response = await messagingAPI.sendMessage(conversationId, content, type, file, replyTo);
+      const response = await messagingAPI.sendMessage(conversationId, content, type, file, replyTo, encryption);
 
       console.log('[MessagingStore] Message sent successfully', {
         status: response.status,

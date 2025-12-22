@@ -92,6 +92,7 @@ export const Message = sequelize.define(
     },
     senderId: {
       type: DataTypes.UUID,
+      field: 'sender_id',
       allowNull: false,
       references: {
         model: 'users',
@@ -100,6 +101,7 @@ export const Message = sequelize.define(
     },
     recipientId: {
       type: DataTypes.UUID,
+      field: 'recipient_id',
       allowNull: true,
       references: {
         model: 'users',
@@ -108,6 +110,7 @@ export const Message = sequelize.define(
     },
     groupId: {
       type: DataTypes.UUID,
+      field: 'group_id',
       allowNull: true,
       references: {
         model: 'groups',
@@ -129,22 +132,26 @@ export const Message = sequelize.define(
     },
     encryptedContent: {
       type: DataTypes.TEXT,
+      field: 'encrypted_content',
       allowNull: true,
     },
     encryptionMetadata: {
       type: DataTypes.JSONB,
+      field: 'encryption_metadata',
       allowNull: true,
       defaultValue: {},
       comment: 'Encryption metadata: algorithm, nonce, authTag for encrypted messages',
     },
     isEncrypted: {
       type: DataTypes.BOOLEAN,
+      field: 'is_encrypted',
       allowNull: false,
       defaultValue: false,
       comment: 'Whether this message is end-to-end encrypted',
     },
     encryptionAlgorithm: {
       type: DataTypes.STRING(50),
+      field: 'encryption_algorithm',
       allowNull: true,
       comment: 'Encryption algorithm used (e.g., x25519-xsalsa20-poly1305, aes-256-gcm)',
     },
@@ -566,7 +573,7 @@ Message.afterCreate(async (message, options) => {
       const { Group } = await import('./index.js');
       await Group.update(
         { lastMessageAt: message.createdAt },
-        { where: { id: message.groupId }, transaction: options.transaction }
+        { where: { id: message.groupId } } // Decoupled from main transaction to prevent rollback on error
       );
     }
 
@@ -582,7 +589,7 @@ Message.afterCreate(async (message, options) => {
               { userId: message.recipientId, contactUserId: message.senderId },
             ],
           },
-          transaction: options.transaction,
+          // transaction: options.transaction // Decoupled to prevent main transaction abortion
         }
       );
     }

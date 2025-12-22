@@ -36,8 +36,6 @@ const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({
         setLoading(true);
         setError(null);
 
-        console.log('[AuthenticatedImage] Loading image:', uri);
-
         // If it's already a data URI, use it directly
         if (uri.startsWith('data:')) {
           if (isMounted) {
@@ -69,7 +67,6 @@ const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({
 
         // Need to fetch with authentication
         const fullUrl = uri.startsWith('http') ? uri : `${API_URL}${uri}`;
-        console.log('[AuthenticatedImage] Fetching authenticated image from:', fullUrl);
 
         // Get token
         const token = await AsyncStorage.getItem('authToken');
@@ -88,8 +85,6 @@ const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({
             },
           }
         );
-
-        console.log('[AuthenticatedImage] Download result:', downloadResult.status);
 
         if (downloadResult.status !== 200) {
           throw new Error(`HTTP ${downloadResult.status}`);
@@ -111,7 +106,6 @@ const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({
         }
 
         const base64Image = `data:${mimeType};base64,${base64}`;
-        console.log('[AuthenticatedImage] Image converted to base64, length:', base64Image.length);
 
         if (isMounted) {
           setImageData(base64Image);
@@ -177,9 +171,6 @@ const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({
       onError={(e) => {
         console.error('[AuthenticatedImage] Image component error:', e.nativeEvent.error);
         setError('Image display error');
-      }}
-      onLoad={() => {
-        console.log('[AuthenticatedImage] Image displayed successfully');
       }}
     />
   );

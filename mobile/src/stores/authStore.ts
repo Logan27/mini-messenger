@@ -3,7 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
-import api, { authAPI, refreshAuthToken, wsService } from '../services/api';
+import api, { authAPI, refreshAuthToken, wsService, encryptionAPI } from '../services/api';
+import { encryptionService } from '../services/encryptionService';
 import { User, LoginCredentials, RegisterForm, AccountStatus, BiometricAuthResult } from '../types';
 import { isTokenExpired } from '../utils/auth';
 
@@ -80,6 +81,22 @@ export const useAuthStore = create<AuthStore>()(
 
           // Connect WebSocket
           wsService.connect(accessToken);
+
+          // Setup Encryption Keys
+          try {
+            const existingKeys = await encryptionService.loadKeys();
+            if (!existingKeys) {
+              const keys = await encryptionService.generateKeyPair();
+              await encryptionAPI.updatePublicKey(keys.publicKey);
+            } else {
+              // Ensure server has our public key (optional, but good for sync)
+              // For now, we assume if we have keys, the server likely has them or we don't want to rotate blindly
+              // But we could fetch server key and check?
+            }
+          } catch (cryptoError) {
+            console.error('Encryption setup failed:', cryptoError);
+            // Non-fatal, but E2E won't work
+          }
         } catch (error: any) {
           set({ isLoading: false });
           const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Login failed';
@@ -139,6 +156,7 @@ export const useAuthStore = create<AuthStore>()(
 
           await AsyncStorage.multiRemove(['authToken', 'user', 'refreshToken']);
           await get().clearBiometricCredentials();
+          await encryptionService.clearKeys();
         }
       },
 

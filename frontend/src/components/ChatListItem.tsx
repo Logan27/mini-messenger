@@ -6,6 +6,9 @@ import { getAvatarUrl } from "@/lib/avatar-utils";
 import { formatDistanceToNow } from "date-fns";
 import { BellOff } from "lucide-react";
 import { formatTimeAgo, safeParseDate } from "@/lib/date-utils";
+import { useEffect, useState } from "react";
+import { encryptionService } from "@/services/encryptionService";
+import { encryptionAPI } from "@/lib/api-client";
 
 interface ChatListItemProps {
   chat: Chat;
@@ -47,6 +50,90 @@ export const ChatListItem = ({
   onBlock
 }: ChatListItemProps) => {
 
+  const [decryptedContent, setDecryptedContent] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const decryptMessage = async () => {
+      // Return early if not encrypted
+      if (!chat.lastMessageIsEncrypted) {
+        if (isMounted) setDecryptedContent(null);
+        return;
+      }
+
+      // If we don't have metadata, we can't decrypt
+      if (!chat.lastMessageEncryptionMetadata?.nonce) return;
+
+      try {
+        const myKeys = encryptionService.loadKeys();
+        if (!myKeys) return;
+
+        let text: string | null = null;
+
+        // 1. Try decrypting as Incoming Message (standard)
+        if (chat.lastMessageEncryptedContent) {
+          try {
+            const otherUserId = chat.id; // Correct for DM
+
+            // Try to get key from cache
+            let senderKey = localStorage.getItem(`public_key_${otherUserId}`);
+            if (!senderKey) {
+              try {
+                const res = await encryptionAPI.getPublicKey(otherUserId);
+                if (res?.data?.data?.publicKey) {
+                  senderKey = res.data.data.publicKey;
+                  localStorage.setItem(`public_key_${otherUserId}`, senderKey);
+                }
+              } catch { }
+            }
+
+            if (senderKey) {
+              text = await encryptionService.decrypt(
+                chat.lastMessageEncryptedContent,
+                chat.lastMessageEncryptionMetadata.nonce,
+                senderKey
+              );
+            }
+          } catch (e) {
+            // Failed regular decryption
+          }
+        }
+
+        // 2. If that failed, maybe it's OUR message (Dual Encryption)?
+        if (!text && chat.lastMessageMetadata?.encryptedContentOwner && chat.lastMessageMetadata?.nonceOwner) {
+          try {
+            // Decrypt using MY key (I am the sender and recipient of this copy)
+            text = await encryptionService.decrypt(
+              chat.lastMessageMetadata.encryptedContentOwner,
+              chat.lastMessageMetadata.nonceOwner,
+              myKeys.publicKey
+            );
+          } catch (e) {
+            // Failed owner decryption
+          }
+        }
+
+        if (text && isMounted) {
+          setDecryptedContent(text);
+        }
+      } catch (e) {
+        console.error('Preview decryption failed', e);
+      }
+    };
+
+    decryptMessage();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [chat]);
+
+  // Helper to safely check timestamp validity
+  const isValidTimestamp = (date: Date) => {
+    return date instanceof Date && date.getTime() > 0 && !isNaN(date.getTime());
+  };
+
   return (
     <div
       onClick={onClick}
@@ -64,7 +151,7 @@ export const ChatListItem = ({
           <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-background" />
         )}
       </div>
-      
+
       <div className="flex-1 min-w-0">
         <div className="flex items-center mb-1 gap-2">
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
@@ -75,7 +162,7 @@ export const ChatListItem = ({
           </div>
           <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
             <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {formatTimeAgo(chat.timestamp)}
+              {isValidTimestamp(chat.timestamp) ? formatTimeAgo(chat.timestamp) : ''}
             </span>
             {chat.unreadCount > 0 && (
               <Badge className="bg-primary text-primary-foreground rounded-full h-5 min-w-[20px] px-1.5 text-xs flex-shrink-0">
@@ -94,7 +181,7 @@ export const ChatListItem = ({
                 <span className="ml-1">typing...</span>
               </span>
             ) : (
-              chat.lastMessage
+              decryptedContent || chat.lastMessage
             )}
           </p>
           {getStatusText(chat)}

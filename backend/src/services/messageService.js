@@ -82,6 +82,15 @@ class MessageService {
       } = messageData;
       const senderId = socket.userId;
 
+      // Fetch sender details (avatar AND username)
+      const sender = await User.findByPk(senderId, { attributes: ['username', 'avatar'] });
+
+      if (sender) {
+        logger.info(`Message sender found: ${sender.username}, Avatar: ${sender.avatar}`);
+      } else {
+        logger.warn(`Message sender not found in DB: ${senderId}`);
+      }
+
       // Generate sequence number for this sender
       const sequenceNumber = this.getNextSequenceNumber(senderId);
 
@@ -89,7 +98,8 @@ class MessageService {
       const enhancedMessage = {
         id: messageId,
         senderId,
-        senderName: socket.username,
+        senderName: socket.username || sender?.username || 'Unknown',
+        senderAvatar: sender?.avatar,
         recipientId,
         groupId,
         content,

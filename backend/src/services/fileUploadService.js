@@ -167,11 +167,11 @@ class FileUploadService {
         }
       }
 
-      // FIX BUG-F002: Scan for viruses BEFORE saving to database
-      // This ensures files are only saved if they pass virus scan
-      const scanResult = await this.scanFile(filePath, null, userId, uploadId); // Scan without file ID first
+      // Scan status is initially 'scanning' - actual scan will be offloaded to queue
+      // This prevents blocking the main thread during upload
+      const scanResult = { status: 'scanning' };
 
-      // Emit progress update for virus scanning completion
+      // Emit progress update for file processing
       if (this.wsService && uploadId) {
         this.wsService.updateFileUploadProgress(uploadId, file.size * 0.8, 'scanning');
       }

@@ -85,13 +85,11 @@ export default function NotificationCenter() {
       if (notificationSettings) {
         // Check global toggle
         if (notificationSettings.inAppEnabled === false) {
-          console.log('🔇 In-app notifications disabled, skipping toast');
           return;
         }
 
         // Check Do Not Disturb
         if (notificationSettings.doNotDisturb) {
-          console.log('🔇 Do Not Disturb enabled, skipping toast');
           return;
         }
 
@@ -106,7 +104,6 @@ export default function NotificationCenter() {
             : (currentTime >= quietHoursStart && currentTime <= quietHoursEnd);
 
           if (isQuietTime) {
-            console.log('🔇 In quiet hours, skipping toast');
             return;
           }
         }

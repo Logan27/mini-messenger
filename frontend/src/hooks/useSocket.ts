@@ -71,7 +71,6 @@ export function useMessageListener(activeChat?: string) {
 
       // If this message is for the currently active chat, invalidate its messages
       if (activeChat && messageChatId === activeChat) {
-        console.log('✅ Message is for active chat, invalidating messages query');
         // For group messages
         if (message.groupId) {
           queryClient.invalidateQueries({ queryKey: ['messages', undefined, message.groupId] });
@@ -159,7 +158,6 @@ export function useUserStatusListener() {
           return contact;
         });
 
-        console.log('  ✅ Contacts cache updated');
         return updated;
       });
 
@@ -180,7 +178,6 @@ export function useUserStatusListener() {
           return conversation;
         });
 
-        console.log('  ✅ Conversations cache updated');
         return updated;
       });
 
@@ -214,7 +211,6 @@ export function useGroupListener() {
 
     // Listen for group updates
     const unsubscribeUpdated = socketService.on('group_updated', (data: { group: unknown }) => {
-      console.log('✏️ Group updated event received:', data);
 
       // Update conversations cache with new group data
       queryClient.setQueryData(['conversations'], (old: unknown) => {

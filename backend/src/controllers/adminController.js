@@ -792,6 +792,10 @@ class AdminController {
         where: { deletedAt: null },
       });
 
+      // Report statistics
+      const totalReports = await Report.count({ paranoid: false });
+      const pendingReports = await Report.count({ where: { status: 'pending' }, paranoid: false });
+
       // Activity trends (last 30 days)
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const dailyMessages = await Message.findAll({
@@ -856,6 +860,10 @@ class AdminController {
             total: totalGroups,
             active: activeGroups,
           },
+          reports: {
+            total: totalReports,
+            pending: pendingReports,
+          },
           activity: {
             dailyMessages: dailyMessages.map(d => ({
               date: d.date,
@@ -895,6 +903,7 @@ class AdminController {
         limit: Joi.number().integer().min(1).max(100).default(20),
         search: Joi.string().trim().min(1).max(100),
         status: Joi.string().valid('pending', 'approved', 'rejected'),
+        role: Joi.string().valid('user', 'admin', 'moderator'),
         sortBy: Joi.string().valid('createdAt', 'username', 'email').default('createdAt'),
         sortOrder: Joi.string().valid('ASC', 'DESC').default('DESC'),
       });
@@ -913,7 +922,7 @@ class AdminController {
         });
       }
 
-      const { page, limit, search, status, sortBy, sortOrder } = queryParams;
+      const { page, limit, search, status, role, sortBy, sortOrder } = queryParams;
       const offset = (page - 1) * limit;
 
       // Build where clause
@@ -921,6 +930,10 @@ class AdminController {
 
       if (status) {
         whereClause.approvalStatus = status;
+      }
+
+      if (role) {
+        whereClause.role = role;
       }
 
       if (search) {
@@ -967,6 +980,7 @@ class AdminController {
           users,
           pagination: {
             currentPage: page,
+            limit,
             totalPages,
             totalUsers,
             hasNextPage: page < totalPages,

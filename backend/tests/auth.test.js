@@ -348,6 +348,7 @@ describe('Authentication API', () => {
       const response = await request(app)
         .post('/api/auth/logout')
         .set('Authorization', authHeader)
+        .send({ refreshToken: session.refreshToken })
         .expect(200);
 
       expect(response.body.success).toBe(true);

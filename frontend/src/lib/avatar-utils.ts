@@ -13,9 +13,9 @@ export function getAvatarUrl(avatarPath: string | undefined): string | undefined
 
   // If avatar is a relative path, prepend API URL
   const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:4000';
-  
+
   // Ensure path starts with /
   const normalizedPath = avatarPath.startsWith('/') ? avatarPath : `/${avatarPath}`;
-  
+
   return `${baseUrl}${normalizedPath}`;
 }

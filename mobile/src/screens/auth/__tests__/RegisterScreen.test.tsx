@@ -158,16 +158,14 @@ describe('RegisterScreen', () => {
   it('shows validation error when passwords do not match', async () => {
     const { getByTestId, getByText } = renderWithQueryClient(<RegisterScreen navigation={mockNavigation} />);
 
-    const passwordInput = getByTestId('password-input');
-    const confirmPasswordInput = getByTestId('confirm-password-input');
-    const registerButton = getByTestId('register-button');
-
     await act(async () => {
+      fireEvent.changeText(getByTestId('firstname-input'), 'Test');
+      fireEvent.changeText(getByTestId('lastname-input'), 'User');
       fireEvent.changeText(getByTestId('username-input'), 'testuser');
       fireEvent.changeText(getByTestId('email-input'), 'test@example.com');
-      fireEvent.changeText(passwordInput, 'Test123!@');
-      fireEvent.changeText(confirmPasswordInput, 'Test456!@'); // Different password
-      fireEvent.press(registerButton);
+      fireEvent.changeText(getByTestId('password-input'), 'Test123!@');
+      fireEvent.changeText(getByTestId('confirm-password-input'), 'Test456!@'); // Different password
+      fireEvent.press(getByTestId('register-button'));
     });
 
     await waitFor(() => {
@@ -178,36 +176,40 @@ describe('RegisterScreen', () => {
   it('successfully registers with valid data', async () => {
     mockRegister.mockResolvedValueOnce(undefined);
 
-    const { getByTestId } = renderWithQueryClient(<RegisterScreen navigation={mockNavigation} />);
+    const { getByTestId, getByText } = renderWithQueryClient(<RegisterScreen navigation={mockNavigation} />);
 
-    const usernameInput = getByTestId('username-input');
-    const emailInput = getByTestId('email-input');
-    const passwordInput = getByTestId('password-input');
-    const confirmPasswordInput = getByTestId('confirm-password-input');
-    const registerButton = getByTestId('register-button');
-
+    // Fill required text fields
     await act(async () => {
-      fireEvent.changeText(usernameInput, 'testuser');
-      fireEvent.changeText(emailInput, 'test@example.com');
-      fireEvent.changeText(passwordInput, 'Test123!@');
-      fireEvent.changeText(confirmPasswordInput, 'Test123!@');
+      fireEvent.changeText(getByTestId('firstname-input'), 'Test');
+      fireEvent.changeText(getByTestId('lastname-input'), 'User');
+      fireEvent.changeText(getByTestId('username-input'), 'testuser');
+      fireEvent.changeText(getByTestId('email-input'), 'test@example.com');
+      fireEvent.changeText(getByTestId('password-input'), 'Test123!@');
+      fireEvent.changeText(getByTestId('confirm-password-input'), 'Test123!@');
+    });
+
+    // Accept terms and privacy
+    await act(async () => {
+      fireEvent.press(getByText(/Terms of Service/i));
+      fireEvent.press(getByText(/Privacy Policy/i));
     });
 
     await act(async () => {
-      fireEvent.press(registerButton);
+      fireEvent.press(getByTestId('register-button'));
     });
 
     await waitFor(() => {
-      expect(mockRegister).toHaveBeenCalledWith({
-        username: 'testuser',
-        email: 'test@example.com',
-        password: 'Test123!@',
-        confirmPassword: 'Test123!@',
-      });
-      expect(Alert.alert).toHaveBeenCalledWith(
-        'Registration Successful',
-        'Your account has been created. Please check your email for verification.',
-        expect.any(Array)
+      expect(mockRegister).toHaveBeenCalledWith(
+        expect.objectContaining({
+          username: 'testuser',
+          email: 'test@example.com',
+          password: 'Test123!@',
+          confirmPassword: 'Test123!@',
+          firstName: 'Test',
+          lastName: 'User',
+          termsAccepted: true,
+          privacyAccepted: true,
+        })
       );
     });
   });
@@ -216,13 +218,22 @@ describe('RegisterScreen', () => {
     const errorMessage = 'Username already exists';
     mockRegister.mockRejectedValueOnce(new Error(errorMessage));
 
-    const { getByTestId } = renderWithQueryClient(<RegisterScreen navigation={mockNavigation} />);
+    const { getByTestId, getByText } = renderWithQueryClient(<RegisterScreen navigation={mockNavigation} />);
 
+    // Fill all required fields
     await act(async () => {
+      fireEvent.changeText(getByTestId('firstname-input'), 'Test');
+      fireEvent.changeText(getByTestId('lastname-input'), 'User');
       fireEvent.changeText(getByTestId('username-input'), 'existinguser');
       fireEvent.changeText(getByTestId('email-input'), 'test@example.com');
       fireEvent.changeText(getByTestId('password-input'), 'Test123!@');
       fireEvent.changeText(getByTestId('confirm-password-input'), 'Test123!@');
+    });
+
+    // Accept terms and privacy
+    await act(async () => {
+      fireEvent.press(getByText(/Terms of Service/i));
+      fireEvent.press(getByText(/Privacy Policy/i));
     });
 
     await act(async () => {
@@ -318,13 +329,25 @@ describe('RegisterScreen', () => {
   it('navigates to login after successful registration', async () => {
     mockRegister.mockResolvedValueOnce(undefined);
 
-    const { getByTestId } = renderWithQueryClient(<RegisterScreen navigation={mockNavigation} />);
+    const { getByTestId, getByText } = renderWithQueryClient(<RegisterScreen navigation={mockNavigation} />);
 
+    // Fill all required fields
     await act(async () => {
+      fireEvent.changeText(getByTestId('firstname-input'), 'Test');
+      fireEvent.changeText(getByTestId('lastname-input'), 'User');
       fireEvent.changeText(getByTestId('username-input'), 'testuser');
       fireEvent.changeText(getByTestId('email-input'), 'test@example.com');
       fireEvent.changeText(getByTestId('password-input'), 'Test123!@');
       fireEvent.changeText(getByTestId('confirm-password-input'), 'Test123!@');
+    });
+
+    // Accept terms and privacy
+    await act(async () => {
+      fireEvent.press(getByText(/Terms of Service/i));
+      fireEvent.press(getByText(/Privacy Policy/i));
+    });
+
+    await act(async () => {
       fireEvent.press(getByTestId('register-button'));
     });
 

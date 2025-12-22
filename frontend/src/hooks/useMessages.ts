@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { messageService } from '@/services/message.service';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery, InfiniteData } from '@tanstack/react-query';
+import { messageService, Message as BackendMessage } from '@/services/message.service';
 import { socketService } from '@/services/socket.service';
 import { useAuth } from '@/contexts/AuthContext';
+import { Message as FrontendMessage } from '@/types/chat';
 
 interface UseMessagesParams {
   recipientId?: string;
@@ -16,45 +17,68 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
 
   // Listen for new messages via WebSocket
   useEffect(() => {
-    const unsubscribe = socketService.on('message.new', (newMessage: unknown) => {
+    const unsubscribe = socketService.on('message.new', (newMessage: BackendMessage & {
+      content?: string;
+      reactions?: Record<string, string[]>;
+      replyTo?: { id: string; content?: string; sender?: { username: string } };
+      // Encryption fields - may come as camelCase or snake_case
+      isEncrypted?: boolean;
+      is_encrypted?: boolean;
+      encryptedContent?: string;
+      encrypted_content?: string;
+      encryptionMetadata?: Record<string, unknown>;
+      encryption_metadata?: Record<string, unknown>;
+      metadata?: Record<string, unknown>;
+      // File fields from backend
+      fileId?: string;
+      fileUrl?: string;
+    }) => {
       // Only update if the message is for the current chat
       const isForCurrentChat =
         (recipientId && (newMessage.senderId === recipientId || newMessage.recipientId === recipientId)) ||
         (groupId && newMessage.groupId === groupId);
 
       if (isForCurrentChat) {
+
         // Transform backend message format to frontend format
-        const transformedMessage = {
+        const transformedMessage: FrontendMessage = {
           id: newMessage.id,
           senderId: newMessage.senderId,
           text: newMessage.content,
           timestamp: new Date(newMessage.createdAt),
           isOwn: newMessage.senderId === user?.id,
           status: newMessage.status || 'sent',
-          messageType: newMessage.messageType,
+          messageType: newMessage.messageType as FrontendMessage['messageType'],
           imageUrl: newMessage.messageType === 'image' ? newMessage.fileName : undefined,
           reactions: newMessage.reactions || {},
           // File attachment fields
-          fileId: newMessage.fileId || newMessage.metadata?.fileId,
-          fileName: newMessage.fileName || newMessage.metadata?.fileName,
-          fileUrl: newMessage.fileUrl || newMessage.metadata?.fileUrl,
-          fileSize: newMessage.fileSize || newMessage.metadata?.fileSize,
-          mimeType: newMessage.mimeType || newMessage.metadata?.mimeType,
+          fileId: newMessage.fileId || (newMessage.metadata?.fileId as string),
+          fileName: newMessage.fileName || (newMessage.metadata?.fileName as string),
+          fileUrl: newMessage.fileUrl || (newMessage.metadata?.fileUrl as string),
+          fileSize: newMessage.fileSize || (newMessage.metadata?.fileSize as number),
+          mimeType: newMessage.mimeType || (newMessage.metadata?.mimeType as string),
           // Call message fields
-          callId: newMessage.metadata?.callId,
-          callType: newMessage.metadata?.callType,
-          callStatus: newMessage.metadata?.callStatus,
-          callDuration: newMessage.metadata?.callDuration,
+          callId: newMessage.metadata?.callId as string,
+          callType: newMessage.metadata?.callType as 'voice' | 'video',
+          callStatus: newMessage.metadata?.callStatus as FrontendMessage['callStatus'],
+          callDuration: newMessage.metadata?.callDuration as number,
           // Reply fields
           replyTo: newMessage.replyTo ? {
             id: newMessage.replyTo.id,
             text: newMessage.replyTo.content || '',
             senderName: newMessage.replyTo.sender?.username || 'Unknown',
           } : undefined,
+          // Encryption
+          isEncrypted: !!newMessage.isEncrypted || !!newMessage.is_encrypted || !!newMessage.encryptedContent || !!newMessage.encrypted_content,
+          encryptedContent: newMessage.encryptedContent || newMessage.encrypted_content,
+          encryptionMetadata: (newMessage.encryptionMetadata || newMessage.encryption_metadata) as FrontendMessage['encryptionMetadata'],
+          // Include metadata for dual encryption (contains encryptedContentOwner and nonceOwner)
+          metadata: newMessage.metadata,
         };
 
+
         const queryKey = ['messages', recipientId, groupId];
-        queryClient.setQueryData(queryKey, (old) => {
+        queryClient.setQueryData<InfiniteData<FrontendMessage[]>>(queryKey, (old) => {
           if (!old) {
             return { pages: [[transformedMessage]], pageParams: [undefined] };
           }
@@ -63,9 +87,9 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
           const firstPage = [...newPages[0]];
 
           // Check if message already exists (replace temp or duplicate)
-          const existingIndex = firstPage.findIndex((msg: unknown) =>
+          const existingIndex = firstPage.findIndex((msg) =>
             msg.id === transformedMessage.id ||
-            (msg.id.startsWith('temp-') && msg.content === newMessage.content)
+            (msg.id.startsWith('temp-') && msg.text === newMessage.content)
           );
 
           if (existingIndex !== -1) {
@@ -78,7 +102,10 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
           return { ...old, pages: newPages };
         });
 
-        // Invalidate conversations to update last message and counters
+        // Invalidate conversations to update last message and counters (throttled)
+        // We use a property on the queryClient or a global throttle map to prevent excessive invalidations
+        // For now, let's just let React Query dedupe, but we could add manual throttling if needed.
+        // Actually, let's trust React Query's deduplication for now as manual throttling inside useEffect is tricky without ref.
         queryClient.invalidateQueries({ queryKey: ['conversations'] });
 
         // Send delivery confirmation to backend
@@ -89,17 +116,19 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
     });
 
     // Listen for message delivered receipts (backend sends message_delivered with underscore)
-    const unsubscribeDelivered = socketService.on('message_delivered', (data: unknown) => {
+    const unsubscribeDelivered = socketService.on('message_delivered', (data: { messageId: string }) => {
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
 
-      queryClient.setQueryData(queryKey, (old) => {
+
+
+      queryClient.setQueryData<InfiniteData<FrontendMessage[]>>(queryKey, (old) => {
         if (!old) return old;
 
-        const newPages = old.pages.map((page: unknown[]) =>
-          page.map((msg: unknown) =>
+        const newPages = old.pages.map((page) =>
+          page.map((msg) =>
             msg.id === messageId
-              ? { ...msg, status: 'delivered' }
+              ? { ...msg, status: 'delivered' as const }
               : msg
           )
         );
@@ -109,16 +138,16 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
     });
 
     // Listen for message read receipts (backend sends message_read with underscore)
-    const unsubscribeRead = socketService.on('message_read', (data: unknown) => {
+    const unsubscribeRead = socketService.on('message_read', (data: { messageId: string }) => {
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
 
-      queryClient.setQueryData(queryKey, (old) => {
+      queryClient.setQueryData<InfiniteData<FrontendMessage[]>>(queryKey, (old) => {
         if (!old) return old;
 
-        const newPages = old.pages.map((page: unknown[]) =>
-          page.map((msg: unknown) =>
-            msg.id === messageId ? { ...msg, status: 'read' } : msg
+        const newPages = old.pages.map((page) =>
+          page.map((msg) =>
+            msg.id === messageId ? { ...msg, status: 'read' as const } : msg
           )
         );
 
@@ -127,15 +156,15 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
     });
 
     // Listen for message deletions (soft delete - only for sender)
-    const unsubscribeSoftDeleted = socketService.on('message_soft_deleted', (data: unknown) => {
+    const unsubscribeSoftDeleted = socketService.on('message_soft_deleted', (data: { messageId: string }) => {
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
 
-      queryClient.setQueryData(queryKey, (old) => {
+      queryClient.setQueryData<InfiniteData<FrontendMessage[]>>(queryKey, (old) => {
         if (!old) return old;
 
-        const newPages = old.pages.map((page: unknown[]) =>
-          page.filter((msg: unknown) => msg.id !== messageId)
+        const newPages = old.pages.map((page) =>
+          page.filter((msg) => msg.id !== messageId)
         );
 
         return { ...old, pages: newPages };
@@ -143,15 +172,15 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
     });
 
     // Listen for hard deletions (deleted for everyone)
-    const unsubscribeHardDeleted = socketService.on('message_hard_deleted', (data: unknown) => {
+    const unsubscribeHardDeleted = socketService.on('message_hard_deleted', (data: { messageId: string }) => {
       const { messageId } = data;
       const queryKey = ['messages', recipientId, groupId];
 
-      queryClient.setQueryData(queryKey, (old) => {
+      queryClient.setQueryData<InfiniteData<FrontendMessage[]>>(queryKey, (old) => {
         if (!old) return old;
 
-        const newPages = old.pages.map((page: unknown[]) =>
-          page.filter((msg: unknown) => msg.id !== messageId)
+        const newPages = old.pages.map((page) =>
+          page.filter((msg) => msg.id !== messageId)
         );
 
         return { ...old, pages: newPages };
@@ -159,15 +188,15 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
     });
 
     // Listen for reaction updates
-    const unsubscribeReaction = socketService.on('message.reaction', (data: unknown) => {
+    const unsubscribeReaction = socketService.on('message.reaction', (data: { messageId: string; reactions: Record<string, string[]> }) => {
       const { messageId, reactions } = data;
       const queryKey = ['messages', recipientId, groupId];
 
-      queryClient.setQueryData(queryKey, (old) => {
+      queryClient.setQueryData<InfiniteData<FrontendMessage[]>>(queryKey, (old) => {
         if (!old) return old;
 
-        const newPages = old.pages.map((page: unknown[]) =>
-          page.map((msg: unknown) => {
+        const newPages = old.pages.map((page) =>
+          page.map((msg) => {
             if (msg.id === messageId) {
               return { ...msg, reactions: reactions || {} };
             }
@@ -189,14 +218,14 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
     };
   }, [recipientId, groupId, queryClient, user]);
 
-  return useInfiniteQuery({
+  return useInfiniteQuery<BackendMessage[], Error, InfiniteData<FrontendMessage[]>>({
     queryKey: ['messages', recipientId, groupId],
     queryFn: ({ pageParam }) =>
       messageService.getMessages({
         recipientId,
         groupId,
         limit,
-        before: pageParam,
+        before: pageParam as string | undefined,
       }),
     getNextPageParam: (lastPage) => {
       // If there are more messages, return the oldest message ID
@@ -207,6 +236,43 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
     },
     initialPageParam: undefined,
     enabled: !!(recipientId || groupId),
+    select: (data) => {
+
+      return {
+        ...data,
+        pages: data.pages.map(page => page.map((msg: BackendMessage & {
+          text?: string;
+          content?: string;
+          // Encryption fields - may come as camelCase or snake_case
+          isEncrypted?: boolean;
+          is_encrypted?: boolean;
+          encryptedContent?: string;
+          encrypted_content?: string;
+          encryptionMetadata?: Record<string, unknown>;
+          encryption_metadata?: Record<string, unknown>;
+          metadata?: Record<string, unknown>;
+          // Other fields that may be transformed
+          timestamp?: Date;
+          isOwn?: boolean;
+        }) => {
+          // Normalize encryption
+          const isEnc = !!msg.isEncrypted || !!msg.is_encrypted || !!msg.encryptedContent || !!msg.encrypted_content;
+
+          return {
+            ...msg,
+            text: msg.text || msg.content,
+            timestamp: msg.timestamp || new Date(msg.createdAt),
+            isOwn: msg.isOwn !== undefined ? msg.isOwn : msg.senderId === user?.id,
+            isEncrypted: isEnc,
+            encryptedContent: msg.encryptedContent || msg.encrypted_content,
+            encryptionMetadata: (msg.encryptionMetadata || msg.encryption_metadata) as FrontendMessage['encryptionMetadata'],
+            // Preserve metadata for dual encryption (contains encryptedContentOwner, nonceOwner)
+            metadata: msg.metadata,
+            messageType: msg.messageType as FrontendMessage['messageType'],
+          } as FrontendMessage;
+        }))
+      };
+    },
   });
 }
 
@@ -222,19 +288,34 @@ export function useSendMessage() {
       await queryClient.cancelQueries({ queryKey });
 
       // Snapshot previous value
-      const previousMessages = queryClient.getQueryData(queryKey);
+      const previousMessages = queryClient.getQueryData<InfiniteData<FrontendMessage[]>>(queryKey);
 
       // Optimistically add message with 'sending' status
-      const tempMessage = {
+      console.log('[useSendMessage] onMutate variables:', {
+        hasMetadata: !!variables.metadata,
+        metadata: variables.metadata,
+        hasEncryptedContentOwner: !!(variables.metadata as Record<string, unknown>)?.encryptedContentOwner,
+      });
+      const tempMessage: FrontendMessage = {
         id: `temp-${Date.now()}`,
-        senderId: user?.id,
-        content: variables.content,
-        createdAt: new Date().toISOString(),
+        senderId: user?.id || '',
+        text: variables.content,
+        timestamp: new Date(),
+        isOwn: true,
         status: 'sending' as const,
-        messageType: 'text',
+        messageType: (variables.messageType as FrontendMessage['messageType']) || 'text',
+        // Pass through encryption fields for optimistic update
+        isEncrypted: variables.isEncrypted,
+        encryptedContent: variables.encryptedContent,
+        encryptionMetadata: variables.encryptionMetadata as FrontendMessage['encryptionMetadata'],
+        metadata: variables.metadata as Record<string, unknown>, // Contains encryptedContentOwner
       };
+      console.log('[useSendMessage] tempMessage created:', {
+        hasMetadata: !!tempMessage.metadata,
+        metadata: tempMessage.metadata,
+      });
 
-      queryClient.setQueryData(queryKey, (old) => {
+      queryClient.setQueryData<InfiniteData<FrontendMessage[]>>(queryKey, (old) => {
         if (!old) return { pages: [[tempMessage]], pageParams: [undefined] };
 
         const newPages = old.pages.map((page, index) => {
@@ -251,33 +332,43 @@ export function useSendMessage() {
     onSuccess: (newMessage, variables, context) => {
       const queryKey = ['messages', variables.recipientId, variables.groupId];
 
+
+
       // Transform backend message to frontend format
-      const transformedMessage = {
+      const transformedMessage: FrontendMessage = {
         id: newMessage.id,
         senderId: newMessage.senderId,
         text: newMessage.content,
         timestamp: new Date(newMessage.createdAt),
         isOwn: true,
         status: newMessage.status || 'sent',
-        messageType: newMessage.messageType,
+        messageType: newMessage.messageType as FrontendMessage['messageType'],
         imageUrl: newMessage.messageType === 'image' ? newMessage.fileName : undefined,
-        fileId: newMessage.fileId || newMessage.metadata?.fileId,
-        fileName: newMessage.fileName || newMessage.metadata?.fileName,
-        fileUrl: newMessage.fileUrl || newMessage.metadata?.fileUrl,
-        fileSize: newMessage.fileSize || newMessage.metadata?.fileSize,
-        mimeType: newMessage.mimeType || newMessage.metadata?.mimeType,
+        fileId: newMessage.fileId || (newMessage.metadata?.fileId as string),
+        fileName: newMessage.fileName || (newMessage.metadata?.fileName as string),
+        fileUrl: newMessage.fileUrl || (newMessage.metadata?.fileUrl as string),
+        fileSize: newMessage.fileSize || (newMessage.metadata?.fileSize as number),
+        mimeType: newMessage.mimeType || (newMessage.metadata?.mimeType as string),
         replyTo: newMessage.replyTo ? {
           id: newMessage.replyTo.id,
           text: newMessage.replyTo.content || '',
           senderName: newMessage.replyTo.sender?.username || 'Unknown',
         } : undefined,
+        // Encryption
+        isEncrypted: !!newMessage.isEncrypted || !!newMessage.is_encrypted || !!newMessage.encryptedContent || !!newMessage.encrypted_content,
+        encryptedContent: newMessage.encryptedContent || newMessage.encrypted_content,
+        encryptionMetadata: (newMessage.encryptionMetadata || newMessage.encryption_metadata) as FrontendMessage['encryptionMetadata'],
+        // Preserve metadata for dual encryption (contains encryptedContentOwner, nonceOwner)
+        metadata: newMessage.metadata || variables.metadata,
       };
 
-      queryClient.setQueryData(queryKey, (old) => {
+
+
+      queryClient.setQueryData<InfiniteData<FrontendMessage[]>>(queryKey, (old) => {
         if (!old) return { pages: [[transformedMessage]], pageParams: [undefined] };
 
-        const newPages = old.pages.map((page: unknown[]) =>
-          page.map((msg: unknown) =>
+        const newPages = old.pages.map((page) =>
+          page.map((msg) =>
             msg.id === context?.tempMessage.id ? transformedMessage : msg
           )
         );
@@ -285,7 +376,7 @@ export function useSendMessage() {
         return { ...old, pages: newPages };
       });
     },
-    onError: (error, variables, context) => {
+    onError: (_error, variables, context) => {
       // Revert to previous state on error
       if (context?.previousMessages) {
         const queryKey = ['messages', variables.recipientId, variables.groupId];
@@ -301,8 +392,20 @@ export function useEditMessage() {
   return useMutation({
     mutationFn: ({ messageId, content }: { messageId: string; content: string }) =>
       messageService.editMessage(messageId, content),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
+    onSuccess: (updatedMessage) => {
+      // Optimistically update the message in all cached conversations
+      queryClient.setQueriesData<InfiniteData<FrontendMessage[]>>({ queryKey: ['messages'] }, (old) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          pages: old.pages.map((page) =>
+            page.map((msg) =>
+              msg.id === updatedMessage.id ? { ...msg, text: updatedMessage.content, isEdited: true } : msg
+            )
+          ),
+        };
+      });
     },
   });
 }
@@ -313,8 +416,18 @@ export function useDeleteMessage() {
   return useMutation({
     mutationFn: ({ messageId, deleteType }: { messageId: string; deleteType?: 'soft' | 'hard' }) =>
       messageService.deleteMessage(messageId, deleteType),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
+    onSuccess: (data, variables) => {
+      // Remove the message from cache
+      queryClient.setQueriesData<InfiniteData<FrontendMessage[]>>({ queryKey: ['messages'] }, (old) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          pages: old.pages.map((page) =>
+            page.filter((msg) => msg.id !== variables.messageId)
+          ),
+        };
+      });
     },
   });
 }
@@ -324,8 +437,23 @@ export function useMarkAsRead() {
 
   return useMutation({
     mutationFn: (messageIds: string[]) => messageService.markAsRead(messageIds),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
+    onSuccess: (_, messageIds) => {
+      // Update status to 'read' in cache
+      queryClient.setQueriesData<InfiniteData<FrontendMessage[]>>({ queryKey: ['messages'] }, (old) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          pages: old.pages.map((page) =>
+            page.map((msg) =>
+              messageIds.includes(msg.id) ? { ...msg, status: 'read' as const } : msg
+            )
+          ),
+        };
+      });
+
+      // We still need to invalidate conversations to update unread counts
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
   });
 }

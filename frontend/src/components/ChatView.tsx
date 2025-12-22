@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useReducer, lazy, Suspense } from "react";
+import { useState, useRef, useEffect, useReducer, lazy, Suspense, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Message } from "@/types/chat";
 import { MessageBubble } from "./MessageBubble";
@@ -16,8 +16,7 @@ import { IncomingCall } from "./IncomingCall";
 import { InlineLoadingFallback } from "./LoadingFallback";
 import EmptyState from "./EmptyState";
 
-// Lazy load heavy WebRTC component - only loaded when user starts a call
-const ActiveCall = lazy(() => import("./ActiveCall").then(module => ({ default: module.ActiveCall })));
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +39,13 @@ import { socketService } from "@/services/socket.service";
 import { toast as sonnerToast } from "sonner";
 import { getErrorMessage } from "@/lib/error-utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, encryptionAPI } from "@/lib/api-client";
+import { encryptionService } from "@/services/encryptionService";
+
+const EMPTY_ARRAY: any[] = [];
+
+// Lazy load heavy WebRTC component - only loaded when user starts a call
+const ActiveCall = lazy(() => import("./ActiveCall").then(module => ({ default: module.ActiveCall })));
 
 interface ChatViewProps {
   chatName: string;
@@ -113,6 +118,7 @@ export const ChatView = ({
   const [mobileSearchQuery, setMobileSearchQuery] = useState('');
   const [mobileSearchResults, setMobileSearchResults] = useState([]);
   const [mobileSearchLoading, setMobileSearchLoading] = useState(false);
+  const [recipientPublicKey, setRecipientPublicKey] = useState<string | null>(null); // State for E2E key
   const [shouldRestoreScroll, setShouldRestoreScroll] = useState(true); // Always try to restore scroll position on initial load
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -341,7 +347,10 @@ export const ChatView = ({
     }
   }, [recipientId, groupId]);
 
-  // Save scroll position when user scrolls (message-based)
+  // Save scroll position when user scrolls (message-based) - REDUNDANT/REMOVED
+  // The other useEffect below (around line 850) handles scroll position saving (center-based)
+  // and does NOT clear it when at the bottom, which is what we want for "Always reopen last reading position".
+  /*
   useEffect(() => {
     let scrollTimeout: NodeJS.Timeout;
 
@@ -402,6 +411,7 @@ export const ChatView = ({
       clearTimeout(scrollTimeout);
     };
   }, [recipientId, groupId, messages]);
+  */
 
   // Mobile search functionality
   useEffect(() => {
@@ -437,6 +447,28 @@ export const ChatView = ({
 
     return () => clearTimeout(searchTimer);
   }, [mobileSearchQuery, recipientId, groupId]);
+
+  useEffect(() => {
+    const fetchKey = async () => {
+      // Reset key when recipient changes
+      setRecipientPublicKey(null);
+
+      if (recipientId && !isGroup) {
+        try {
+          // Always fetch fresh key from API to ensure we have the latest
+          // We still update localStorage so MessageBubbles can use the cached version for performance
+          const res = await encryptionAPI.getPublicKey(recipientId);
+          if (res.data?.data?.publicKey) {
+            setRecipientPublicKey(res.data.data.publicKey);
+            localStorage.setItem(`public_key_${recipientId}`, res.data.data.publicKey);
+          }
+        } catch (e) {
+          console.error('Failed to fetch public key', e);
+        }
+      }
+    };
+    fetchKey();
+  }, [recipientId, isGroup]);
 
   // Smart scroll: only scroll to bottom for new messages, not on initial load or when loading history
   useEffect(() => {
@@ -530,9 +562,10 @@ export const ChatView = ({
       const { scrollTop, scrollHeight, clientHeight } = container;
       const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
 
-      // More generous threshold: if within 1.5 screens of bottom, consider it "at bottom"
+      // Threshold: if within 150px of bottom, consider it "at bottom"
       // This ensures users who are reading recent messages get auto-scrolled
-      const isNearBottom = distanceFromBottom < (clientHeight * 1.5);
+      // but users reading history don't get yanked to the bottom
+      const isNearBottom = distanceFromBottom < 150;
 
       // Check if this is a RECENT own message (sent within last 5 seconds)
       const messageAge = Date.now() - new Date(latestMessage.timestamp).getTime();
@@ -540,7 +573,7 @@ export const ChatView = ({
 
       // Auto-scroll rules:
       // - ALWAYS scroll for RECENT own messages (sent within 5 seconds)
-      // - For incoming messages OR old own messages, only scroll if already near bottom
+      // - Scroll for incoming messages ONLY if user was already near the bottom
       const shouldScroll = isRecentOwnMessage || isNearBottom;
 
       if (shouldScroll) {
@@ -637,9 +670,12 @@ export const ChatView = ({
 
   // Auto-scroll when typing indicator appears/disappears
   useEffect(() => {
+    // Disabled to prevent scrolling away from reading position
+    /*
     if (isTyping) {
       scrollToBottom();
     }
+    */
   }, [isTyping]);
 
   useEffect(() => {
@@ -654,8 +690,15 @@ export const ChatView = ({
         // Debounce the scroll position saving
         clearTimeout(scrollTimeout);
         scrollTimeout = setTimeout(() => {
-          // Save the message ID that's currently in the center of the viewport
           const savedScrollKey = `chat_scroll_${recipientId || groupId}`;
+
+          // If user is at the bottom, clear saved position so they stay at bottom on reload
+          if (isNearBottom) {
+            localStorage.removeItem(savedScrollKey);
+            return;
+          }
+
+          // Save the message ID that's currently in the center of the viewport
           const viewportCenter = scrollTop + clientHeight / 2;
 
           // Find the message closest to the viewport center
@@ -687,7 +730,7 @@ export const ChatView = ({
       container?.removeEventListener("scroll", handleScroll);
       clearTimeout(scrollTimeout);
     };
-  }, [recipientId, groupId, messages]);
+  }, [recipientId, groupId]); // Removed 'messages' dependency to prevent listener thrashing
 
   // Listen for typing indicators
   useEffect(() => {
@@ -708,7 +751,7 @@ export const ChatView = ({
   // Listen for incoming calls
   useEffect(() => {
     const handleIncomingCall = (data: unknown) => {
-      
+
       const call = data.call;
       if (!call) return;
 
@@ -741,9 +784,9 @@ export const ChatView = ({
 
       const unreadMessages = messages.filter(
         msg => !msg.isOwn &&
-               msg.status !== 'read' &&
-               !msg.id.startsWith('temp-') &&
-               !markedAsReadRef.current.has(msg.id)
+          msg.status !== 'read' &&
+          !msg.id.startsWith('temp-') &&
+          !markedAsReadRef.current.has(msg.id)
       );
 
       if (unreadMessages.length > 0) {
@@ -777,9 +820,54 @@ export const ChatView = ({
           description: "Your message has been updated",
         });
       } else {
+        let contentToSend = inputValue.trim();
+        let encryptionData = undefined;
+
+        // Check encryption toggle
+        const encryptionEnabled = localStorage.getItem('encryption_enabled') !== 'false';
+
+        // Encrypt if direct message and key available and enabled
+        if (!isGroup && recipientId && encryptionEnabled) {
+          if (!recipientPublicKey) {
+            toast({
+              variant: "destructive",
+              title: "Encryption Unavailable",
+              description: "Recipient has not set up encryption keys yet. Cannot send encrypted message.",
+            });
+            return;
+          }
+
+          try {
+            // Generate nonce and encrypt for both recipient and self (Dual Encryption)
+            const { ciphertext, nonce, ciphertextOwner, nonceOwner } = await encryptionService.encryptDual(contentToSend, recipientPublicKey);
+
+            encryptionData = {
+              isEncrypted: true,
+              encryptedContent: ciphertext,
+              encryptionMetadata: { nonce, algorithm: 'x25519-xsalsa20-poly1305' },
+              metadata: {
+                encryptedContentOwner: ciphertextOwner,
+                nonceOwner
+              }
+            };
+            // Placeholder content
+            contentToSend = '🔒 Encrypted Message';
+          } catch (e) {
+            console.error('Encryption failed', e);
+            toast({
+              variant: "destructive",
+              title: "Encryption Failed",
+              description: "Could not encrypt message. Please check your keys.",
+            });
+            return; // Abort sending to prevent plaintext leak
+          }
+        }
+
         const messageData = isGroup
-          ? { groupId, content: inputValue.trim(), replyToId: replyingTo?.id }
-          : { recipientId, content: inputValue.trim(), replyToId: replyingTo?.id };
+          ? { groupId, content: contentToSend, replyToId: replyingTo?.id }
+          : { recipientId, content: contentToSend, replyToId: replyingTo?.id, ...encryptionData };
+
+
 
         await sendMessage.mutateAsync(messageData);
         setReplyingTo(null);
@@ -848,18 +936,18 @@ export const ChatView = ({
     }, 3000);
   };
 
-  const handleReply = (message: Message) => {
+  const handleReply = useCallback((message: Message) => {
     setReplyingTo(message);
     setEditingMessage(null);
-  };
+  }, []);
 
-  const handleEdit = (message: Message) => {
+  const handleEdit = useCallback((message: Message) => {
     setEditingMessage(message);
     setInputValue(message.text || "");
     setReplyingTo(null);
-  };
+  }, []);
 
-  const handleDelete = async (messageId: string) => {
+  const handleDelete = useCallback(async (messageId: string) => {
     try {
       await deleteMessage.mutateAsync({ messageId, deleteType: 'soft' });
       toast({
@@ -873,9 +961,9 @@ export const ChatView = ({
         description: getErrorMessage(error),
       });
     }
-  };
+  }, [deleteMessage, toast]);
 
-  const handleReplyClick = (messageId: string) => {
+  const handleReplyClick = useCallback((messageId: string) => {
     const messageElement = messageRefs.current.get(messageId);
     if (messageElement && messagesContainerRef.current) {
       // Scroll to message
@@ -885,9 +973,9 @@ export const ChatView = ({
       setHighlightedMessageId(messageId);
       setTimeout(() => setHighlightedMessageId(null), 2000);
     }
-  };
+  }, []);
 
-  const handleReaction = async (messageId: string, emoji: string) => {
+  const handleReaction = useCallback(async (messageId: string, emoji: string) => {
     try {
       await addReaction.mutateAsync({ messageId, emoji });
     } catch (error) {
@@ -897,7 +985,7 @@ export const ChatView = ({
         description: getErrorMessage(error),
       });
     }
-  };
+  }, [addReaction, toast]);
 
   const handleFileUploaded = async (fileData: unknown) => {
     if (!recipientId && !groupId) return;
@@ -946,6 +1034,14 @@ export const ChatView = ({
     setShowOutgoingCall(true);
   };
 
+  const allFileMessages = useMemo(() =>
+    messages.filter(msg =>
+      (msg.messageType === 'file' && msg.fileId) ||
+      (msg.imageUrl && (msg.messageType === 'image' || msg.mimeType?.startsWith('image/')))
+    ),
+    [messages]
+  );
+
   return (
     <div className="flex flex-col mobile-vh-100">
       {/* Header */}
@@ -989,7 +1085,7 @@ export const ChatView = ({
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
 
           {/* Desktop search and files buttons - hidden on mobile */}
@@ -1012,16 +1108,16 @@ export const ChatView = ({
           </div>
           {!isGroup && recipientId && (
             <>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="icon"
                 onClick={() => handleStartCall('voice')}
                 title="Voice call"
               >
                 <Phone className="h-5 w-5" />
               </Button>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="icon"
                 onClick={() => handleStartCall('video')}
                 title="Video call"
@@ -1030,7 +1126,7 @@ export const ChatView = ({
               </Button>
             </>
           )}
-          
+
           {/* Group-specific menu - desktop only */}
           {isGroup && groupId && (
             <DropdownMenu>
@@ -1060,7 +1156,7 @@ export const ChatView = ({
                   <BellOff className="mr-2 h-4 w-4" />
                   Mute Notifications
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => {
                     if (confirm('Are you sure you want to leave this group?')) {
                       onGroupLeft?.();
@@ -1074,7 +1170,7 @@ export const ChatView = ({
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          
+
           {/* Direct chat menu - desktop only */}
           {!isGroup && recipientId && (
             <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
@@ -1090,13 +1186,13 @@ export const ChatView = ({
                     // Contact can be stored with either userId or contactUserId depending on who initiated
                     return c.contactUserId === recipientId || c.userId === recipientId;
                   });
-                  
+
                   return (
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={async (e) => {
                         e.preventDefault();
-                        
-                        
+
+
                         if (!contact) {
                           toast({
                             title: "Error",
@@ -1105,7 +1201,7 @@ export const ChatView = ({
                           });
                           return;
                         }
-                        
+
                         try {
                           if (contact.isMuted) {
                             await unmuteContact.mutateAsync(contact.id);
@@ -1122,9 +1218,7 @@ export const ChatView = ({
                           }
                           // Refetch contacts to get updated mute status
                           const result = await refetchContacts();
-                          const updatedContact = result.data?.find((c: unknown) => (c as Record<string, unknown>).id === contact.id);
-                          console.log('✅ Updated contact after refetch:', updatedContact);
-                          
+
                           // Close and reopen dropdown to show updated state
                           setDropdownOpen(false);
                         } catch (error) {
@@ -1162,7 +1256,7 @@ export const ChatView = ({
                       });
                       return;
                     }
-                    
+
                     if (confirm('Are you sure you want to block this user? You will no longer receive messages from them.')) {
                       try {
                         await blockContact.mutateAsync(contact.id);
@@ -1194,7 +1288,7 @@ export const ChatView = ({
                       });
                       return;
                     }
-                    
+
                     if (confirm('Are you sure you want to delete this chat? This will remove the contact and all messages.')) {
                       try {
                         await removeContact.mutateAsync(contact.id);
@@ -1375,7 +1469,7 @@ export const ChatView = ({
                 })()
               )}
 
-  
+
               {/* Leave/Delete chat option */}
               {isGroup && groupId && (
                 <DropdownMenuItem
@@ -1436,138 +1530,139 @@ export const ChatView = ({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </div>
+      </div >
 
       {/* Messages */}
-      <div
+      < div
         ref={messagesContainerRef}
         className="flex-1 overflow-y-auto p-4 bg-muted/30 relative"
       >
-        {isLoadingMessages ? (
-          <MessageSkeleton count={6} />
-        ) : messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <EmptyState
-              icon={MessageSquare}
-              title="No messages yet"
-              description="Start the conversation by sending a message"
-            />
-          </div>
-        ) : (
-          <>
-            {/* Loading indicator when auto-loading */}
-            {hasMoreMessages && isLoadingMore && (
-              <div className="flex justify-center py-3 mb-2">
-                <div className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading older messages...
+        {
+          isLoadingMessages ? (
+            <MessageSkeleton count={6} />
+          ) : messages.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <EmptyState
+                icon={MessageSquare}
+                title="No messages yet"
+                description="Start the conversation by sending a message"
+              />
+            </div>
+          ) : (
+            <>
+              {/* Loading indicator when auto-loading */}
+              {hasMoreMessages && isLoadingMore && (
+                <div className="flex justify-center py-3 mb-2">
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading older messages...
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {(() => {
-              // Filter all file messages for navigation ONCE (not on every message render)
-              const allFileMessages = messages.filter(
-                msg => msg.messageType === 'file' && msg.fileId
-              );
-
-              return messages.map((message, index) => {
+              {messages.map((message, index) => {
                 const isLastMessage = index === messages.length - 1;
+                const isFile = (message.messageType === 'file' && message.fileId) ||
+                  (message.imageUrl && (message.messageType === 'image' || message.mimeType?.startsWith('image/')));
 
                 return (
-                <div
-                  key={message.id}
-                  data-message-id={message.id}
-                  ref={(el) => {
-                    if (el) {
-                      messageRefs.current.set(message.id, el);
+                  <div
+                    key={message.id}
+                    data-message-id={message.id}
+                    ref={(el) => {
+                      if (el) {
+                        messageRefs.current.set(message.id, el);
 
-                      // Auto-scroll when last message element mounts/updates
-                      if (isLastMessage && message.isOwn) {
-                        const messageAge = Date.now() - message.timestamp.getTime();
-                        const isRecentOwnMessage = messageAge < 5000; // 5 seconds
+                        // Auto-scroll when last message element mounts/updates
+                        if (isLastMessage && message.isOwn) {
+                          const messageAge = Date.now() - message.timestamp.getTime();
+                          const isRecentOwnMessage = messageAge < 5000; // 5 seconds
 
-                        // Only scroll if this is a different message than last time
-                        // This prevents scrolling on status updates (read receipts)
-                        if (isRecentOwnMessage && lastScrolledMessageIdRef.current !== message.id) {
-                          lastScrolledMessageIdRef.current = message.id;
+                          // Only scroll if this is a different message than last time
+                          // This prevents scrolling on status updates (read receipts)
+                          if (isRecentOwnMessage && lastScrolledMessageIdRef.current !== message.id) {
+                            lastScrolledMessageIdRef.current = message.id;
 
-                          // Use RAF to ensure layout is complete
-                          requestAnimationFrame(() => {
-                            const container = messagesContainerRef.current;
-                            if (container) {
-                              container.scrollTo({
-                                top: container.scrollHeight,
-                                behavior: "smooth"
-                              });
-                            }
-                          });
+                            // Use RAF to ensure layout is complete
+                            requestAnimationFrame(() => {
+                              const container = messagesContainerRef.current;
+                              if (container) {
+                                container.scrollTo({
+                                  top: container.scrollHeight,
+                                  behavior: "smooth"
+                                });
+                              }
+                            });
+                          }
                         }
+                      } else {
+                        messageRefs.current.delete(message.id);
                       }
-                    } else {
-                      messageRefs.current.delete(message.id);
-                    }
-                  }}
-                  className={cn(
-                    "transition-colors duration-300",
-                    highlightedMessageId === message.id && "bg-primary/10 rounded-lg"
-                  )}
-                >
-                  {message.messageType === 'call' ? (
-                    <CallMessage
-                      callId={message.callId || message.id}
-                      callType={message.callType || 'voice'}
-                      callStatus={message.callStatus || 'completed'}
-                      callDuration={message.callDuration}
-                      timestamp={message.timestamp}
-                      isOwn={message.isOwn}
-                      onCallBack={() => {
-                        if (message.callType === 'video') {
-                          handleStartCall('video');
-                        } else {
-                          handleStartCall('voice');
-                        }
-                      }}
-                    />
-                  ) : (
-                    <MessageBubble
-                      message={message}
-                      currentUserId={user?.id || ''}
-                      onReply={handleReply}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      onReplyClick={handleReplyClick}
-                      onReaction={handleReaction}
-                      isGroupMessage={!!groupId}
-                      allImages={allFileMessages}
-                    />
-                  )}
-                </div>
-              );
-              });
-            })()}
-          </>
-        )}
-        {isTyping && (
-          <div className="px-4 pb-4">
-            <TypingIndicator />
-          </div>
-        )}
+                    }}
+                    className={cn(
+                      "transition-colors duration-300",
+                      highlightedMessageId === message.id && "bg-primary/10 rounded-lg"
+                    )}
+                  >
+                    {message.messageType === 'call' ? (
+                      <CallMessage
+                        callId={message.callId || message.id}
+                        callType={message.callType || 'voice'}
+                        callStatus={message.callStatus || 'completed'}
+                        callDuration={message.callDuration}
+                        timestamp={message.timestamp}
+                        isOwn={message.isOwn}
+                        onCallBack={() => {
+                          if (message.callType === 'video') {
+                            handleStartCall('video');
+                          } else {
+                            handleStartCall('voice');
+                          }
+                        }}
+                      />
+                    ) : (
+                      <MessageBubble
+                        message={message}
+                        currentUserId={user?.id || ''}
+                        recipientId={recipientId}
+                        onReply={handleReply}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onReplyClick={handleReplyClick}
+                        onReaction={handleReaction}
+                        isGroupMessage={!!groupId}
+                        allImages={isFile ? allFileMessages : EMPTY_ARRAY}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          )}
+        {
+          isTyping && (
+            <div className="px-4 pb-4">
+              <TypingIndicator />
+            </div>
+          )
+        }
         <div ref={messagesEndRef} />
 
-        {showScrollButton && (
-          <Button
-            onClick={scrollToBottom}
-            size="icon"
-            className="fixed bottom-24 right-8 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <ArrowDown className="h-5 w-5" />
-          </Button>
-        )}
-      </div>
+        {
+          showScrollButton && (
+            <Button
+              onClick={scrollToBottom}
+              size="icon"
+              className="fixed bottom-24 right-8 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <ArrowDown className="h-5 w-5" />
+            </Button>
+          )
+        }
+      </div >
 
       {/* Input */}
-      <div className="border-t border-border bg-background">
+      < div className="border-t border-border bg-background" >
         {editingMessage && (
           <div className="px-4 pt-3 pb-2 bg-muted/50 border-b border-border">
             <div className="flex items-start justify-between gap-2">
@@ -1593,28 +1688,30 @@ export const ChatView = ({
             </div>
           </div>
         )}
-        {replyingTo && !editingMessage && (
-          <div className="px-4 pt-3 pb-2 bg-muted/50 border-b border-border">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-primary mb-1">
-                  Replying to {replyingTo.isOwn ? "yourself" : chatName}
-                </p>
-                <p className="text-sm text-muted-foreground truncate">
-                  {replyingTo.text || "Image"}
-                </p>
+        {
+          replyingTo && !editingMessage && (
+            <div className="px-4 pt-3 pb-2 bg-muted/50 border-b border-border">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-primary mb-1">
+                    Replying to {replyingTo.isOwn ? "yourself" : chatName}
+                  </p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {replyingTo.text || "Image"}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => setReplyingTo(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={() => setReplyingTo(null)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
-          </div>
-        )}
+          )
+        }
 
         <div className="p-4 safe-bottom">
           <div className="flex items-center gap-2">
@@ -1660,7 +1757,7 @@ export const ChatView = ({
             </Button>
           </div>
         </div>
-      </div>
+      </div >
 
       <FileUploadDialog
         open={showFileUpload}
@@ -1675,260 +1772,263 @@ export const ChatView = ({
         groupId={groupId || undefined}
       />
 
-  
-      {isGroup && groupId && (
-        <>
-          <GroupSettings
-            open={showGroupSettings}
-            onOpenChange={setShowGroupSettings}
-            groupId={groupId}
-            isAdmin={isGroupAdmin}
-            isCreator={isGroupCreator}
-            onGroupUpdated={() => {
-              setShowGroupSettings(false);
-              onGroupUpdated?.();
-            }}
-            onGroupDeleted={() => {
-              setShowGroupSettings(false);
-              onGroupLeft?.();
-            }}
-          />
 
-          <GroupInfo
-            open={showGroupInfo}
-            onOpenChange={setShowGroupInfo}
-            groupId={groupId}
-            isAdmin={isGroupAdmin}
-            isCreator={isGroupCreator}
-            onLeaveGroup={() => {
-              setShowGroupInfo(false);
-              onGroupLeft?.();
-            }}
-          />
-        </>
-      )}
+      {
+        isGroup && groupId && (
+          <>
+            <GroupSettings
+              open={showGroupSettings}
+              onOpenChange={setShowGroupSettings}
+              groupId={groupId}
+              isAdmin={isGroupAdmin}
+              isCreator={isGroupCreator}
+              onGroupUpdated={() => {
+                setShowGroupSettings(false);
+                onGroupUpdated?.();
+              }}
+              onGroupDeleted={() => {
+                setShowGroupSettings(false);
+                onGroupLeft?.();
+              }}
+            />
+
+            <GroupInfo
+              open={showGroupInfo}
+              onOpenChange={setShowGroupInfo}
+              groupId={groupId}
+              isAdmin={isGroupAdmin}
+              isCreator={isGroupCreator}
+              onLeaveGroup={() => {
+                setShowGroupInfo(false);
+                onGroupLeft?.();
+              }}
+            />
+          </>
+        )
+      }
 
       {/* Outgoing Call Modal */}
-      {!isGroup && recipientId && (
-        <OutgoingCall
-          open={showOutgoingCall}
-          onOpenChange={(open) => {
-            setShowOutgoingCall(open);
-            // When outgoing call is dismissed (rejected, missed, etc.), refresh messages
-            if (!open) {
-              queryClient.invalidateQueries({ 
-                queryKey: recipientId ? ['messages', recipientId] : ['groupMessages', groupId] 
-              });
-              queryClient.invalidateQueries({ queryKey: ['conversations'] });
-            }
-          }}
-          recipientId={recipientId}
-          recipientName={chatName}
-          recipientAvatar={chatAvatar}
-          callType={callType}
-          onCallAccepted={(callId) => {
-            console.log('✅ Outgoing call accepted:', callId);
-            console.log('🎯 Opening ActiveCall as INITIATOR');
-            setShowOutgoingCall(false);
-            // Open ActiveCall dialog
-            setShowActiveCall(true);
-            setActiveCallData({
-              callId,
-              participantId: recipientId,
-              participantName: chatName,
-              participantAvatar: chatAvatar,
-              callType,
-              isInitiator: true // initiating call
-            });
-            console.log('✅ ActiveCall state set:', { callId, participantId: recipientId, isInitiator: true });
-          }}
-        />
-      )}
-
-      {/* Incoming Call Modal */}
-      {incomingCallData && (
-        <IncomingCall
-          open={showIncomingCall}
-          onOpenChange={(open) => {
-            setShowIncomingCall(open);
-            // When incoming call is dismissed, refresh messages
-            if (!open) {
-              queryClient.invalidateQueries({ 
-                queryKey: recipientId ? ['messages', recipientId] : ['groupMessages', groupId] 
-              });
-              queryClient.invalidateQueries({ queryKey: ['conversations'] });
-            }
-          }}
-          callId={incomingCallData.callId}
-          callerId={incomingCallData.callerId}
-          callerName={incomingCallData.callerName}
-          callerAvatar={incomingCallData.callerAvatar}
-          callType={incomingCallData.callType}
-          onCallAccepted={(callId) => {
-            console.log('✅ Call accepted:', callId);
-            console.log('🎯 Opening ActiveCall as RECEIVER');
-            setShowIncomingCall(false);
-            // Open ActiveCall dialog
-            setShowActiveCall(true);
-            setActiveCallData({
-              callId,
-              participantId: incomingCallData.callerId,
-              participantName: incomingCallData.callerName,
-              participantAvatar: incomingCallData.callerAvatar,
-              callType: incomingCallData.callType,
-              isInitiator: false // receiving call
-            });
-          }}
-          onCallRejected={() => {
-            console.log('❌ Call rejected');
-            setShowIncomingCall(false);
-            setIncomingCallData(null);
-            // Refresh messages to show the missed call
-            queryClient.invalidateQueries({ 
-              queryKey: recipientId ? ['messages', recipientId] : ['groupMessages', groupId] 
-            });
-            queryClient.invalidateQueries({ queryKey: ['conversations'] });
-          }}
-        />
-      )}
-
-      {/* Active Call Modal */}
-      {showActiveCall && activeCallData && (
-        <Suspense fallback={<InlineLoadingFallback />}>
-          <ActiveCall
-            open={showActiveCall}
+      {
+        !isGroup && recipientId && (
+          <OutgoingCall
+            open={showOutgoingCall}
             onOpenChange={(open) => {
-              console.trace('Stack trace for onOpenChange');
-              setShowActiveCall(open);
+              setShowOutgoingCall(open);
+              // When outgoing call is dismissed (rejected, missed, etc.), refresh messages
               if (!open) {
-                setActiveCallData(null);
-                // Refresh messages to show the call record
                 queryClient.invalidateQueries({
                   queryKey: recipientId ? ['messages', recipientId] : ['groupMessages', groupId]
                 });
-                // Also refresh conversations to update last message
                 queryClient.invalidateQueries({ queryKey: ['conversations'] });
               }
             }}
-            callId={activeCallData.callId}
-            participantId={activeCallData.participantId}
-          participantName={activeCallData.participantName}
-          participantAvatar={activeCallData.participantAvatar}
-          callType={activeCallData.callType}
-          isInitiator={activeCallData.isInitiator}
+            recipientId={recipientId}
+            recipientName={chatName}
+            recipientAvatar={chatAvatar}
+            callType={callType}
+            onCallAccepted={(callId) => {
+              setShowOutgoingCall(false);
+              // Open ActiveCall dialog
+              setShowActiveCall(true);
+              setActiveCallData({
+                callId,
+                participantId: recipientId,
+                participantName: chatName,
+                participantAvatar: chatAvatar,
+                callType,
+                isInitiator: true // initiating call
+              });
+            }}
           />
-        </Suspense>
-      )}
+        )
+      }
+
+      {/* Incoming Call Modal */}
+      {
+        incomingCallData && (
+          <IncomingCall
+            open={showIncomingCall}
+            onOpenChange={(open) => {
+              setShowIncomingCall(open);
+              // When incoming call is dismissed, refresh messages
+              if (!open) {
+                queryClient.invalidateQueries({
+                  queryKey: recipientId ? ['messages', recipientId] : ['groupMessages', groupId]
+                });
+                queryClient.invalidateQueries({ queryKey: ['conversations'] });
+              }
+            }}
+            callId={incomingCallData.callId}
+            callerId={incomingCallData.callerId}
+            callerName={incomingCallData.callerName}
+            callerAvatar={incomingCallData.callerAvatar}
+            callType={incomingCallData.callType}
+            onCallAccepted={(callId) => {
+              setShowIncomingCall(false);
+              // Open ActiveCall dialog
+              setShowActiveCall(true);
+              setActiveCallData({
+                callId,
+                participantId: incomingCallData.callerId,
+                participantName: incomingCallData.callerName,
+                participantAvatar: incomingCallData.callerAvatar,
+                callType: incomingCallData.callType,
+                isInitiator: false // receiving call
+              });
+            }}
+            onCallRejected={() => {
+              setShowIncomingCall(false);
+              setIncomingCallData(null);
+              // Refresh messages to show the missed call
+              queryClient.invalidateQueries({
+                queryKey: recipientId ? ['messages', recipientId] : ['groupMessages', groupId]
+              });
+              queryClient.invalidateQueries({ queryKey: ['conversations'] });
+            }}
+          />
+        )
+      }
+
+      {/* Active Call Modal */}
+      {
+        showActiveCall && activeCallData && (
+          <Suspense fallback={<InlineLoadingFallback />}>
+            <ActiveCall
+              open={showActiveCall}
+              onOpenChange={(open) => {
+                console.trace('Stack trace for onOpenChange');
+                setShowActiveCall(open);
+                if (!open) {
+                  setActiveCallData(null);
+                  // Refresh messages to show the call record
+                  queryClient.invalidateQueries({
+                    queryKey: recipientId ? ['messages', recipientId] : ['groupMessages', groupId]
+                  });
+                  // Also refresh conversations to update last message
+                  queryClient.invalidateQueries({ queryKey: ['conversations'] });
+                }
+              }}
+              callId={activeCallData.callId}
+              participantId={activeCallData.participantId}
+              participantName={activeCallData.participantName}
+              participantAvatar={activeCallData.participantAvatar}
+              callType={activeCallData.callType}
+              isInitiator={activeCallData.isInitiator}
+            />
+          </Suspense>
+        )
+      }
       {/* Mobile Search Dialog */}
-      {mobileSearchOpen && (
-        <div className="md:hidden fixed inset-0 z-50 bg-black/50 flex"
-             onClick={() => setMobileSearchOpen(false)}>
-          <div className="m-4 bg-background rounded-lg shadow-lg w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="p-4 border-b flex items-center justify-between">
-              <h3 className="font-semibold">Search Messages</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMobileSearchOpen(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="p-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={recipientId ? "Search in this chat..." : "Search messages..."}
-                  className="pl-10 pr-10"
-                  autoFocus
-                  value={mobileSearchQuery}
-                  onChange={(e) => setMobileSearchQuery(e.target.value)}
-                />
-                {mobileSearchLoading && (
-                  <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
-                )}
+      {
+        mobileSearchOpen && (
+          <div className="md:hidden fixed inset-0 z-50 bg-black/50 flex"
+            onClick={() => setMobileSearchOpen(false)}>
+            <div className="m-4 bg-background rounded-lg shadow-lg w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+              <div className="p-4 border-b flex items-center justify-between">
+                <h3 className="font-semibold">Search Messages</h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setMobileSearchOpen(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
+              <div className="p-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={recipientId ? "Search in this chat..." : "Search messages..."}
+                    className="pl-10 pr-10"
+                    autoFocus
+                    value={mobileSearchQuery}
+                    onChange={(e) => setMobileSearchQuery(e.target.value)}
+                  />
+                  {mobileSearchLoading && (
+                    <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
 
-              {/* Search Results */}
-              {mobileSearchQuery.length >= 2 && (
-                <div className="mt-4 max-h-96 overflow-y-auto">
-                  {mobileSearchResults.length > 0 ? (
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Found {mobileSearchResults.length} result{mobileSearchResults.length !== 1 ? 's' : ''}
-                      </p>
-                      {mobileSearchResults.map((result: Record<string, unknown>) => (
-                        <div
-                          key={result.id as string}
-                          onClick={() => {
-                            const messageId = result.id as string;
+                {/* Search Results */}
+                {mobileSearchQuery.length >= 2 && (
+                  <div className="mt-4 max-h-96 overflow-y-auto">
+                    {mobileSearchResults.length > 0 ? (
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Found {mobileSearchResults.length} result{mobileSearchResults.length !== 1 ? 's' : ''}
+                        </p>
+                        {mobileSearchResults.map((result: Record<string, unknown>) => (
+                          <div
+                            key={result.id as string}
+                            onClick={() => {
+                              const messageId = result.id as string;
 
-                            // Check if the message exists in the current loaded messages
-                            const messageExists = messages.some(msg => msg.id === messageId);
-                            console.log('✅ Message exists in current messages:', messageExists);
+                              // Check if the message exists in the current loaded messages
+                              const messageExists = messages.some(msg => msg.id === messageId);
 
-                            if (messageExists) {
-                              handleReplyClick(messageId);
-                              setMobileSearchOpen(false);
-                              setMobileSearchQuery('');
-                            } else {
-                              // Message not found, show user-friendly error
-                              toast({
-                                title: "Message not available",
-                                description: "This message is not in the currently loaded conversation. Try loading more messages.",
-                                variant: "destructive",
-                              });
-                            }
-                          }}
-                          className="p-3 border rounded-lg hover:bg-muted cursor-pointer"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center text-xs font-medium">
-                              {((result.sender as Record<string, unknown>)?.firstName as string)?.[0]?.toUpperCase() ||
-                               ((result.sender as Record<string, unknown>)?.username as string)?.[0]?.toUpperCase() ||
-                               '?'}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-sm">
-                                  {((result.sender as Record<string, unknown>)?.firstName as string) ||
-                                   ((result.sender as Record<string, unknown>)?.username as string)}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {new Date(result.createdAt as string).toLocaleTimeString('en-US', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
-                                </span>
+                              if (messageExists) {
+                                handleReplyClick(messageId);
+                                setMobileSearchOpen(false);
+                                setMobileSearchQuery('');
+                              } else {
+                                // Message not found, show user-friendly error
+                                toast({
+                                  title: "Message not available",
+                                  description: "This message is not in the currently loaded conversation. Try loading more messages.",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                            className="p-3 border rounded-lg hover:bg-muted cursor-pointer"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center text-xs font-medium">
+                                {((result.sender as Record<string, unknown>)?.firstName as string)?.[0]?.toUpperCase() ||
+                                  ((result.sender as Record<string, unknown>)?.username as string)?.[0]?.toUpperCase() ||
+                                  '?'}
                               </div>
-                              <p className="text-sm text-muted-foreground truncate">
-                                {result.content as string}
-                              </p>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-sm">
+                                    {((result.sender as Record<string, unknown>)?.firstName as string) ||
+                                      ((result.sender as Record<string, unknown>)?.username as string)}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(result.createdAt as string).toLocaleTimeString('en-US', {
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-muted-foreground truncate">
+                                  {result.content as string}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : !mobileSearchLoading ? (
-                    <div className="text-center py-8">
-                      <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        No messages found matching "{mobileSearchQuery}"
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-              )}
+                        ))}
+                      </div>
+                    ) : !mobileSearchLoading ? (
+                      <div className="text-center py-8">
+                        <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          No messages found matching "{mobileSearchQuery}"
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
 
-              {mobileSearchQuery.length < 2 && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Type at least 2 characters to search
-                </p>
-              )}
+                {mobileSearchQuery.length < 2 && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Type at least 2 characters to search
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };

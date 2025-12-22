@@ -136,6 +136,14 @@ export interface Message {
     name: string;
     avatar?: string;
   };
+  isEncrypted?: boolean;
+  encryptedContent?: string;
+  encryptionMetadata?: {
+    algorithm?: string;
+    nonce?: string;
+    authTag?: string;
+  };
+  encryptionAlgorithm?: string;
 }
 
 export interface Conversation {

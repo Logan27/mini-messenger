@@ -43,7 +43,7 @@ export const messageService = {
       conversationWith: params.recipientId,
     };
     delete apiParams.recipientId;
-    
+
     const response = await apiClient.get('/messages', { params: apiParams });
 
     return response.data.data;
@@ -56,6 +56,9 @@ export const messageService = {
     messageType?: string;
     replyToId?: string;
     metadata?: Record<string, unknown>;
+    isEncrypted?: boolean;
+    encryptedContent?: string;
+    encryptionMetadata?: Record<string, unknown>;
   }) {
 
     // Check if user is offline

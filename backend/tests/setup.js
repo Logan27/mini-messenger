@@ -26,6 +26,7 @@ process.env.FILE_UPLOAD_PATH = './temp/test_uploads';
 config.jwt.secret = 'test-jwt-secret-key';
 config.jwt.refreshSecret = 'test-jwt-refresh-secret-key';
 config.session.secret = 'test-session-secret';
+config.database.host = '127.0.0.1'; // Ensure tests connect to localhost (Docker port mapping)
 
 // Initialize database connection
 let dbInitialized = false;
@@ -130,19 +131,28 @@ global.testUtils = {
   async clearDatabase() {
     try {
       const models = Object.values(sequelize.models);
-
-      // Disable foreign key checks temporarily
-      await sequelize.query('SET CONSTRAINTS ALL DEFERRED');
-
-      // Delete all data from tables
-      for (const model of models) {
-        await model.destroy({ where: {}, force: true, truncate: true });
+      const tableNames = models.map(model => `"${model.getTableName()}"`).join(', ');
+      
+      if (tableNames) {
+        // Use a single TRUNCATE CASCADE command for all tables
+        await sequelize.query(`TRUNCATE ${tableNames} RESTART IDENTITY CASCADE`);
       }
-
-      // Re-enable foreign key checks
-      await sequelize.query('SET CONSTRAINTS ALL IMMEDIATE');
     } catch (error) {
-      console.error('Error clearing database:', error);
+      // If some tables don't exist yet, this might fail. We'll try a more granular approach if it does.
+      try {
+        const models = Object.values(sequelize.models);
+        for (const model of models) {
+          try {
+            const tableName = model.getTableName();
+            const name = typeof tableName === 'string' ? tableName : tableName.tableName;
+            await sequelize.query(`TRUNCATE "${name}" RESTART IDENTITY CASCADE`);
+          } catch (err) {
+            // Ignore if table doesn't exist
+          }
+        }
+      } catch (innerError) {
+        console.error('Error clearing database:', innerError);
+      }
     }
   },
 };

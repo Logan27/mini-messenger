@@ -193,7 +193,6 @@ export const onForegroundMessage = (callback: (payload: unknown) => void) => {
   }
 
   return onMessage(messaging, (payload) => {
-    console.log('Foreground message received:', payload);
     callback(payload);
   });
 };

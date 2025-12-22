@@ -153,6 +153,41 @@ This directory contains detailed test cases covering all functional and non-func
 
 ---
 
+### 7. [UI Components Test Cases](07-session-7-ui-components.md)
+**Coverage:** UI Components, Empty States, Dark Mode, Shortcuts
+
+- **Empty States** (TC-UI-001 to 006): Index, ChatView, CallHistory, BlockedContacts, NotificationCenter
+- **Skeleton Loaders** (TC-UI-007 to 009): ChatList, Messages, CallHistory
+- **Keyboard Shortcuts** (TC-UI-010 to 015): Chat switching, settings, close chat, send message
+- **Dark Mode** (TC-UI-016 to 021): Toggle, component adaptation, error boundary
+- **Accessibility** (TC-UI-022): Contrast ratios (WCAG AA)
+
+**Test Scenarios:** 22+
+
+---
+
+### 8. [PWA, Notifications & Advanced Settings](08-pwa-notifications-settings.md)
+**Coverage:** PWA, Offline, Notification Preferences, Session Management
+
+- **PWA & Offline** (TC-PWA-001 to 004): Service Worker, Offline Page, Offline Queue, Install Prompt
+- **Notification Settings** (TC-NT-001 to 005): Master toggle, Quiet Hours, DND, Granular types
+- **Active Sessions** (TC-SC-008): Detailed view, revoke specific, revoke all others
+
+**Test Scenarios:** 12+
+
+---
+
+### 9. [Encryption & Security Deep Dive](09-encryption-security.md)
+**Coverage:** Dual Encryption, Key Backup, Rotation, Security Edge Cases
+
+- **Dual Encryption** (TC-SEC-001): Multi-device support, payload verification
+- **Key Management** (TC-SEC-002 to 003): Encrypted backup/restore, rotation, history
+- **Security Logic** (TC-SEC-004): Group vs P2P distinctions, metadata integrity
+
+**Test Scenarios:** 8+
+
+---
+
 ## Test Coverage Summary
 
 | Category | Functional Requirements | Test Cases | Priority |
@@ -168,8 +203,11 @@ This directory contains detailed test cases covering all functional and non-func
 | Performance | NFR-PF-001 to NFR-PF-005 | 20+ | High |
 | Integration | Various | 25+ | High |
 | End-to-End | Various | 15+ | High |
+| UI Components | UI/UX | 22+ | Medium |
+| PWA & Settings | FR-NT-004, FR-SC-002, PWA | 12+ | Medium |
+| Encryption Security | FR-MS-012, FR-SC-004 | 8+ | Critical |
 
-**Total Test Scenarios: 350+**
+**Total Test Scenarios: 393+**
 
 ---
 

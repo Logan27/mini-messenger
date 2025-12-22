@@ -83,7 +83,8 @@ fileQueue.process(async job => {
       await thumbnailService.generateThumbnail(filePath, options);
     } else if (operation === 'virus-scan') {
       const fileUploadService = (await import('./fileUploadService.js')).default;
-      await fileUploadService.scanFile(filePath);
+      const { userId } = job.data;
+      await fileUploadService.scanFile(filePath, fileId, userId);
     } else if (operation === 'process') {
       const fileUploadService = (await import('./fileUploadService.js')).default;
       await fileUploadService.processFile(fileId, options);

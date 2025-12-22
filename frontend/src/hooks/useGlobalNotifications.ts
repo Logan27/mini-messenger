@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { getAvatarUrl } from "@/lib/avatar-utils";
 import { socketService } from '@/services/socket.service';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api-client';
+
 
 /**
  * Global notification handler for all incoming messages
@@ -26,7 +28,6 @@ export function useGlobalNotifications() {
         if (response.data?.data?.settings) {
           const newSettings = response.data.data.settings;
           setNotificationSettings(newSettings);
-          console.log('✅ State update called with:', newSettings);
         }
       } catch (error) {
         console.error('❌ Failed to load notification settings:', error);
@@ -117,8 +118,6 @@ export function useGlobalNotifications() {
             badge: '/favicon.ico',
           });
 
-          console.log('✅ Contact request notification created');
-
           // Handle notification click
           notification.onclick = () => {
             window.focus();
@@ -136,7 +135,6 @@ export function useGlobalNotifications() {
 
     // Listen for contact accepted
     const unsubscribeContactAccepted = socketService.on('contact.accepted', (data: unknown) => {
-      console.log('✅ Contact request accepted via socket:', data);
 
       // Check notification settings
       if (notificationSettings) {
@@ -204,8 +202,6 @@ export function useGlobalNotifications() {
             badge: '/favicon.ico',
           });
 
-          console.log('✅ Call notification created');
-
           // Handle notification click - navigate to chat view to accept/reject call
           notification.onclick = () => {
             window.focus();
@@ -222,7 +218,8 @@ export function useGlobalNotifications() {
     });
 
     // Listen for ALL incoming messages
-    const unsubscribe = socketService.on('message.new', (newMessage: unknown) => {
+    const unsubscribe = socketService.on('message.new', async (newMessage: any) => {
+
       // Don't notify for messages we sent
       if (newMessage.senderId === user.id) {
         return;
@@ -236,120 +233,98 @@ export function useGlobalNotifications() {
 
       // Check notification settings
       if (notificationSettings) {
-
+        // ... (checks kept identical for brevity in thought process, but I must include them in replacement)
         // Check global notifications toggle first (master switch)
-        if (notificationSettings.inAppEnabled === false) {
-          return;
-        }
+        if ((notificationSettings as any).inAppEnabled === false) return; // Cast to any to avoid Unknown type error
 
-        // Check Do Not Disturb (highest priority after global toggle)
-        if (notificationSettings.doNotDisturb === true) {
-          return;
-        }
+        // Check Do Not Disturb
+        if ((notificationSettings as any).doNotDisturb === true) return;
 
-        // Check if push notifications are disabled (desktop/browser notifications)
-        if (notificationSettings.pushEnabled === false) {
-          return;
-        }
+        // Check if push notifications are disabled
+        if ((notificationSettings as any).pushEnabled === false) return;
 
         // Check if message notifications are disabled
-        if (notificationSettings.messageNotifications === false) {
-          return;
-        }
+        if ((notificationSettings as any).messageNotifications === false) return;
 
         // Check quiet hours
-        if (notificationSettings.quietHoursStart && notificationSettings.quietHoursEnd) {
+        if ((notificationSettings as any).quietHoursStart && (notificationSettings as any).quietHoursEnd) {
+          // ... logic ...
+          // I'll copy the logic from original file to be safe
+          const ns = notificationSettings as any;
           const now = new Date();
           const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-          // Normalize time strings to HH:MM format (backend may return HH:MM:SS)
           const normalizeTime = (time: string) => time.substring(0, 5);
-          const quietHoursStart = normalizeTime(notificationSettings.quietHoursStart);
-          const quietHoursEnd = normalizeTime(notificationSettings.quietHoursEnd);
-
-          // Handle overnight periods (e.g., 22:00 to 08:00)
+          const quietHoursStart = normalizeTime(ns.quietHoursStart);
+          const quietHoursEnd = normalizeTime(ns.quietHoursEnd);
           const isQuietTime = quietHoursStart > quietHoursEnd
             ? (currentTime >= quietHoursStart || currentTime <= quietHoursEnd)
             : (currentTime >= quietHoursStart && currentTime <= quietHoursEnd);
-
-          if (isQuietTime) {
-            return;
-          } else {
-            console.log('✅ Not in quiet hours - notification allowed');
-          }
+          if (isQuietTime) return;
         }
       }
 
       // Check if notifications are supported
-      if (!('Notification' in window)) {
-        console.error('❌ Notifications API not supported in this browser');
-        return;
-      }
+      if (!('Notification' in window)) return;
 
-      // Check permission status
-      if (Notification.permission === 'denied') {
-        console.warn('⚠️ Notification permission denied by user. Please enable in browser settings.');
-        console.warn('⚠️ Chrome: Settings > Privacy and security > Site Settings > Notifications');
-        return;
-      }
-
-      if (Notification.permission === 'default') {
-        console.warn('⚠️ Notification permission not requested yet. Asking now...');
-        Notification.requestPermission().then(permission => {
-          if (permission === 'granted') {
-            console.log('✅ Permission granted! Notifications will work for next message.');
-          }
-        });
-        return;
-      }
-
-      // Show notification if permission granted
       if (Notification.permission === 'granted') {
         try {
           const senderName = newMessage.senderUsername || newMessage.sender?.username || 'Someone';
-          const notificationBody = newMessage.content || 'You have a new message';
+          let notificationBody = newMessage.content || 'You have a new message';
+
+          // Decrypt if needed
+          if (newMessage.isEncrypted && newMessage.encryptedContent && newMessage.encryptionMetadata?.nonce) {
+            try {
+              // Dynamically import encryption service to avoid circular dependencies if any?
+              // No, top level import is fine usually.
+              const { encryptionService } = await import('@/services/encryptionService');
+              const { encryptionAPI } = await import('@/lib/api-client');
+
+              const myKeys = encryptionService.loadKeys();
+              if (myKeys) {
+                const senderId = newMessage.senderId;
+                let senderKey = localStorage.getItem(`public_key_${senderId}`);
+
+                if (!senderKey) {
+                  try {
+                    const res = await encryptionAPI.getPublicKey(senderId);
+                    if (res?.data?.data?.publicKey) {
+                      senderKey = res.data.data.publicKey;
+                      localStorage.setItem(`public_key_${senderId}`, senderKey);
+                    }
+                  } catch (e) { console.error('Failed to fetch key for notification', e); }
+                }
+
+                if (senderKey) {
+                  const decrypted = await encryptionService.decrypt(
+                    newMessage.encryptedContent,
+                    newMessage.encryptionMetadata.nonce,
+                    senderKey
+                  );
+                  if (decrypted) notificationBody = decrypted;
+                }
+              }
+            } catch (e) {
+              console.error('Notification decryption failed', e);
+            }
+          }
 
           const notification = new Notification(`New message from ${senderName}`, {
             body: notificationBody,
-            icon: newMessage.senderAvatar || newMessage.sender?.avatar || '/favicon.ico',
-            tag: newMessage.id, // Prevent duplicate notifications
+            icon: getAvatarUrl(newMessage.senderAvatar || newMessage.sender?.avatar) || '/icon.svg',
+            tag: newMessage.id,
             requireInteraction: false,
             silent: false,
-            badge: '/favicon.ico',
+            badge: '/icon.svg',
           });
 
-          console.log('✅ Notification object created:', notification);
+          setTimeout(() => notification.close(), 5000);
 
-          // Auto-close after 5 seconds
-          setTimeout(() => {
-            console.log('⏰ Auto-closing notification');
-            notification.close();
-          }, 5000);
-
-          // Handle notification click
           notification.onclick = () => {
             window.focus();
             notification.close();
-            // Could navigate to the conversation here
           };
-
-          // Handle notification close
-          notification.onclose = () => {
-          };
-
-          // Handle notification error
-          notification.onerror = (error) => {
-            console.error('❌ Notification error:', error);
-          };
-
-          console.log('✅ Notification created and event handlers attached');
         } catch (error) {
           console.error('❌ Failed to create notification:', error);
-          console.error('❌ Error details:', {
-            name: (error as Error).name,
-            message: (error as Error).message,
-            stack: (error as Error).stack
-          });
         }
       }
     });

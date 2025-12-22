@@ -1,10 +1,12 @@
 import { Message } from "@/types/chat";
 import { cn } from "@/lib/utils";
+import { encryptionService } from "@/services/encryptionService";
+import { encryptionAPI } from "@/lib/api-client";
 import { Check, CheckCheck, MoreVertical, Reply, Copy, Trash2, Edit2, Download, FileIcon, Image as ImageIcon, Video, Music, Clock } from "lucide-react";
 import { MessageReactions } from "./MessageReactions";
 import { ReactionPicker } from "./ReactionPicker";
 import { ReplyPreview } from "./ReplyPreview";
-import { useState, lazy, Suspense } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +31,7 @@ interface MessageBubbleProps {
   onReaction?: (messageId: string, emoji: string) => void;
   isGroupMessage?: boolean;
   allImages?: Message[]; // All image messages in chat for navigation
+  recipientId?: string | null;  // Needed for decrypting own messages
 }
 
 const formatMessageTime = (date: Date) => {
@@ -47,7 +50,8 @@ const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelete, onReplyClick, onReaction, isGroupMessage = false, allImages = [] }: MessageBubbleProps) => {
+// Export memoized component
+export const MessageBubble = React.memo(({ message, currentUserId, onReply, onEdit, onDelete, onReplyClick, onReaction, isGroupMessage = false, allImages = [], recipientId }: MessageBubbleProps) => {
   const [showActions, setShowActions] = useState(false);
   const [showFilePreview, setShowFilePreview] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -96,6 +100,98 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
       setShowFilePreview(true);
     }
   };
+
+  // Encryption Decryption Effect
+  const [decryptedContent, setDecryptedContent] = useState<string | null>(null);
+  const [decryptionError, setDecryptionError] = useState(false);
+
+  useEffect(() => {
+
+
+    if (!message.isEncrypted && !message.encryptedContent) {
+      return;
+    }
+
+    const decrypt = async () => {
+      try {
+        // Dual Decryption Logic
+        const myKeys = encryptionService.loadKeys();
+
+        // 1. Decrypt Own Message (Self-Copy)
+        if (message.isOwn && myKeys) {
+          // Check for Dual Encrypted Metadata
+          if (message.metadata?.encryptedContentOwner && message.metadata?.nonceOwner) {
+            const text = await encryptionService.decrypt(
+              message.metadata.encryptedContentOwner,
+              message.metadata.nonceOwner,
+              myKeys.publicKey // "Sender" is me, encrypted for me
+            );
+            setDecryptedContent(text);
+            return;
+          } else {
+            // Old own messages without dual encryption cannot be decrypted
+            // (they were encrypted only for the recipient, not for the sender)
+            setDecryptionError(true);
+            return;
+          }
+        }
+
+        // 2. Incoming message decryption (from other users)
+        // Need sender public key
+        const otherUserId = message.senderId;
+
+        if (!otherUserId) {
+          setDecryptionError(true);
+          return;
+        }
+
+        // Get sender's public key - first try cache, then API
+        let key = localStorage.getItem(`public_key_${otherUserId}`);
+        const cachedKey = key; // Remember if we had a cached key
+
+        if (!key) {
+          const res = await encryptionAPI.getPublicKey(otherUserId);
+          if (res.data?.data?.publicKey) {
+            key = res.data.data.publicKey;
+            localStorage.setItem(`public_key_${otherUserId}`, key);
+          }
+        }
+
+        if (!key || !message.encryptionMetadata?.nonce || !message.encryptedContent) {
+          setDecryptionError(true);
+          return;
+        }
+
+        // Try decryption
+        try {
+          const text = await encryptionService.decrypt(message.encryptedContent, message.encryptionMetadata.nonce, key);
+          setDecryptedContent(text);
+        } catch (err) {
+          // If we used a cached key, try fetching fresh key from API
+          if (cachedKey) {
+            const res = await encryptionAPI.getPublicKey(otherUserId);
+            if (res.data?.data?.publicKey && res.data.data.publicKey !== cachedKey) {
+              key = res.data.data.publicKey;
+              localStorage.setItem(`public_key_${otherUserId}`, key);
+              try {
+                const text = await encryptionService.decrypt(message.encryptedContent, message.encryptionMetadata.nonce, key);
+                setDecryptedContent(text);
+                return;
+              } catch {
+                // Failed even with fresh key
+              }
+            }
+          }
+          setDecryptionError(true);
+        }
+      } catch {
+        // Expected for old messages with lost keys - silently show as encrypted
+        setDecryptionError(true);
+      }
+    };
+
+    decrypt();
+  }, [message]);
 
   const handleNavigate = (direction: 'prev' | 'next') => {
     if (direction === 'prev' && currentImageIndex > 0) {
@@ -155,7 +251,7 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
                   onClick={() => onReplyClick?.(message.replyTo!.id)}
                 />
               )}
-              
+
               {/* File Attachment */}
               {message.messageType === 'file' && message.fileName && (
                 <>
@@ -230,10 +326,25 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
               )}
 
               {/* Message text - hide filenames for file attachments */}
-              {message.text && message.messageType !== 'file' && (
+              {message.text && message.messageType !== 'file' && !message.isEncrypted && (
                 <p className="text-sm break-words">{message.text}</p>
               )}
-              
+
+              {/* Encrypted Message Text */}
+              {message.isEncrypted && (
+                <div className="text-sm break-words">
+                  {decryptedContent ? (
+                    <p>{decryptedContent}</p>
+                  ) : decryptionError ? (
+                    <p className="italic opacity-70">{message.text || "🔒 Encrypted Message"}</p>
+                  ) : (
+                    <p className="italic opacity-70 flex items-center gap-1">
+                      <span className="text-xs">🔒</span> Decrypting...
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div
                 className={cn(
                   "flex items-center gap-1 mt-1",
@@ -336,21 +447,23 @@ export const MessageBubble = ({ message, currentUserId, onReply, onEdit, onDelet
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </div>
+      </div >
 
       {/* File Preview Modal with navigation */}
-      {currentFilePreviewData && showFilePreview && (
-        <Suspense fallback={<InlineLoadingFallback />}>
-          <FilePreview
-            isOpen={showFilePreview}
-            onClose={() => setShowFilePreview(false)}
-            file={currentFilePreviewData}
-            allFiles={allImageFiles}
-            currentIndex={currentImageIndex}
-            onNavigate={handleNavigate}
-          />
-        </Suspense>
-      )}
+      {
+        currentFilePreviewData && showFilePreview && (
+          <Suspense fallback={<InlineLoadingFallback />}>
+            <FilePreview
+              isOpen={showFilePreview}
+              onClose={() => setShowFilePreview(false)}
+              file={currentFilePreviewData}
+              allFiles={allImageFiles}
+              currentIndex={currentImageIndex}
+              onNavigate={handleNavigate}
+            />
+          </Suspense>
+        )
+      }
     </>
   );
-};
+});

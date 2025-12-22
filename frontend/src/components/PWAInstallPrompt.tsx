@@ -39,10 +39,8 @@ export const PWAInstallPrompt: React.FC = () => {
     const result = await pwaService.showInstallPrompt();
 
     if (result === 'accepted') {
-      console.log('User accepted the install prompt');
       setCanInstall(false);
     } else if (result === 'dismissed') {
-      console.log('User dismissed the install prompt');
       handleDismiss();
     }
 

@@ -322,9 +322,8 @@ describe('API Service', () => {
       expect(mockAxiosInstance.post).toHaveBeenCalledWith('/api/messages', {
         recipientId,
         content,
-        type: 'text',
-        replyTo: undefined,
-        file: undefined,
+        messageType: 'text',
+        replyToId: undefined,
       });
     });
 
@@ -360,20 +359,22 @@ describe('API Service', () => {
   });
 
   describe('File API', () => {
-    it('uploadFile sends POST request with FormData', async () => {
+    it('uploadFile uses fetch instead of axios', async () => {
       const file = { uri: 'file://test.jpg', name: 'test.jpg', type: 'image/jpeg' };
-      mockAxiosInstance.post.mockResolvedValue({ data: { fileId: 'file123' } });
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue({ data: { fileId: 'file123' } }),
+      };
+      global.fetch = jest.fn().mockResolvedValue(mockResponse);
 
       await fileAPI.uploadFile(file);
 
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/api/files/upload',
-        expect.any(Object), // FormData
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/files/upload'),
+        expect.objectContaining({
+          method: 'POST',
+        })
       );
     });
 

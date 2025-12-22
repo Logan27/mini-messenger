@@ -116,9 +116,6 @@ export const FileGallery = ({
             sender: file.sender,
           }));
 
-          console.log('📁 Fetched files:', fetchedFiles);
-          console.log('📁 First file URL:', fetchedFiles[0]?.fileUrl);
-
           setFiles(fetchedFiles);
           setFilteredFiles(fetchedFiles);
         } catch (error) {
@@ -211,7 +208,6 @@ export const FileGallery = ({
 
   const handleDownloadAll = () => {
     // TODO: Implement bulk download as ZIP
-    console.log('Download all files');
   };
 
   const imageFiles = files.filter((f) => f.mimeType.startsWith('image/'));

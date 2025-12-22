@@ -3,6 +3,8 @@ import { authService, AuthResponse } from '@/services/auth.service';
 import { socketService } from '@/services/socket.service';
 import { useNavigate } from 'react-router-dom';
 import { preloadCriticalRoutes, preloadAdminRoutes } from '@/utils/routePreload';
+import { encryptionService } from '@/services/encryptionService';
+import { encryptionAPI } from '@/lib/api-client';
 
 interface User {
   id: string;
@@ -49,13 +51,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Wrapper for setUser that also updates localStorage
   const updateUser = (newUser: User | null) => {
-    console.log('🟢 AuthContext: Updating user:', newUser);
     setUser(newUser);
     if (newUser) {
-      console.log('🟢 AuthContext: Saving to localStorage');
       localStorage.setItem('user', JSON.stringify(newUser));
     } else {
-      console.log('🟢 AuthContext: Removing from localStorage');
       localStorage.removeItem('user');
     }
   };
@@ -65,12 +64,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedUser = authService.getStoredUser();
     const token = localStorage.getItem('accessToken');
 
-    console.log('🟡 AuthContext: Loading from localStorage:', storedUser);
-
     if (storedUser && token) {
       setUser(storedUser);
       // Connect WebSocket immediately on page load
-      console.log('🟡 AuthContext: Connecting WebSocket...');
 
       // Small delay to ensure DOM is ready and prevent race conditions
       setTimeout(() => {
@@ -79,6 +75,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Request notification permission
       requestNotificationPermission();
+
+      // Check and restore encryption keys on reload with sync verification
+      const checkKeys = async () => {
+        // Clear all cached public keys on reload to prevent stale key issues
+        try {
+          Object.keys(localStorage).filter(key => key.startsWith('public_key_')).forEach(key => {
+            localStorage.removeItem(key);
+          });
+          Object.keys(localStorage).filter(key => key.startsWith('public_key_')).forEach(key => {
+            localStorage.removeItem(key);
+          });
+        } catch (e) {
+          // Ignore error
+        }
+
+        try {
+          let keys = encryptionService.loadKeys();
+          if (!keys) {
+            keys = await encryptionService.generateKeyPair();
+            encryptionService.storeKeys(keys.publicKey, keys.secretKey);
+            await encryptionAPI.uploadPublicKey(keys.publicKey);
+          } else {
+            // Verify keys match server
+            try {
+              const userId = storedUser.id;
+              const serverKeyResponse = await encryptionAPI.getPublicKey(userId);
+              const serverKey = serverKeyResponse.data?.data?.publicKey;
+
+              if (serverKey && serverKey !== keys.publicKey) {
+                await encryptionAPI.uploadPublicKey(keys.publicKey);
+              } else if (!serverKey) {
+                await encryptionAPI.uploadPublicKey(keys.publicKey);
+              }
+            } catch (syncError) {
+              console.error('Key sync check failed:', syncError);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to restore/generate keys:', error);
+        }
+      };
+      checkKeys();
     }
 
     setIsLoading(false);
@@ -108,7 +146,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Connect WebSocket (socket service has guards against duplicate connections)
       const token = localStorage.getItem('accessToken');
       if (token) {
-        console.log('🟡 AuthContext: Connecting WebSocket after login...');
         socketService.connect(token);
       }
 
@@ -117,6 +154,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Preload critical routes for better navigation performance
       preloadCriticalRoutes();
+
+      // Clear all cached public keys to prevent stale key issues
+      // Keys are cached with prefix 'public_key_'
+      Object.keys(localStorage).filter(key => key.startsWith('public_key_')).forEach(key => {
+        localStorage.removeItem(key);
+      });
+
+      // Setup E2E Encryption Keys with server sync verification
+      try {
+        let keys = encryptionService.loadKeys();
+        if (!keys) {
+          // No local keys - generate new ones and upload
+          keys = await encryptionService.generateKeyPair();
+          encryptionService.storeKeys(keys.publicKey, keys.secretKey);
+          await encryptionAPI.uploadPublicKey(keys.publicKey);
+        } else {
+          // Local keys exist - verify they match the server
+          try {
+            const userId = response.data.user.id;
+            const serverKeyResponse = await encryptionAPI.getPublicKey(userId);
+            const serverKey = serverKeyResponse.data?.data?.publicKey;
+
+            if (serverKey && serverKey !== keys.publicKey) {
+              // Keys don't match! Re-upload local key to server
+              await encryptionAPI.uploadPublicKey(keys.publicKey);
+            } else if (!serverKey) {
+              // No key on server - upload local key
+              await encryptionAPI.uploadPublicKey(keys.publicKey);
+            }
+          } catch (syncError) {
+            // Ignore sync error during login, proceed
+          }
+        }
+      } catch (keyError) {
+        console.error('Encryption setup failed:', keyError);
+      }
 
       // Preload admin routes if user is an admin
       if (response.data.user.role === 'admin') {
@@ -149,12 +222,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authService.logout();
       socketService.disconnect();
+      encryptionService.clearKeys();
       updateUser(null);
       navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
+      console.error('Logout error:', error);
       // Clear local state even if API call fails
       socketService.disconnect();
+      encryptionService.clearKeys();
       updateUser(null);
       navigate('/login');
     }

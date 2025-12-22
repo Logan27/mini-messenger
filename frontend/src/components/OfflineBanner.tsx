@@ -22,21 +22,45 @@ export const OfflineBanner: React.FC<OfflineBannerProps> = ({ className }) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showReconnected, setShowReconnected] = useState(false);
 
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      setShowReconnected(true);
+  // Active ping to verify connection
+  const checkConnectivity = async () => {
+    try {
+      const response = await fetch('http://localhost:4000/health', { method: 'HEAD', mode: 'no-cors' });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
 
-      // Hide "reconnected" message after 3 seconds
-      setTimeout(() => {
-        setShowReconnected(false);
-      }, 3000);
+  useEffect(() => {
+    const handleOnline = async () => {
+      // Verify with a ping before showing restored
+      const isActuallyOnline = await checkConnectivity();
+      if (isActuallyOnline) {
+        setIsOnline(true);
+        setShowReconnected(true);
+
+        // Hide "reconnected" message after 3 seconds
+        setTimeout(() => {
+          setShowReconnected(false);
+        }, 3000);
+      }
     };
 
     const handleOffline = () => {
       setIsOnline(false);
       setShowReconnected(false);
     };
+
+    // Periodic check to prevent false positives
+    const interval = setInterval(async () => {
+      if (!navigator.onLine && isOnline) {
+        setIsOnline(false);
+      } else if (navigator.onLine && !isOnline) {
+        const back = await checkConnectivity();
+        if (back) handleOnline();
+      }
+    }, 5000);
 
     // Add event listeners
     window.addEventListener('online', handleOnline);
@@ -46,8 +70,9 @@ export const OfflineBanner: React.FC<OfflineBannerProps> = ({ className }) => {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      clearInterval(interval);
     };
-  }, []);
+  }, [isOnline]);
 
   // Don't render anything if online and not showing reconnected message
   if (isOnline && !showReconnected) {

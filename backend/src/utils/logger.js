@@ -12,8 +12,8 @@ export const initializeLogger = () => {
 
   const transports = [];
 
-  // Console transport for development
-  if (config.isDevelopment) {
+  // Console transport for development and tests
+  if (config.isDevelopment || config.isTest) {
     transports.push(
       new winston.transports.Console({
         level: config.logging.level,

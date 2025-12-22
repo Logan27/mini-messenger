@@ -1,3 +1,5 @@
+import cluster from 'cluster';
+import { os } from 'os';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -7,150 +9,120 @@ import { config } from './config/index.js';
 import { initializeRedis, closeRedis } from './config/redis.js';
 import { initializeLogger } from './utils/logger.js';
 
-const startServer = async () => {
-  let server; // Declare server in outer scope for graceful shutdown
+const numCPUs = os?.cpus().length || 1;
+
+const startWorker = async () => {
+  let server;
 
   try {
-    console.log('🔧 Starting server initialization...');
+    if (cluster.isPrimary && config.isProduction) {
+      console.log(`🚀 Primary process ${process.pid} is running`);
+      console.log(`📡 Spawning ${numCPUs} workers...`);
 
-    // Initialize logger
-    console.log('📝 Initializing logger...');
-    initializeLogger();
-    console.log('✅ Logger initialized');
-
-    // Initialize database
-    console.log('💾 Initializing database...');
-    await initializeDatabase();
-    console.log('✅ Database initialized');
-
-    // Initialize Redis
-    console.log('🔴 Initializing Redis...');
-    await initializeRedis();
-    console.log('✅ Redis initialized');
-
-    // Initialize services
-    console.log('📦 Loading app.js...');
-    const { initializeServices } = await import('./app.js');
-    console.log('📦 App.js loaded, initializing services...');
-    await initializeServices();
-    console.log('✅ Services initialized');
-
-    // Initialize queue schedules
-    console.log('📋 Initializing background job queues...');
-    const { scheduleMessageCleanup } = await import('./services/queueService.js');
-    await scheduleMessageCleanup();
-    console.log('✅ Background job queues scheduled');
-
-    // Start the server
-    console.log('🚀 Creating server...');
-    server = createServer();
-
-    console.log('🚀 =====================================');
-    console.log(`🚀 Messenger Backend Server`);
-    console.log('🚀 =====================================');
-    console.log(`📍 Environment: ${config.env}`);
-    console.log(`🌐 Server: http://${config.host}:${config.port}`);
-    console.log(`📚 API Docs: http://localhost:${config.port}${config.swagger.path}`);
-    console.log(`🏥 Health: http://localhost:${config.port}/health`);
-    console.log(`⏱️  Started at: ${new Date().toISOString()}`);
-    console.log('🚀 =====================================');
-
-    if (config.isDevelopment) {
-      console.log('\n🔧 Development Mode Features:');
-      console.log('  • Hot reload enabled');
-      console.log('  • Detailed error messages');
-      console.log('  • Request logging enabled');
-      console.log('  • CORS configured for local development');
-      console.log('🚀 =====================================');
-    }
-
-    // Handle server errors
-    server.on('error', error => {
-      if (error.syscall !== 'listen') {
-        throw error;
+      // Fork workers
+      for (let i = 0; i < numCPUs; i++) {
+        cluster.fork();
       }
 
-      const bind = typeof config.port === 'string' ? `Pipe ${config.port}` : `Port ${config.port}`;
+      cluster.on('exit', (worker, code, signal) => {
+        console.error(`❌ Worker ${worker.process.pid} died (code: ${code}, signal: ${signal})`);
+        console.log('🔄 Starting a new worker...');
+        cluster.fork();
+      });
+    } else {
+      // Worker process or development mode
+      console.log(`🔧 Starting worker initialization (PID: ${process.pid})...`);
 
-      switch (error.code) {
-        case 'EACCES':
-          console.error(`❌ ${bind} requires elevated privileges`);
-          process.exit(1);
-          break;
-        case 'EADDRINUSE':
-          console.error(`❌ ${bind} is already in use`);
-          process.exit(1);
-          break;
-        default:
-          throw error;
+      // Initialize logger
+      initializeLogger();
+
+      // Initialize database
+      await initializeDatabase();
+
+      // Initialize Redis
+      await initializeRedis();
+
+      // Initialize services
+      const { initializeServices } = await import('./app.js');
+      await initializeServices();
+
+      // Initialize queue schedules (only on one worker or use a lock)
+      // For simplicity, we'll let all workers try, but production should use a singleton worker for jobs
+      const { scheduleMessageCleanup } = await import('./services/queueService.js');
+      await scheduleMessageCleanup();
+
+      // Start the server
+      server = createServer();
+
+      if (!config.isProduction || !cluster.isPrimary) {
+        console.log(`🚀 Worker ${process.pid} started on http://${config.host}:${config.port}`);
       }
-    });
-  } catch (error) {
-    console.error('❌ Failed to start server:', error);
-    process.exit(1);
-  }
 
-  // Graceful shutdown handling
-  const gracefulShutdown = async signal => {
-    console.log(`\n🔄 Received ${signal}, shutting down gracefully...`);
-
-    const shutdownTimer = setTimeout(() => {
-      console.error('❌ Could not close connections in time, forcefully shutting down');
-      process.exit(1);
-    }, 10000);
-
-    try {
-      // Close HTTP server
-      server.close(() => {
-        console.log('✅ HTTP server closed');
+      // Handle server errors
+      server.on('error', error => {
+        if (error.syscall !== 'listen') throw error;
+        const bind = typeof config.port === 'string' ? `Pipe ${config.port}` : `Port ${config.port}`;
+        switch (error.code) {
+          case 'EACCES':
+            console.error(`❌ ${bind} requires elevated privileges`);
+            process.exit(1);
+            break;
+          case 'EADDRINUSE':
+            console.error(`❌ ${bind} is already in use`);
+            process.exit(1);
+            break;
+          default:
+            throw error;
+        }
       });
 
-      // Close database connections
-      const { closeDatabase } = await import('./config/database.js');
-      await closeDatabase();
+      // Graceful shutdown handling
+      const gracefulShutdown = async signal => {
+        console.log(`\n🔄 [Worker ${process.pid}] Received ${signal}, shutting down gracefully...`);
+        const shutdownTimer = setTimeout(() => {
+          console.error('❌ Could not close connections in time, forcefully shutting down');
+          process.exit(1);
+        }, 10000);
 
-      // Close Redis connections
-      const { closeRedis } = await import('./config/redis.js');
-      await closeRedis();
+        try {
+          if (server) {
+            await new Promise(resolve => server.close(resolve));
+            console.log('✅ HTTP server closed');
+          }
+          await closeDatabase();
+          await closeRedis();
+          const { closeQueues } = await import('./services/queueService.js');
+          await closeQueues();
+          clearTimeout(shutdownTimer);
+          console.log('✅ Graceful shutdown completed');
+          process.exit(0);
+        } catch (error) {
+          clearTimeout(shutdownTimer);
+          console.error('❌ Error during graceful shutdown:', error);
+          process.exit(1);
+        }
+      };
 
-      // Close queue connections
-      const { closeQueues } = await import('./services/queueService.js');
-      await closeQueues();
-
-      clearTimeout(shutdownTimer);
-      console.log('✅ Graceful shutdown completed');
-      process.exit(0);
-    } catch (error) {
-      clearTimeout(shutdownTimer);
-      console.error('❌ Error during graceful shutdown:', error);
-      process.exit(1);
+      process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+      process.on('SIGINT', () => gracefulShutdown('SIGINT'));
     }
-  };
-
-  // Register shutdown handlers
-  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-  // Handle uncaught exceptions
-  process.on('uncaughtException', error => {
-    console.error('❌ Uncaught Exception:', error);
-    gracefulShutdown('uncaughtException');
-  });
-
-  process.on('unhandledRejection', (reason, promise) => {
-    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-    gracefulShutdown('unhandledRejection');
-  });
-
-  return server;
+  } catch (error) {
+    console.error(`❌ Failed to start worker ${process.pid}:`, error);
+    process.exit(1);
+  }
 };
 
-// Start the server
-const currentFile = fileURLToPath(import.meta.url);
-const entryFile = resolve(process.argv[1]);
+// Handle uncaught exceptions globally
+process.on('uncaughtException', error => {
+  console.error('❌ Uncaught Exception:', error);
+  if (!cluster.isPrimary) process.exit(1);
+});
 
-if (currentFile === entryFile) {
-  startServer();
-}
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  if (!cluster.isPrimary) process.exit(1);
+});
 
-export default startServer;
+startWorker();
+
+export default startWorker;

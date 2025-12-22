@@ -51,12 +51,12 @@ apiClient.interceptors.response.use(
 
     // Don't intercept auth endpoints (login, register, refresh)
     const isAuthEndpoint = originalRequest.url?.includes('/auth/login') ||
-                          originalRequest.url?.includes('/auth/register') ||
-                          originalRequest.url?.includes('/auth/refresh');
+      originalRequest.url?.includes('/auth/register') ||
+      originalRequest.url?.includes('/auth/refresh');
 
     // Handle CSRF token errors (403 with CSRF_TOKEN_INVALID)
     const isCsrfError = error.response?.status === 403 &&
-                        error.response?.data?.error?.type === 'CSRF_TOKEN_INVALID';
+      error.response?.data?.error?.type === 'CSRF_TOKEN_INVALID';
 
     if (isCsrfError && !originalRequest._csrfRetry) {
       originalRequest._csrfRetry = true;
@@ -108,5 +108,29 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export const encryptionAPI = {
+  uploadPublicKey: async (publicKey: string) => {
+    try {
+      return await apiClient.post('/encryption/keypair', { publicKey });
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number } };
+      if (err.response?.status === 409) {
+        // Key already exists, update it instead
+        return await apiClient.put('/encryption/public-key', { publicKey });
+      }
+      throw error;
+    }
+  },
+
+  getPublicKey: (userId: string) =>
+    apiClient.get(`/encryption/public-key/${userId}`),
+
+  getPublicKeys: (userIds: string[]) =>
+    apiClient.post('/encryption/public-keys', { userIds }),
+
+  updatePublicKey: (publicKey: string) =>
+    apiClient.put('/encryption/public-key', { publicKey }),
+};
 
 export default apiClient;

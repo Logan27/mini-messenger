@@ -20,12 +20,13 @@ export class TestDatabaseSeeder {
    */
   async seedUsers(count = 5) {
     const users = [];
+    const prefix = `test${Date.now()}`;
 
     // Create regular users
     for (let i = 0; i < count - 1; i++) {
       const user = await messagingTestHelpers.createTestUser({
-        username: `testuser${i + 1}`,
-        email: `testuser${i + 1}@example.com`,
+        username: `${prefix}user${i + 1}`,
+        email: `${prefix}user${i + 1}@example.com`,
         firstName: `Test`,
         lastName: `User${i + 1}`,
         approvalStatus: 'approved',
@@ -36,8 +37,8 @@ export class TestDatabaseSeeder {
 
     // Create one admin user
     const adminUser = await messagingTestHelpers.createTestUser({
-      username: 'testadmin',
-      email: 'testadmin@example.com',
+      username: `${prefix}admin`,
+      email: `${prefix}admin@example.com`,
       firstName: 'Test',
       lastName: 'Admin',
       role: 'admin',
@@ -46,6 +47,7 @@ export class TestDatabaseSeeder {
     });
     users.push(adminUser);
 
+    this.createdData.users = [];
     this.createdData.users.push(...users);
     return users;
   }
@@ -53,8 +55,11 @@ export class TestDatabaseSeeder {
   /**
    * Seed groups with members for testing
    */
-  async seedGroups(userCount = 3, groupCount = 2) {
-    const users = await this.seedUsers(userCount);
+  async seedGroups(userCount = 3, groupCount = 2, users = null) {
+    // If users not provided, seed them
+    if (!users) {
+      users = await this.seedUsers(userCount);
+    }
     const groups = [];
 
     for (let i = 0; i < groupCount; i++) {
@@ -70,7 +75,7 @@ export class TestDatabaseSeeder {
         await messagingTestHelpers.addUserToGroup(
           group.id,
           users[j].id,
-          j === 0 ? 'admin' : 'member'
+          j === 0 ? 'admin' : 'user'
         );
       }
 
@@ -144,28 +149,22 @@ export class TestDatabaseSeeder {
 
     for (let i = 0; i < messageCount; i++) {
       const uploader = users[i % users.length];
+      const recipient = users[(i + 1) % users.length];
 
       // Create different types of test files
       const fileTypes = ['text', 'image', 'pdf', 'video'];
       const fileType = fileTypes[i % fileTypes.length];
 
       try {
-        const { record, path: filePath } = await messagingTestHelpers.createTestFileByType(fileType);
-
-        // Update file record with uploader info
-        record.uploaderId = uploader.id;
-        record.virusScanStatus = 'clean';
-        await record.save();
+        // Pass uploaderId to createTestFileByType
+        const { record, path: filePath } = await messagingTestHelpers.createTestFileByType(fileType, uploader.id);
 
         // Create a message with the file
         const message = await messagingTestHelpers.createTestMessage({
           senderId: uploader.id,
-          recipientId: users[(i + 1) % users.length].id,
+          recipientId: recipient.id,
           content: `File message with ${fileType} file`,
           messageType: fileType === 'image' ? 'image' : 'file',
-          fileName: record.originalName,
-          fileSize: record.fileSize,
-          mimeType: record.mimeType,
         });
 
         // Link file to message
@@ -193,7 +192,7 @@ export class TestDatabaseSeeder {
     console.log(`✅ Created ${users.length} test users`);
 
     // Seed groups
-    const { groups } = await this.seedGroups(5, 3);
+    const { groups } = await this.seedGroups(5, 3, users);
     console.log(`✅ Created ${groups.length} test groups`);
 
     // Seed direct messages
@@ -228,7 +227,7 @@ export class TestDatabaseSeeder {
     const users = await this.seedUsers(3);
     console.log(`✅ Created ${users.length} test users`);
 
-    const { groups } = await this.seedGroups(3, 1);
+    const { groups } = await this.seedGroups(3, 1, users);
     console.log(`✅ Created ${groups.length} test group`);
 
     const directMessages = await this.seedDirectMessages(users, 5);
@@ -260,7 +259,7 @@ export class TestDatabaseSeeder {
           await file.destroy({ force: true });
           if (filePath) {
             const fs = await import('fs/promises');
-            await fs.unlink(filePath).catch(() => {});
+            await fs.unlink(filePath).catch(() => { });
           }
         } catch (error) {
           console.error('Error deleting test file:', error);
@@ -295,12 +294,10 @@ export class TestDatabaseSeeder {
         }
       }
 
-      this.createdData = {
-        users: [],
-        groups: [],
-        messages: [],
-        files: [],
-      };
+      this.createdData.users = [];
+      this.createdData.groups = [];
+      this.createdData.messages = [];
+      this.createdData.files = [];
 
       console.log('✅ Test data cleanup completed');
     } catch (error) {

@@ -10,27 +10,28 @@ const Report = sequelize.define(
   'Report',
   {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
+      allowNull: false,
     },
     reporterId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: false,
       comment: 'User who submitted the report',
     },
     reportedUserId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: true,
       comment: 'Reported user (if reporting a user)',
     },
     reportedMessageId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: true,
       comment: 'Reported message (if reporting a message)',
     },
     reportedFileId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: true,
       comment: 'Reported file (if reporting a file)',
     },
@@ -72,7 +73,7 @@ const Report = sequelize.define(
       comment: 'Status of the report',
     },
     reviewedBy: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: true,
       comment: 'Admin who reviewed the report',
     },
@@ -111,7 +112,7 @@ const Report = sequelize.define(
   },
   {
     tableName: 'reports',
-    underscored: true, // Use camelCase for field names
+    underscored: true,
     timestamps: true,
     indexes: [
       { fields: ['reporterId'] },
@@ -122,6 +123,7 @@ const Report = sequelize.define(
       { fields: ['reviewedBy'] },
       { fields: ['reason'] },
     ],
+    paranoid: false,
   }
 );
 

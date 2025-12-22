@@ -40,7 +40,6 @@ class OfflineQueueService {
 
       request.onsuccess = () => {
         this.db = request.result;
-        console.log('Offline queue database initialized');
         resolve();
       };
 
@@ -78,7 +77,6 @@ class OfflineQueueService {
       const request = store.add(queuedItem);
 
       request.onsuccess = () => {
-        console.log('Item added to offline queue:', queuedItem);
         this.notifyListeners();
         resolve();
       };
@@ -152,7 +150,6 @@ class OfflineQueueService {
       const request = store.delete(id);
 
       request.onsuccess = () => {
-        console.log('Item removed from queue:', id);
         this.notifyListeners();
         resolve();
       };
@@ -204,7 +201,6 @@ class OfflineQueueService {
       return;
     }
 
-    console.log(`Processing ${items.length} queued items...`);
     toast.info(`Sending ${items.length} queued message${items.length > 1 ? 's' : ''}...`);
 
     // Sort by timestamp (oldest first)
@@ -272,7 +268,6 @@ class OfflineQueueService {
       });
 
       if (response.ok) {
-        console.log('Successfully sent queued item:', item.id);
         return true;
       } else {
         console.error('Failed to send queued item:', response.status, response.statusText);
@@ -298,7 +293,6 @@ class OfflineQueueService {
       const request = store.clear();
 
       request.onsuccess = () => {
-        console.log('Queue cleared');
         this.notifyListeners();
         resolve();
       };
@@ -342,7 +336,6 @@ class OfflineQueueService {
    */
   startAutoProcessing(): void {
     window.addEventListener('online', () => {
-      console.log('Connection restored, processing queue...');
       this.processQueue();
     });
 

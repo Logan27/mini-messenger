@@ -151,20 +151,13 @@ export const NotificationSettings = () => {
     setIsLoading(true);
     try {
       const response = await apiClient.get('/notification-settings');
-      console.log('🔔 NotificationSettings: API response:', response.data);
 
       if (response.data?.data?.settings) {
         const backendSettings = response.data.data.settings;
-        console.log('🔔 NotificationSettings: Backend settings:', backendSettings);
-        console.log('🔔 NotificationSettings: messageNotifications RAW value:', backendSettings.messageNotifications, 'type:', typeof backendSettings.messageNotifications);
 
         const backendPrefs = fromBackendFormat(backendSettings);
-        console.log('🔔 NotificationSettings: Transformed prefs:', backendPrefs);
-        console.log('🔔 NotificationSettings: Transformed messages value:', backendPrefs.notificationTypes?.messages, 'type:', typeof backendPrefs.notificationTypes?.messages);
 
         const finalPrefs = { ...DEFAULT_PREFERENCES, ...backendPrefs };
-        console.log('🔔 NotificationSettings: Final prefs after merge:', finalPrefs);
-        console.log('🔔 NotificationSettings: Final messages toggle value:', finalPrefs.notificationTypes.messages);
 
         setPreferences(finalPrefs);
       }
@@ -180,8 +173,6 @@ export const NotificationSettings = () => {
   };
 
   const updatePreference = async (path: string, value: unknown) => {
-    console.log(`🔧 NotificationSettings: Updating ${path} to:`, value, 'type:', typeof value);
-
     // Update local state
     const newPrefs = JSON.parse(JSON.stringify(preferences));
     const keys = path.split('.');
@@ -192,21 +183,17 @@ export const NotificationSettings = () => {
     }
     current[keys[keys.length - 1]] = value;
 
-    console.log('🔧 NotificationSettings: New preferences after update:', newPrefs);
     setPreferences(newPrefs);
 
     // Save immediately to backend
     try {
       const backendData = toBackendFormat(newPrefs);
-      console.log('🔧 NotificationSettings: Sending to backend:', backendData);
 
       await apiClient.put('/notification-settings', backendData);
-      console.log('✅ NotificationSettings: Settings saved successfully');
       toast.success('Setting updated');
 
       // Manually trigger event for useGlobalNotifications hook
       // (Backend WebSocket event might not be reliable)
-      console.log('🔄 NotificationSettings: Manually triggering settings update event');
       socketService.triggerLocalEvent('notification-settings:updated', {
         settings: backendData,
         updatedBy: 'self'

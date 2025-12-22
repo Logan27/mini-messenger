@@ -1,63 +1,100 @@
 import { defineConfig, devices } from '@playwright/test';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// ES module compatible __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Auth state file paths
+const authFile = join(__dirname, '.auth/user.json');
+const adminAuthFile = join(__dirname, '.auth/admin.json');
 
 /**
- * See https://playwright.dev/docs/test-configuration.
+ * Playwright configuration for E2E tests
+ * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
   testDir: './e2e',
+
   /* Run tests in files in parallel */
   fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
+
+  /* Fail the build on CI if you accidentally left test.only in the source code */
   forbidOnly: !!process.env.CI,
+
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
+
+  /* Opt out of parallel tests on CI */
   workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
+
+  /* Reporter configuration */
   reporter: [
     ['html'],
     ['json', { outputFile: 'playwright-report/results.json' }],
     ['list'],
   ],
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+
+  /* Shared settings for all projects */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
+    /* Base URL for the app */
     baseURL: 'http://localhost:3000',
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+
+    /* Collect trace when retrying failed tests */
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
+
+    /* Reasonable timeouts */
+    actionTimeout: 10000,
+    navigationTimeout: 30000,
   },
 
-  /* Configure projects for major browsers */
+  /* Test timeout */
+  timeout: 30000,
+
+  /* Configure test projects */
   projects: [
+    // Setup project - runs authentication
+    {
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
+    },
+
+    // Main tests - run with user authentication
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: authFile,
+      },
+      dependencies: ['setup'],
+      testIgnore: [/admin\.spec\.ts/, /auth\.spec\.ts/],
     },
 
+    // Admin tests - run with admin authentication
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      name: 'chromium-admin',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: adminAuthFile,
+      },
+      dependencies: ['setup'],
+      testMatch: /admin\.spec\.ts/,
     },
 
+    // Auth tests - run without pre-authentication (test login/register flows)
     {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-
-    /* Test against mobile viewports. */
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
+      name: 'chromium-no-auth',
+      use: {
+        ...devices['Desktop Chrome'],
+      },
+      testMatch: /auth\.spec\.ts/,
     },
   ],
 
-  /* Run your local dev server before starting the tests */
+  /* Run frontend dev server before starting tests */
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:3000',

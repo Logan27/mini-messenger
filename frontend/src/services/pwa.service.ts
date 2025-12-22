@@ -35,13 +35,10 @@ class PWAService {
 
       // Notify listeners that app can be installed
       this.notifyInstallListeners(true);
-
-      console.log('PWA: Install prompt available');
     });
 
     // Listen for successful installation
     window.addEventListener('appinstalled', () => {
-      console.log('PWA: App installed successfully');
       this.deferredPrompt = null;
       this.notifyInstallListeners(false);
     });
@@ -85,8 +82,6 @@ class PWAService {
 
       // Wait for the user to respond to the prompt
       const { outcome } = await this.deferredPrompt.userChoice;
-
-      console.log(`PWA: User response - ${outcome}`);
 
       // Clear the prompt
       this.deferredPrompt = null;
@@ -145,16 +140,13 @@ export const pwaService = new PWAService();
 export const usePWARegistration = () => {
   return useRegisterSW({
     onRegistered(registration) {
-      console.log('PWA: Service Worker registered:', registration);
     },
     onRegisterError(error) {
       console.error('PWA: Service Worker registration error:', error);
     },
     onOfflineReady() {
-      console.log('PWA: App ready to work offline');
     },
     onNeedRefresh() {
-      console.log('PWA: New content available, please refresh');
     },
   });
 };

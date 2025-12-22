@@ -501,12 +501,13 @@ export const messagingAPI = {
   getMessages: (params: { conversationWith?: string; groupId?: string; page?: number; limit?: number }) =>
     api.get('/api/messages', { params }),
 
-  sendMessage: (receiverId: string, content: string, type: 'text' | 'image' | 'file' = 'text', fileData?: any, replyTo?: string) => {
+  sendMessage: (receiverId: string, content: string, type: 'text' | 'image' | 'file' = 'text', fileData?: any, replyTo?: string, encryption?: any) => {
     const payload: any = {
       recipientId: receiverId,
       content,
       messageType: type,
-      replyToId: replyTo
+      replyToId: replyTo,
+      ...encryption
     };
 
     // If fileData is provided (from file upload response), include file metadata
@@ -677,6 +678,18 @@ export const groupAPI = {
 
   leaveGroup: (groupId: string) =>
     api.post(`/api/groups/${groupId}/leave`),
+
+  muteGroup: (groupId: string) =>
+    api.post(`/api/groups/${groupId}/mute`),
+
+  unmuteGroup: (groupId: string) =>
+    api.delete(`/api/groups/${groupId}/mute`),
+
+  getGroupSettings: (groupId: string) =>
+    api.get(`/api/groups/${groupId}/settings`),
+
+  updateGroupSettings: (groupId: string, settings: any) =>
+    api.put(`/api/groups/${groupId}/settings`, settings),
 };
 
 export const contactAPI = {
@@ -724,6 +737,17 @@ export const contactAPI = {
 
   unmuteContact: (contactId: string) =>
     api.delete(`/api/contacts/${contactId}/mute`),
+};
+
+export const encryptionAPI = {
+  getPublicKey: (userId: string) =>
+    api.get(`/api/encryption/public-key/${userId}`),
+
+  getPublicKeys: (userIds: string[]) =>
+    api.post('/api/encryption/public-keys', { userIds }),
+
+  updatePublicKey: (publicKey: string) =>
+    api.put('/api/encryption/public-key', { publicKey }),
 };
 
 export default api;

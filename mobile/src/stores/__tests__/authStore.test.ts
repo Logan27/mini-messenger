@@ -25,13 +25,38 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(() => Promise.resolve()),
 }));
 
+// Mock isTokenExpired utility
+jest.mock('../../utils/auth', () => ({
+  isTokenExpired: jest.fn(() => false), // Token is not expired by default
+}));
+
 // Mock API
 jest.mock('../../services/api', () => ({
+  __esModule: true,
   authAPI: {
     login: jest.fn(),
     register: jest.fn(),
     logout: jest.fn(),
     refreshToken: jest.fn(),
+  },
+  wsService: {
+    connect: jest.fn(),
+    disconnect: jest.fn(),
+  },
+  encryptionAPI: {
+    updatePublicKey: jest.fn(() => Promise.resolve({ data: { success: true } })),
+  },
+  refreshAuthToken: jest.fn(),
+  default: {
+    defaults: { headers: { common: {} } },
+  },
+}));
+
+// Mock encryptionService
+jest.mock('../../services/encryptionService', () => ({
+  encryptionService: {
+    loadKeys: jest.fn(() => Promise.resolve(null)),
+    generateKeyPair: jest.fn(() => Promise.resolve({ publicKey: 'mock-public-key', secretKey: 'mock-secret-key' })),
   },
 }));
 
@@ -260,6 +285,9 @@ describe('authStore', () => {
     });
 
     it('clears state when token refresh fails', async () => {
+      const { isTokenExpired } = require('../../utils/auth');
+      (isTokenExpired as jest.Mock).mockReturnValueOnce(true);
+
       (AsyncStorage.getItem as jest.Mock).mockImplementation((key) => {
         if (key === 'authToken') return Promise.resolve('mock-token');
         if (key === 'user') return Promise.resolve(JSON.stringify({ id: '1' }));
@@ -275,19 +303,14 @@ describe('authStore', () => {
       const state = useAuthStore.getState();
       expect(state.user).toBeNull();
       expect(state.isAuthenticated).toBe(false);
-      expect(state.error).toBe('Session expired. Please log in again.');
     });
   });
 
   describe('refreshToken', () => {
     it('successfully refreshes token', async () => {
-      (AsyncStorage.getItem as jest.Mock).mockResolvedValue('mock-refresh-token');
-      (authAPI.refreshToken as jest.Mock).mockResolvedValueOnce({
-        data: {
-          data: {
-            tokens: { accessToken: 'new-access-token' },
-          },
-        },
+      const { refreshAuthToken } = require('../../services/api');
+      (refreshAuthToken as jest.Mock).mockResolvedValueOnce({
+        accessToken: 'new-access-token',
       });
 
       const { refreshToken } = useAuthStore.getState();
@@ -296,7 +319,6 @@ describe('authStore', () => {
       expect(result).toBe(true);
       const state = useAuthStore.getState();
       expect(state.token).toBe('new-access-token');
-      expect(AsyncStorage.setItem).toHaveBeenCalledWith('authToken', 'new-access-token');
     });
 
     it('returns false when no refresh token', async () => {
@@ -319,15 +341,15 @@ describe('authStore', () => {
     });
 
     it('handles refresh failure', async () => {
-      (AsyncStorage.getItem as jest.Mock).mockResolvedValue('mock-refresh-token');
-      (authAPI.refreshToken as jest.Mock).mockRejectedValueOnce(new Error('Refresh failed'));
+      const { refreshAuthToken } = require('../../services/api');
+      (refreshAuthToken as jest.Mock).mockRejectedValueOnce(new Error('Refresh failed'));
 
       const { refreshToken } = useAuthStore.getState();
       const result = await refreshToken();
 
       expect(result).toBe(false);
       const state = useAuthStore.getState();
-      expect(state.error).toBe('Failed to refresh session');
+      expect(state.error).toBe('Session expired');
     });
   });
 

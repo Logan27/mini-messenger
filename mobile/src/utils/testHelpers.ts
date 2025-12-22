@@ -83,7 +83,6 @@ export const measurePerformance = async (name: string, fn: () => Promise<void> |
   const start = performance.now();
   await fn();
   const end = performance.now();
-  console.log(`${name} took ${end - start} milliseconds`);
 };
 
 // Memory usage testing

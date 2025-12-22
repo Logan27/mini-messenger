@@ -73,6 +73,8 @@ export const config = {
         (process.env.NODE_ENV === 'development' ? 10000 : 100),
       skipSuccessfulRequests: process.env.RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS === 'true',
     },
+    csrfSecret: process.env.CSRF_SECRET,
+    mobileAppSecret: process.env.MOBILE_APP_SECRET,
   },
 
   fileUpload: {
@@ -157,7 +159,7 @@ export const config = {
 };
 
 // Validate critical configuration
-const requiredEnvVars = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'SESSION_SECRET'];
+const requiredEnvVars = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'SESSION_SECRET', 'CSRF_SECRET', 'MOBILE_APP_SECRET'];
 
 const missing = requiredEnvVars.filter(envVar => !process.env[envVar]);
 

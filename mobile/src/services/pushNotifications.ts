@@ -16,12 +16,6 @@ try {
   FirebaseMessaging = require('@react-native-firebase/messaging');
   messaging = FirebaseMessaging.default;
   isFirebaseAvailable = true;
-
-  console.log('Firebase Cloud Messaging is available', {
-    hasMessaging: !!messaging,
-    hasAuthStatus: !!FirebaseMessaging.AuthorizationStatus,
-    moduleType: typeof messaging
-  });
 } catch (error) {
   console.warn('Firebase Cloud Messaging is not available, using Expo notifications only');
   isFirebaseAvailable = false;
@@ -77,7 +71,6 @@ export class PushNotificationService {
         // Use Firebase Cloud Messaging for native platforms when available
         try {
           token = await this.getFCMToken();
-          console.log('Successfully obtained FCM token');
         } catch (fcmError: any) {
           const errorMsg = fcmError?.message || 'Unknown error';
           if (errorMsg.includes('API key') || errorMsg.includes('IllegalArgumentException')) {
@@ -93,7 +86,6 @@ export class PushNotificationService {
           }
           const expoPushToken = await Notifications.getExpoPushTokenAsync();
           token = expoPushToken.data;
-          console.log('Successfully obtained Expo push token');
         }
       } else {
         // Use Expo push notifications for web/other platforms or when Firebase is not available
@@ -103,10 +95,7 @@ export class PushNotificationService {
         }
         const expoPushToken = await Notifications.getExpoPushTokenAsync();
         token = expoPushToken.data;
-        console.log('Successfully obtained Expo push token');
       }
-
-      console.log('Push notification token:', token);
 
       // Register token with backend
       await this.registerToken(token);
@@ -129,23 +118,7 @@ export class PushNotificationService {
    */
   async requestPermissions(): Promise<boolean> {
     try {
-      // DIAGNOSTIC: Enhanced permission request logging with platform utility
       const platformInfo = getPlatformInfo();
-      console.log('Requesting notification permissions', {
-        platform: platformInfo.platform,
-        platformVersion: platformInfo.version,
-        isDevice: platformInfo.isDevice,
-        isEmulator: platformInfo.isEmulator,
-        isSimulator: platformInfo.isSimulator,
-        isFirebaseAvailable,
-        hasMessaging: !!messaging,
-        messagingType: typeof messaging,
-        androidVersionCheck: platformInfo.platform === 'android' && platformInfo.apiLevel && platformInfo.apiLevel >= 33
-      });
-
-      // Unified permission request using Expo Notifications
-      // This handles Android 13+ POST_NOTIFICATIONS and iOS permissions correctly
-      console.log('Requesting permissions via Expo Notifications');
 
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
@@ -155,7 +128,6 @@ export class PushNotificationService {
         finalStatus = status;
       }
 
-      console.log('Permission status:', finalStatus);
       return finalStatus === 'granted';
     } catch (error) {
       console.error('Error requesting notification permissions:', error);
@@ -174,7 +146,6 @@ export class PushNotificationService {
     try {
       // Check if we already have a token
       const token = await messaging().getToken();
-      console.log('FCM Token:', token);
       return token;
     } catch (error: any) {
       // Provide more helpful error messages
@@ -214,7 +185,6 @@ export class PushNotificationService {
           manufacturer: Device.manufacturer,
         },
       });
-      console.log('Device token registered with backend');
     } catch (error: any) {
       const isNetworkError = !error.response;
       const is401Error = error.response?.status === 401;
@@ -274,7 +244,6 @@ export class PushNotificationService {
       await api.delete('/api/users/me/device-token', {
         data: { token },
       });
-      console.log('Device token unregistered from backend');
     } catch (error) {
       console.error('Failed to unregister device token:', error);
     }
@@ -287,7 +256,6 @@ export class PushNotificationService {
     // Listener for when notification is received while app is in foreground
     this.notificationListener = Notifications.addNotificationReceivedListener(
       (notification) => {
-        console.log('Notification received:', notification);
         this.handleNotificationReceived(notification);
       }
     );
@@ -295,7 +263,6 @@ export class PushNotificationService {
     // Listener for when user taps on notification
     this.responseListener = Notifications.addNotificationResponseReceivedListener(
       (response) => {
-        console.log('Notification tapped:', response);
         this.handleNotificationTapped(response);
       }
     );
@@ -312,15 +279,12 @@ export class PushNotificationService {
     }
 
     if (!isFirebaseAvailable || !messaging) {
-      console.log('Firebase not available, skipping FCM listeners setup');
       return;
     }
 
     try {
       // Handle foreground messages
       messaging().onMessage(async (remoteMessage: any) => {
-        console.log('FCM message received in foreground:', remoteMessage);
-
         // Display local notification when app is in foreground
         if (remoteMessage.notification) {
           await this.displayLocalNotification(
@@ -333,7 +297,6 @@ export class PushNotificationService {
 
       // Handle notification opened when app was in background
       messaging().onNotificationOpenedApp((remoteMessage: any) => {
-        console.log('Notification opened app from background:', remoteMessage);
         if (remoteMessage.data) {
           this.routeToScreen(remoteMessage.data);
         }
@@ -344,7 +307,6 @@ export class PushNotificationService {
         .getInitialNotification()
         .then((remoteMessage: any) => {
           if (remoteMessage) {
-            console.log('Notification opened app from quit state:', remoteMessage);
             if (remoteMessage.data) {
               // Delay routing to ensure navigation is ready
               setTimeout(() => {
@@ -359,7 +321,6 @@ export class PushNotificationService {
 
       // Handle token refresh
       messaging().onTokenRefresh(async (token: string) => {
-        console.log('FCM token refreshed:', token);
         await this.registerToken(token);
       });
     } catch (error) {
@@ -372,7 +333,6 @@ export class PushNotificationService {
    */
   private handleNotificationReceived(notification: Notifications.Notification): void {
     const data = notification.request.content.data;
-    console.log('Handling notification data:', data);
 
     // You can add custom logic here (e.g., update badge count, show in-app alert)
   }
@@ -382,7 +342,6 @@ export class PushNotificationService {
    */
   private handleNotificationTapped(response: Notifications.NotificationResponse): void {
     const data = response.notification.request.content.data;
-    console.log('User tapped notification with data:', data);
 
     this.routeToScreen(data);
   }
@@ -426,7 +385,6 @@ export class PushNotificationService {
         break;
 
       default:
-        console.log('Unknown notification type:', type);
     }
   }
 

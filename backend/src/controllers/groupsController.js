@@ -15,20 +15,21 @@ class GroupsController {
    * POST /api/groups
    */
   async createGroup(req, res) {
-    const transaction = await sequelize.transaction();
     try {
       const { name, description, groupType = 'private', avatar, initialMembers } = req.body;
       const userId = req.user.id;
 
       // FIX BUG-G003: Validate and deduplicate initial members
+      logger.info('Create Group Debug - Phase 1:', { userId, initialMembers });
+
       let validatedMembers = [];
       if (initialMembers && initialMembers.length > 0) {
-        // Remove duplicates and filter out creator
-        const uniqueMembers = [...new Set(initialMembers)].filter(id => id !== userId);
+        // Remove duplicates and filter out creator (ensure string comparison)
+        const uniqueMembers = [...new Set(initialMembers.map(id => String(id)))].filter(id => id !== String(userId));
+        logger.info('Create Group Debug - Phase 2 (Unique):', { uniqueMembers });
 
         // Check member limit (19 initial + 1 creator = 20 max)
         if (uniqueMembers.length > 19) {
-          await transaction.rollback();
           return res.status(400).json({
             success: false,
             error: {
@@ -38,7 +39,7 @@ class GroupsController {
           });
         }
 
-        // Validate all members exist and are approved
+        // Validate all members exist and are approved BEFORE transaction
         if (uniqueMembers.length > 0) {
           const users = await User.findAll({
             where: {
@@ -46,13 +47,12 @@ class GroupsController {
               approvalStatus: 'approved',
             },
             attributes: ['id'],
-            transaction,
           });
 
           if (users.length !== uniqueMembers.length) {
-            const foundIds = users.map(u => u.id);
+            const foundIds = users.map(u => String(u.id));
             const invalidIds = uniqueMembers.filter(id => !foundIds.includes(id));
-            await transaction.rollback();
+            logger.warn('Create Group Debug - Validation Failed:', { foundIds, invalidIds });
             return res.status(400).json({
               success: false,
               error: {
@@ -63,115 +63,132 @@ class GroupsController {
           }
 
           validatedMembers = uniqueMembers;
+          logger.info('Create Group Debug - Phase 3 (Validated):', { validatedMembers });
         }
       }
 
-      // FIX BUG-G002: Wrap all operations in transaction
-      // Create the group
-      const group = await Group.create(
-        {
-          name,
-          description,
-          groupType,
-          avatar,
-          creatorId: userId,
-        },
-        { transaction }
-      );
-
-      // Add creator as admin
-      await GroupMember.create(
-        {
-          groupId: group.id,
-          userId: userId,
-          role: 'admin',
-          invitedBy: userId,
-          joinedAt: new Date(),
-          isActive: true,
-        },
-        { transaction }
-      );
-
-      // Add validated initial members
-      for (const memberId of validatedMembers) {
-        await GroupMember.create(
+      // Start transaction only for actual data creation
+      const transaction = await sequelize.transaction();
+      try {
+        // Create the group
+        const group = await Group.create(
           {
-            groupId: group.id,
-            userId: memberId,
-            role: 'member',
-            invitedBy: userId,
-            joinedAt: new Date(),
-            isActive: true,
+            name,
+            description,
+            groupType,
+            avatar,
+            creatorId: userId,
           },
           { transaction }
         );
-      }
+        logger.info('Create Group Debug - Phase 4 (Group Created):', { groupId: group.id });
 
-      // Commit transaction before fetching group data
-      await transaction.commit();
-
-      // Fetch complete group data with members (after commit)
-      const groupWithMembers = await Group.findByPk(group.id, {
-        include: [
-          {
-            model: GroupMember,
-            as: 'members',
-            include: [
-              {
-                model: User,
-                as: 'user',
-                attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'status'],
-              },
-            ],
-            where: { isActive: true },
-            required: false,
-          },
-        ],
-      });
-
-      // Audit logging for group create
-      logger.info('Group created', {
-        userId,
-        groupId: group.id,
-        name,
-        groupType,
-        initialMembersCount: validatedMembers.length,
-      });
-
-      // FIX BUG-G006: Add null check for WebSocket
-      const io = getIO();
-      if (io) {
-        io.to(`user:${userId}`).emit(WS_EVENTS.GROUP_JOIN, {
-          group: groupWithMembers,
-          type: 'created',
-          timestamp: new Date().toISOString(),
+        // Add creator as admin
+        let creatorMember = await GroupMember.findOne({
+          where: { groupId: group.id, userId: userId },
+          transaction,
+          paranoid: false
         });
 
-        // Notify initial members
+        if (!creatorMember) {
+          logger.info('Create Group Debug - Phase 5 (Creating Creator Membership)');
+          await GroupMember.create({
+            groupId: group.id,
+            userId: userId,
+            role: 'admin',
+            invitedBy: userId,
+            joinedAt: new Date(),
+            isActive: true,
+          }, { transaction, hooks: false });
+        } else if (!creatorMember.isActive) {
+          logger.info('Create Group Debug - Phase 5 (Reactivating Creator Membership)');
+          await creatorMember.update({ isActive: true, role: 'admin' }, { transaction, hooks: false });
+        }
+
+        // Add validated initial members
         for (const memberId of validatedMembers) {
-          io.to(`user:${memberId}`).emit(WS_EVENTS.GROUP_JOIN, {
+          logger.info(`Create Group Debug - Processing member: ${memberId}`);
+          let member = await GroupMember.findOne({
+            where: { groupId: group.id, userId: memberId },
+            transaction,
+            paranoid: false
+          });
+
+          if (!member) {
+            logger.info(`Create Group Debug - Creating membership for: ${memberId}`);
+            await GroupMember.create({
+              groupId: group.id,
+              userId: memberId,
+              role: 'user',
+              invitedBy: userId,
+              joinedAt: new Date(),
+              isActive: true,
+            }, { transaction, hooks: false });
+          } else if (!member.isActive) {
+            logger.info(`Create Group Debug - Reactivating membership for: ${memberId}`);
+            await member.update({ isActive: true, role: 'user' }, { transaction, hooks: false });
+          }
+        }
+
+        // Commit transaction before fetching group data
+        await transaction.commit();
+
+        // Fetch complete group data with members (AFTER commit)
+        const groupWithMembers = await Group.findByPk(group.id, {
+          include: [
+            {
+              model: GroupMember,
+              as: 'members',
+              include: [
+                {
+                  model: User,
+                  as: 'user',
+                  attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'status'],
+                },
+              ],
+              where: { isActive: true },
+              required: false,
+            },
+          ],
+        });
+
+        // Audit logging for group create
+        logger.info('Group created successfully', {
+          userId,
+          groupId: group.id,
+          name,
+          groupType,
+          initialMembersCount: validatedMembers.length,
+        });
+
+        // WebSocket notifications (after success)
+        const io = getIO();
+        if (io) {
+          io.to(`user:${userId}`).emit(WS_EVENTS.GROUP_JOIN, {
             group: groupWithMembers,
-            type: 'added',
+            type: 'created',
             timestamp: new Date().toISOString(),
           });
+
+          for (const memberId of validatedMembers) {
+            io.to(`user:${memberId}`).emit(WS_EVENTS.GROUP_JOIN, {
+              group: groupWithMembers,
+              type: 'added',
+              timestamp: new Date().toISOString(),
+            });
+          }
         }
-      } else {
-        logger.warn('WebSocket not available, skipping real-time notifications', {
-          event: 'GROUP_JOIN',
-          groupId: group.id,
-          userId,
+
+        return res.status(201).json({
+          success: true,
+          data: groupWithMembers,
+          message: 'Group created successfully',
         });
+      } catch (error) {
+        if (transaction) await transaction.rollback();
+        throw error;
       }
-
-      res.status(201).json({
-        success: true,
-        data: groupWithMembers,
-        message: 'Group created successfully',
-      });
     } catch (error) {
-      await transaction.rollback();
-
-      // FIX BUG-G001: Use logger instead of console.error
       logger.error('Error creating group:', {
         error: error.message,
         stack: error.stack,
@@ -179,17 +196,7 @@ class GroupsController {
         groupData: { name: req.body.name, groupType: req.body.groupType },
       });
 
-      if (error.message.includes('already a member')) {
-        return res.status(400).json({
-          success: false,
-          error: {
-            type: 'VALIDATION_ERROR',
-            message: error.message,
-          },
-        });
-      }
-
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: {
           type: 'INTERNAL_ERROR',
@@ -588,7 +595,7 @@ class GroupsController {
     const transaction = await sequelize.transaction();
     try {
       const { id: groupId } = req.params;
-      const { userId: memberId, role = 'member' } = req.body;
+      const { userId: memberId, role = 'user' } = req.body;
       const userId = req.user.id;
 
       // FIX BUG-G010: Validate UUID format

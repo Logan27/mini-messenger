@@ -5,11 +5,12 @@ interface AuthenticatedImageProps {
   src: string;
   alt: string;
   className?: string;
+  onClick?: () => void;
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
-export const AuthenticatedImage = ({ src, alt, className }: AuthenticatedImageProps) => {
+export const AuthenticatedImage = ({ src, alt, className, onClick }: AuthenticatedImageProps) => {
   const [imageSrc, setImageSrc] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -30,8 +31,6 @@ export const AuthenticatedImage = ({ src, alt, className }: AuthenticatedImagePr
             imageUrl = `${API_URL}${src}`;
           }
         }
-
-        console.log('🖼️ Loading image from:', imageUrl);
 
         const token = localStorage.getItem('accessToken');
         const response = await axios.get(imageUrl, {
@@ -79,5 +78,5 @@ export const AuthenticatedImage = ({ src, alt, className }: AuthenticatedImagePr
     );
   }
 
-  return <img src={imageSrc} alt={alt} className={className} />;
+  return <img src={imageSrc} alt={alt} className={className} onClick={onClick} />;
 };

@@ -1,5 +1,6 @@
 export interface Message {
   id: string;
+  senderId: string;
   text?: string;
   timestamp: Date;
   isOwn: boolean;
@@ -20,6 +21,18 @@ export interface Message {
   callType?: 'voice' | 'video';
   callStatus?: 'completed' | 'missed' | 'cancelled' | 'rejected' | 'ongoing';
   callDuration?: number; // in seconds, only for completed calls
+  // Encryption fields
+  isEncrypted?: boolean;
+  encryptedContent?: string;
+  encryptionMetadata?: {
+    nonce: string;
+    keys?: Record<string, string>;
+  };
+  metadata?: {
+    encryptedContentOwner?: string;
+    nonceOwner?: string;
+    [key: string]: unknown;
+  };
 }
 
 export interface Reaction {
@@ -47,4 +60,16 @@ export interface Chat {
   userRole?: 'admin' | 'member'; // User's role in group chats
   creatorId?: string; // Group creator ID for group chats
   isMuted?: boolean; // Whether notifications are muted for this chat
+  // Encryption fields for last message preview
+  lastMessageIsEncrypted?: boolean;
+  lastMessageEncryptedContent?: string;
+  lastMessageEncryptionMetadata?: {
+    nonce: string;
+    keys?: Record<string, string>;
+  };
+  lastMessageMetadata?: {
+    encryptedContentOwner?: string;
+    nonceOwner?: string;
+    [key: string]: unknown;
+  };
 }

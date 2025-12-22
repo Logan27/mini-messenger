@@ -12,7 +12,7 @@ import logger from '../utils/logger.js';
  * CSRF secret for HMAC token generation
  * In production, this should come from environment variables
  */
-const csrfSecret = process.env.CSRF_SECRET || 'your-csrf-secret-change-this-in-production';
+const csrfSecret = config.security.csrfSecret;
 
 /**
  * Configure CSRF protection using csrf-csrf (modern replacement for deprecated csurf)
@@ -57,6 +57,7 @@ const csrfExemptRoutes = [
   '/api/auth/refresh', // Token refresh for mobile apps
   '/api/auth/logout', // Logout endpoint for mobile apps
   '/api/csrf-token', // Token endpoint itself
+  '/api/auth/2fa/setup', // Exempt 2FA setup to resolve local dev cross-port issues
 ];
 
 /**
@@ -79,8 +80,7 @@ const conditionalCsrfProtection = (req, res, next) => {
   // Verify mobile app with secret header
   const mobileAppHeader = req.get('X-Mobile-App');
   const mobileAppSecret = req.get('X-Mobile-App-Secret');
-  const expectedSecret =
-    process.env.MOBILE_APP_SECRET || 'your_mobile_app_secret_change_this_in_production';
+  const expectedSecret = config.security.mobileAppSecret;
 
   if (mobileAppHeader === 'true' && mobileAppSecret === expectedSecret) {
     logger.debug('Skipping CSRF for authenticated mobile app', {
@@ -91,13 +91,26 @@ const conditionalCsrfProtection = (req, res, next) => {
     return next();
   }
 
-  // If mobile header present but secret invalid, log warning and apply CSRF
+  // If mobile header present but invalid secret, log warning and apply CSRF
   if (mobileAppHeader === 'true' && mobileAppSecret !== expectedSecret) {
     logger.warn('Mobile app header present but invalid secret', {
       path: req.path,
       method: req.method,
       ip: req.ip,
       userAgent: req.get('User-Agent'),
+    });
+  }
+
+  // Debug CSRF for 2FA setup
+  if (req.path.includes('2fa/setup')) {
+    const token = req.headers['x-csrf-token'] || req.headers['csrf-token'] || req.body?._csrf;
+    const cookie = req.cookies && req.cookies['_csrf'];
+    logger.info('CSRF Debug for 2FA Setup:', {
+      hasToken: !!token,
+      tokenPrefix: token ? token.substring(0, 5) : 'none',
+      hasCookie: !!cookie,
+      cookiePrefix: cookie ? cookie.substring(0, 5) : 'none',
+      headers: Object.keys(req.headers)
     });
   }
 

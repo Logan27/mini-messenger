@@ -62,7 +62,6 @@ const App = () => {
     const initializeCsrf = async () => {
       try {
         await csrfService.getToken();
-        console.log('CSRF token initialized');
       } catch (error) {
         console.error('Failed to initialize CSRF token:', error);
         // Non-fatal error - token will be fetched on first state-changing request

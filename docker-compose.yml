@@ -105,8 +105,8 @@ services:
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/logs:/app/logs
-      # Mount source code for development (uncomment for dev)
-      # - ./backend/src:/app/src
+      # Mount source code for development
+      - ./backend/src:/app/src
     depends_on:
       postgres:
         condition: service_healthy
@@ -125,17 +125,29 @@ services:
 
   # Frontend Application
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      target: ${BUILD_TARGET:-production}
-      args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:4000/api}
-        VITE_SOCKET_URL: ${VITE_SOCKET_URL:-http://localhost:4000}
+    image: messenger-backend
+    # build:
+    #   context: ./frontend
+    #   dockerfile: Dockerfile
+    #   target: development
+    #   args:
+    #     VITE_API_URL: ${VITE_API_URL:-http://localhost:4000/api}
+    #     VITE_SOCKET_URL: ${VITE_SOCKET_URL:-http://localhost:4000}
+    command: >
+             npm install && 
+             echo 'Dependencies installed.' && 
+             npm run dev -- --host 0.0.0.0 --force"
     container_name: messenger-frontend
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:4000/api}
+      - VITE_SOCKET_URL=${VITE_SOCKET_URL:-http://localhost:4000}
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-3000}:80"
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       backend:
         condition: service_healthy

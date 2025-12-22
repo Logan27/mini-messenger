@@ -52,9 +52,9 @@ class SearchPerformanceTest {
                   COALESCE(lastName, '') || ' ' ||
                   COALESCE(email, '')
                 ) @@
-                plainto_tsquery('english', '${searchTerm.replace(/'/g, "''")}')
+                plainto_tsquery('english', :searchTerm)
                 OR
-                (username || ' ' || COALESCE(firstName, '') || ' ' || COALESCE(lastName, '') || ' ' || email) % '${searchTerm.replace(/'/g, "''")}'
+                (username || ' ' || COALESCE(firstName, '') || ' ' || COALESCE(lastName, '') || ' ' || email) % :searchTerm
               )
             `),
             { id: { [Op.ne]: 'test-user-id' } }, // Mock user ID
@@ -73,6 +73,7 @@ class SearchPerformanceTest {
             'rejectionReason',
           ],
         },
+        replacements: { searchTerm },
         limit: 20,
         offset: 0,
         order: [
@@ -80,10 +81,10 @@ class SearchPerformanceTest {
             sequelize.literal(`
             (
               GREATEST(
-                SIMILARITY(COALESCE(username, ''), '${searchTerm.replace(/'/g, "''")}'),
-                SIMILARITY(COALESCE(firstName, ''), '${searchTerm.replace(/'/g, "''")}'),
-                SIMILARITY(COALESCE(lastName, ''), '${searchTerm.replace(/'/g, "''")}'),
-                SIMILARITY(COALESCE(email, ''), '${searchTerm.replace(/'/g, "''")}')
+                SIMILARITY(COALESCE(username, ''), :searchTerm),
+                SIMILARITY(COALESCE(firstName, ''), :searchTerm),
+                SIMILARITY(COALESCE(lastName, ''), :searchTerm),
+                SIMILARITY(COALESCE(email, ''), :searchTerm)
               ) * 0.4 +
               ts_rank(
                 to_tsvector('english',
@@ -92,7 +93,7 @@ class SearchPerformanceTest {
                   COALESCE(lastName, '') || ' ' ||
                   COALESCE(email, '')
                 ),
-                plainto_tsquery('english', '${searchTerm.replace(/'/g, "''")}')
+                plainto_tsquery('english', :searchTerm)
               ) * 0.6
             )
           `),

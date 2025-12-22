@@ -232,9 +232,11 @@ export const storageOptimizer = {
     const AsyncStorage = require('@react-native-async-storage/async-storage');
     const keys = await AsyncStorage.getAllKeys();
 
+    // Log the cleanup operation
+    console.log(`Cleaning up ${keys.length} cache entries`);
+
     // Remove cache entries older than maxAge
     // Implementation would check timestamps and remove old entries
-    console.log(`Cleaning up ${keys.length} cache entries`);
   },
 };
 

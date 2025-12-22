@@ -23,11 +23,8 @@ const DrawerMenu: React.FC<DrawerContentComponentProps> = (props) => {
 
   const toggleTheme = async () => {
     // Toggle between light and dark (ignore system for now)
-    console.log('[DrawerMenu] Current theme:', theme);
     const newTheme = (theme === 'dark') ? 'light' : 'dark';
-    console.log('[DrawerMenu] Setting theme to:', newTheme);
     await setTheme(newTheme);
-    console.log('[DrawerMenu] Theme set complete');
   };
 
   const getInitials = () => {
@@ -66,7 +63,6 @@ const DrawerMenu: React.FC<DrawerContentComponentProps> = (props) => {
                 })()
               }}
               style={styles.avatar}
-              onError={(error) => console.log('Avatar load error:', error.nativeEvent.error)}
             />
           ) : (
             <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary }]}>

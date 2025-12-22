@@ -122,8 +122,28 @@ router.post(
         });
       }
 
-      const { content, recipientId, groupId, messageType = 'text', replyToId, metadata } = req.body;
       const senderId = req.user.id;
+
+      // Destructure request body
+      const {
+        content,
+        recipientId,
+        groupId,
+        messageType,
+        replyToId,
+        metadata,
+        isEncrypted,
+        encryptedContent,
+        encryptionMetadata,
+        encryptionAlgorithm,
+      } = req.body;
+
+      let fileData = null;
+      if (req.file) {
+        // File handling logic
+      }
+
+      const messageId = uuidv4();
 
       // FIXED BUG-M002: Validate recipient exists and is approved
       if (recipientId) {
@@ -187,9 +207,19 @@ router.post(
       }
 
       // Create message ID
-      const messageId = uuidv4();
+
 
       // FIXED BUG-M005: Wrap in transaction for data consistency
+      logger.info('🔍 DEBUG ENCRYPTION VALUES:', {
+        bodyIsEncrypted: req.body.isEncrypted,
+        varIsEncrypted: isEncrypted,
+        hasEncryptedContent: !!encryptedContent,
+        finalValue: !!isEncrypted || !!encryptedContent,
+        metadata: metadata,
+        hasEncryptedContentOwner: !!metadata?.encryptedContentOwner,
+        hasNonceOwner: !!metadata?.nonceOwner,
+      });
+
       const transaction = await sequelize.transaction();
 
       try {
@@ -205,6 +235,10 @@ router.post(
             status: 'sent',
             replyToId: replyToId || null,
             metadata: metadata || {},
+            isEncrypted: !!isEncrypted || !!encryptedContent,
+            encryptedContent: encryptedContent || null,
+            encryptionMetadata: encryptionMetadata || {},
+            encryptionAlgorithm: encryptionAlgorithm || null,
           },
           { transaction }
         );
@@ -221,7 +255,7 @@ router.post(
             {
               model: User,
               as: 'sender',
-              attributes: ['id', 'username', 'firstName', 'lastName'],
+              attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
             },
             {
               model: Message,
@@ -260,6 +294,7 @@ router.post(
             const messageData = {
               id: messageWithSender.id,
               senderId: messageWithSender.senderId,
+              senderName: messageWithSender.sender?.username,
               recipientId: messageWithSender.recipientId,
               groupId: messageWithSender.groupId,
               content: messageWithSender.content,
@@ -271,19 +306,19 @@ router.post(
               replyToId: messageWithSender.replyToId,
               replyTo: messageWithSender.replyTo
                 ? {
-                    id: messageWithSender.replyTo.id,
-                    content: messageWithSender.replyTo.content,
-                    senderId: messageWithSender.replyTo.senderId,
-                    messageType: messageWithSender.replyTo.messageType,
-                    sender: messageWithSender.replyTo.sender
-                      ? {
-                          id: messageWithSender.replyTo.sender.id,
-                          username: messageWithSender.replyTo.sender.username,
-                          firstName: messageWithSender.replyTo.sender.firstName,
-                          lastName: messageWithSender.replyTo.sender.lastName,
-                        }
-                      : null,
-                  }
+                  id: messageWithSender.replyTo.id,
+                  content: messageWithSender.replyTo.content,
+                  senderId: messageWithSender.replyTo.senderId,
+                  messageType: messageWithSender.replyTo.messageType,
+                  sender: messageWithSender.replyTo.sender
+                    ? {
+                      id: messageWithSender.replyTo.sender.id,
+                      username: messageWithSender.replyTo.sender.username,
+                      firstName: messageWithSender.replyTo.sender.firstName,
+                      lastName: messageWithSender.replyTo.sender.lastName,
+                    }
+                    : null,
+                }
                 : null,
               metadata: messageWithSender.metadata,
               reactions: messageWithSender.reactions || {},
@@ -298,12 +333,19 @@ router.post(
                 : null,
               sender: messageWithSender.sender
                 ? {
-                    id: messageWithSender.sender.id,
-                    username: messageWithSender.sender.username,
-                    firstName: messageWithSender.sender.firstName,
-                    lastName: messageWithSender.sender.lastName,
-                  }
+                  id: messageWithSender.sender.id,
+                  username: messageWithSender.sender.username,
+                  firstName: messageWithSender.sender.firstName,
+                  lastName: messageWithSender.sender.lastName,
+                  avatar: messageWithSender.sender.avatar,
+                }
                 : null,
+              senderAvatar: messageWithSender.sender?.avatar,
+              // Encryption fields
+              isEncrypted: !!(messageWithSender.isEncrypted || messageWithSender.is_encrypted || messageWithSender.encryptedContent),
+              encryptedContent: messageWithSender.encryptedContent || messageWithSender.encrypted_content,
+              encryptionMetadata: messageWithSender.encryptionMetadata || messageWithSender.encryption_metadata || {},
+              encryptionAlgorithm: messageWithSender.encryptionAlgorithm || messageWithSender.encryption_algorithm,
             };
 
             // Emit to recipient for direct messages
@@ -353,24 +395,29 @@ router.post(
             replyToId: messageWithSender.replyToId,
             replyTo: messageWithSender.replyTo
               ? {
-                  id: messageWithSender.replyTo.id,
-                  content: messageWithSender.replyTo.content,
-                  senderId: messageWithSender.replyTo.senderId,
-                  messageType: messageWithSender.replyTo.messageType,
-                  sender: messageWithSender.replyTo.sender
-                    ? {
-                        id: messageWithSender.replyTo.sender.id,
-                        username: messageWithSender.replyTo.sender.username,
-                        firstName: messageWithSender.replyTo.sender.firstName,
-                        lastName: messageWithSender.replyTo.sender.lastName,
-                      }
-                    : null,
-                }
+                id: messageWithSender.replyTo.id,
+                content: messageWithSender.replyTo.content,
+                senderId: messageWithSender.replyTo.senderId,
+                messageType: messageWithSender.replyTo.messageType,
+                sender: messageWithSender.replyTo.sender
+                  ? {
+                    id: messageWithSender.replyTo.sender.id,
+                    username: messageWithSender.replyTo.sender.username,
+                    firstName: messageWithSender.replyTo.sender.firstName,
+                    lastName: messageWithSender.replyTo.sender.lastName,
+                  }
+                  : null,
+              }
               : null,
             metadata: messageWithSender.metadata,
             reactions: messageWithSender.reactions || {},
             createdAt: messageWithSender.createdAt,
             updatedAt: messageWithSender.updatedAt,
+            // Encryption fields
+            isEncrypted: messageWithSender.isEncrypted,
+            encryptedContent: messageWithSender.encryptedContent,
+            encryptionMetadata: messageWithSender.encryptionMetadata,
+            encryptionAlgorithm: messageWithSender.encryptionAlgorithm,
             // Extract file metadata fields for easier frontend access
             fileId: messageWithSender.metadata?.fileId || null,
             fileName: messageWithSender.metadata?.fileName || null,
@@ -381,11 +428,11 @@ router.post(
               : null,
             sender: messageWithSender.sender
               ? {
-                  id: messageWithSender.sender.id,
-                  username: messageWithSender.sender.username,
-                  firstName: messageWithSender.sender.firstName,
-                  lastName: messageWithSender.sender.lastName,
-                }
+                id: messageWithSender.sender.id,
+                username: messageWithSender.sender.username,
+                firstName: messageWithSender.sender.firstName,
+                lastName: messageWithSender.sender.lastName,
+              }
               : null,
           },
         });
@@ -660,63 +707,71 @@ router.get(
       // Get total pages
       const totalPages = Math.ceil(count / limit);
 
+      const responseData = messages.map(message => ({
+        id: message.id,
+        senderId: message.senderId,
+        recipientId: message.recipientId,
+        groupId: message.groupId,
+        content: message.content,
+        messageType: message.messageType,
+        status: message.status,
+        isRead: message.status === 'read',
+        isDelivered: message.status === 'delivered' || message.status === 'read',
+        replyToId: message.replyToId,
+        replyTo: message.replyTo
+          ? {
+            id: message.replyTo.id,
+            content: message.replyTo.content,
+            senderId: message.replyTo.senderId,
+            messageType: message.replyTo.messageType,
+            sender: message.replyTo.sender
+              ? {
+                id: message.replyTo.sender.id,
+                username: message.replyTo.sender.username,
+                firstName: message.replyTo.sender.firstName,
+                lastName: message.replyTo.sender.lastName,
+              }
+              : null,
+          }
+          : null,
+        metadata: message.metadata,
+        reactions: message.reactions || {},
+        editedAt: message.editedAt,
+        createdAt: message.createdAt,
+        updatedAt: message.updatedAt,
+        // Extract file metadata fields for easier frontend access
+        fileId: message.metadata?.fileId || null,
+        fileName: message.metadata?.fileName || null,
+        fileSize: message.metadata?.fileSize || null,
+        mimeType: message.metadata?.mimeType || null,
+        fileUrl: message.metadata?.fileId ? `/api/files/${message.metadata.fileId}` : null,
+        sender: message.sender
+          ? {
+            id: message.sender.id,
+            username: message.sender.username,
+            firstName: message.sender.firstName,
+            lastName: message.sender.lastName,
+          }
+          : null,
+        group: message.group
+          ? {
+            id: message.group.id,
+            name: message.group.name,
+            description: message.group.description,
+          }
+          : null,
+        // Encryption fields
+        isEncrypted: !!(message.isEncrypted || message.is_encrypted || message.encryptedContent),
+        encryptedContent: message.encryptedContent || message.encrypted_content,
+        encryptionMetadata: message.encryptionMetadata || message.encryption_metadata || {},
+        encryptionAlgorithm: message.encryptionAlgorithm || message.encryption_algorithm,
+      }));
+
+
       res.status(200).json({
         success: true,
         message: 'Message history retrieved successfully',
-        data: messages.map(message => ({
-          id: message.id,
-          senderId: message.senderId,
-          recipientId: message.recipientId,
-          groupId: message.groupId,
-          content: message.content,
-          messageType: message.messageType,
-          status: message.status,
-          isRead: message.status === 'read',
-          isDelivered: message.status === 'delivered' || message.status === 'read',
-          replyToId: message.replyToId,
-          replyTo: message.replyTo
-            ? {
-                id: message.replyTo.id,
-                content: message.replyTo.content,
-                senderId: message.replyTo.senderId,
-                messageType: message.replyTo.messageType,
-                sender: message.replyTo.sender
-                  ? {
-                      id: message.replyTo.sender.id,
-                      username: message.replyTo.sender.username,
-                      firstName: message.replyTo.sender.firstName,
-                      lastName: message.replyTo.sender.lastName,
-                    }
-                  : null,
-              }
-            : null,
-          metadata: message.metadata,
-          reactions: message.reactions || {},
-          editedAt: message.editedAt,
-          createdAt: message.createdAt,
-          updatedAt: message.updatedAt,
-          // Extract file metadata fields for easier frontend access
-          fileId: message.metadata?.fileId || null,
-          fileName: message.metadata?.fileName || null,
-          fileSize: message.metadata?.fileSize || null,
-          mimeType: message.metadata?.mimeType || null,
-          fileUrl: message.metadata?.fileId ? `/api/files/${message.metadata.fileId}` : null,
-          sender: message.sender
-            ? {
-                id: message.sender.id,
-                username: message.sender.username,
-                firstName: message.sender.firstName,
-                lastName: message.sender.lastName,
-              }
-            : null,
-          group: message.group
-            ? {
-                id: message.group.id,
-                name: message.group.name,
-                description: message.group.description,
-              }
-            : null,
-        })),
+        data: responseData,
         pagination: {
           currentPage: parseInt(page),
           totalPages,
@@ -1026,13 +1081,18 @@ router.put(
           editedAt: message.editedAt,
           createdAt: message.createdAt,
           updatedAt: message.updatedAt,
+          // Encryption fields
+          isEncrypted: !!(message.isEncrypted || message.is_encrypted || message.encryptedContent),
+          encryptedContent: message.encryptedContent || message.encrypted_content,
+          encryptionMetadata: message.encryptionMetadata || message.encryption_metadata || {},
+          encryptionAlgorithm: message.encryptionAlgorithm || message.encryption_algorithm,
           sender: message.sender
             ? {
-                id: message.sender.id,
-                username: message.sender.username,
-                firstName: message.sender.firstName,
-                lastName: message.sender.lastName,
-              }
+              id: message.sender.id,
+              username: message.sender.username,
+              firstName: message.sender.firstName,
+              lastName: message.sender.lastName,
+            }
             : null,
         },
       });
@@ -1347,11 +1407,11 @@ router.get(
           editedAt: edit.editedAt,
           editor: edit.editor
             ? {
-                id: edit.editor.id,
-                username: edit.editor.username,
-                firstName: edit.editor.firstName,
-                lastName: edit.editor.lastName,
-              }
+              id: edit.editor.id,
+              username: edit.editor.username,
+              firstName: edit.editor.firstName,
+              lastName: edit.editor.lastName,
+            }
             : null,
         })),
       });
@@ -1686,20 +1746,25 @@ router.get(
         editedAt: message.editedAt,
         createdAt: message.createdAt,
         updatedAt: message.updatedAt,
+        // Encryption fields
+        isEncrypted: !!(message.isEncrypted || message.is_encrypted || message.encryptedContent),
+        encryptedContent: message.encryptedContent || message.encrypted_content,
+        encryptionMetadata: message.encryptionMetadata || message.encryption_metadata || {},
+        encryptionAlgorithm: message.encryptionAlgorithm || message.encryption_algorithm,
         sender: message.sender
           ? {
-              id: message.sender.id,
-              username: message.sender.username,
-              firstName: message.sender.firstName,
-              lastName: message.sender.lastName,
-            }
+            id: message.sender.id,
+            username: message.sender.username,
+            firstName: message.sender.firstName,
+            lastName: message.sender.lastName,
+          }
           : null,
         group: message.Group
           ? {
-              id: message.Group.id,
-              name: message.Group.name,
-              description: message.Group.description,
-            }
+            id: message.Group.id,
+            name: message.Group.name,
+            description: message.Group.description,
+          }
           : null,
       }));
 
@@ -1856,29 +1921,33 @@ router.get(
               deletedAt: null,
             },
             order: [['created_at', 'DESC']],
-            attributes: ['id', 'content', 'messageType', 'createdAt', 'senderId'],
+            attributes: ['id', 'content', 'messageType', 'createdAt', 'senderId', 'isEncrypted', 'encryptedContent', 'encryptionMetadata', 'metadata'],
           });
 
           return {
             type: 'direct',
             user: otherUser
               ? {
-                  id: otherUser.id,
-                  username: otherUser.username,
-                  firstName: otherUser.firstName,
-                  lastName: otherUser.lastName,
-                  profilePicture: otherUser.avatar,
-                  onlineStatus: otherUser.status,
-                }
+                id: otherUser.id,
+                username: otherUser.username,
+                firstName: otherUser.firstName,
+                lastName: otherUser.lastName,
+                profilePicture: otherUser.avatar,
+                onlineStatus: otherUser.status,
+              }
               : null,
             lastMessage: lastMessage
               ? {
-                  id: lastMessage.id,
-                  content: lastMessage.content,
-                  type: lastMessage.messageType,
-                  createdAt: lastMessage.createdAt,
-                  isOwn: lastMessage.senderId === userId,
-                }
+                id: lastMessage.id,
+                content: lastMessage.content,
+                type: lastMessage.messageType,
+                createdAt: lastMessage.createdAt,
+                isOwn: lastMessage.senderId === userId,
+                isEncrypted: lastMessage.isEncrypted,
+                encryptedContent: lastMessage.encryptedContent,
+                encryptionMetadata: lastMessage.encryptionMetadata,
+                metadata: lastMessage.metadata,
+              }
               : null,
             messageCount: parseInt(dm.messageCount),
             unreadCount: parseInt(dm.unreadCount || 0),
@@ -1918,6 +1987,7 @@ router.get(
                 attributes: ['id', 'username'],
               },
             ],
+            attributes: ['id', 'content', 'messageType', 'createdAt', 'senderId', 'isEncrypted', 'encryptedContent', 'encryptionMetadata'],
           });
 
           const unreadCount = await Message.count({
@@ -1933,28 +2003,28 @@ router.get(
             type: 'group',
             group: gm.group
               ? {
-                  id: gm.group.id,
-                  name: gm.group.name,
-                  description: gm.group.description,
-                  avatar: gm.group.avatar,
-                  creatorId: gm.group.creatorId,
-                }
+                id: gm.group.id,
+                name: gm.group.name,
+                description: gm.group.description,
+                avatar: gm.group.avatar,
+                creatorId: gm.group.creatorId,
+              }
               : null,
             userRole: gm.role, // Include user's role in the group (admin, member, etc.)
             lastMessage: lastMessage
               ? {
-                  id: lastMessage.id,
-                  content: lastMessage.content,
-                  type: lastMessage.messageType,
-                  createdAt: lastMessage.createdAt,
-                  sender: lastMessage.sender
-                    ? {
-                        id: lastMessage.sender.id,
-                        username: lastMessage.sender.username,
-                      }
-                    : null,
-                  isOwn: lastMessage.senderId === userId,
-                }
+                id: lastMessage.id,
+                content: lastMessage.content,
+                type: lastMessage.messageType,
+                createdAt: lastMessage.createdAt,
+                sender: lastMessage.sender
+                  ? {
+                    id: lastMessage.sender.id,
+                    username: lastMessage.sender.username,
+                  }
+                  : null,
+                isOwn: lastMessage.senderId === userId,
+              }
               : null,
             unreadCount,
             lastMessageAt: lastMessage ? lastMessage.createdAt : gm.joinedAt,

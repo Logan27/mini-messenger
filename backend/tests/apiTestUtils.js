@@ -82,7 +82,7 @@ export class APITestUtils {
    * Send a message via API
    */
   async sendMessage(senderToken, messageData, options = {}) {
-    return this.makeAuthRequest('POST', '/messages/send', senderToken, messageData, options);
+    return this.makeAuthRequest('POST', '/messages', senderToken, messageData, options);
   }
 
   /**

@@ -103,32 +103,29 @@ if (config.isDevelopment) {
 // Custom request logging
 app.use(requestLogger);
 
-// Rate limiting - DISABLED FOR WEBSOCKET TESTING
-// const limiter = rateLimit({
-//   windowMs: config.security.rateLimit.windowMs,
-//   max: process.env.NODE_ENV === 'test' ? 1000 : config.security.rateLimit.maxRequests,
-//   skipSuccessfulRequests: config.security.rateLimit.skipSuccessfulRequests,
-//   message: {
-//     error: 'Too many requests from this IP, please try again later.',
-//   },
-//   standardHeaders: true,
-//   legacyHeaders: false,
-// });
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: config.security.rateLimit.windowMs,
+  max: process.env.NODE_ENV === 'test' ? 1000 : config.security.rateLimit.maxRequests,
+  skipSuccessfulRequests: config.security.rateLimit.skipSuccessfulRequests,
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-// Apply rate limiting to all routes - DISABLED FOR TESTING
-// app.use(limiter);
+// Apply rate limiting to all routes
+app.use(limiter);
 
-// Serve static files from uploads directory with CORS headers
+// Serve static files from uploads directory
 const uploadPath = path.resolve(config.fileUpload.uploadPath);
 app.use(
   '/uploads',
-  (req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET');
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
-    next();
-  },
-  express.static(uploadPath)
+  express.static(uploadPath, {
+    maxAge: '1d', // Cache for 1 day
+    immutable: false, // Allow updates
+  })
 );
 
 // API Routes

@@ -617,17 +617,17 @@ router.get('/search', authenticate, async (req, res) => {
                 COALESCE("last_name", '') || ' ' ||
                 COALESCE("email", '')
               ) @@
-              plainto_tsquery('english', '${searchTerm.replace(/'/g, "''")}')
+              plainto_tsquery('english', :searchTerm)
               OR
-              ("username" || ' ' || COALESCE("first_name", '') || ' ' || COALESCE("last_name", '') || ' ' || "email") % '${searchTerm.replace(/'/g, "''")}'
+              ("username" || ' ' || COALESCE("first_name", '') || ' ' || COALESCE("last_name", '') || ' ' || "email") % :searchTerm
               OR
-              "username" ILIKE '${searchTerm.replace(/'/g, "''")}%'
+              "username" ILIKE :searchTermPrefix
               OR
-              COALESCE("first_name", '') ILIKE '${searchTerm.replace(/'/g, "''")}%'
+              COALESCE("first_name", '') ILIKE :searchTermPrefix
               OR
-              COALESCE("last_name", '') ILIKE '${searchTerm.replace(/'/g, "''")}%'
+              COALESCE("last_name", '') ILIKE :searchTermPrefix
               OR
-              "email" ILIKE '${searchTerm.replace(/'/g, "''")}%'
+              "email" ILIKE :searchTermPrefix
             )
           `),
           // Exclude current user from results
@@ -651,6 +651,10 @@ router.get('/search', authenticate, async (req, res) => {
           'rejectionReason',
         ],
       },
+      replacements: { 
+        searchTerm: searchTerm,
+        searchTermPrefix: `${searchTerm}%`
+      },
       limit: parseInt(limit),
       offset,
       order: [
@@ -659,10 +663,10 @@ router.get('/search', authenticate, async (req, res) => {
           sequelize.literal(`
           (
             GREATEST(
-              SIMILARITY(COALESCE("username", ''), '${searchTerm.replace(/'/g, "''")}'),
-              SIMILARITY(COALESCE("first_name", ''), '${searchTerm.replace(/'/g, "''")}'),
-              SIMILARITY(COALESCE("last_name", ''), '${searchTerm.replace(/'/g, "''")}'),
-              SIMILARITY(COALESCE("email", ''), '${searchTerm.replace(/'/g, "''")}')
+              SIMILARITY(COALESCE("username", ''), :searchTerm),
+              SIMILARITY(COALESCE("first_name", ''), :searchTerm),
+              SIMILARITY(COALESCE("last_name", ''), :searchTerm),
+              SIMILARITY(COALESCE("email", ''), :searchTerm)
             ) * 0.4 +
             ts_rank(
               to_tsvector('english',
@@ -671,7 +675,7 @@ router.get('/search', authenticate, async (req, res) => {
                 COALESCE("last_name", '') || ' ' ||
                 COALESCE("email", '')
               ),
-              plainto_tsquery('english', '${searchTerm.replace(/'/g, "''")}')
+              plainto_tsquery('english', :searchTerm)
             ) * 0.6
           )
         `),
@@ -770,7 +774,7 @@ router.get('/search', authenticate, async (req, res) => {
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.get('/:userId', async (req, res) => {
+router.get('/:userId', authenticate, async (req, res) => {
   try {
     const requestId = req.id;
     const { userId } = req.params;

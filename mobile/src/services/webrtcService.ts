@@ -79,8 +79,6 @@ class WebRTCService {
     // Handle ICE candidates
     (this.peerConnection as any).onicecandidate = (event: any) => {
       if (event.candidate) {
-        console.log('ICE candidate generated:', event.candidate);
-
         // Send ICE candidate to the other peer via WebSocket
         const targetUserId = recipientId || this.getRemoteUserId();
         if (targetUserId) {
@@ -95,8 +93,6 @@ class WebRTCService {
 
     // Handle ICE connection state changes
     (this.peerConnection as any).oniceconnectionstatechange = () => {
-      console.log('ICE connection state:', this.peerConnection?.iceConnectionState);
-
       if (this.peerConnection?.iceConnectionState === 'connected') {
         useCallStore.getState().updateCallStatus('connected');
       } else if (
@@ -109,8 +105,6 @@ class WebRTCService {
 
     // Handle remote stream
     (this.peerConnection as any).ontrack = (event: any) => {
-      console.log('Remote track received:', event.streams[0]);
-
       if (event.streams && event.streams[0]) {
         this.remoteStream = event.streams[0];
         useCallStore.getState().setRemoteStream(event.streams[0]);
@@ -144,8 +138,6 @@ class WebRTCService {
         sdp: offer.sdp,
         recipientId,
       });
-
-      console.log('SDP offer created and sent');
     } catch (error) {
       console.error('Failed to create offer:', error);
       throw error;
@@ -168,8 +160,6 @@ class WebRTCService {
 
       // Process any queued ICE candidates
       this.processIceCandidateQueue();
-
-      console.log('SDP offer received and set');
     } catch (error) {
       console.error('Failed to handle offer:', error);
       throw error;
@@ -194,8 +184,6 @@ class WebRTCService {
         sdp: answer.sdp,
         callerId,
       });
-
-      console.log('SDP answer created and sent');
     } catch (error) {
       console.error('Failed to create answer:', error);
       throw error;
@@ -216,8 +204,6 @@ class WebRTCService {
 
       // Process any queued ICE candidates
       this.processIceCandidateQueue();
-
-      console.log('SDP answer received and set');
     } catch (error) {
       console.error('Failed to handle answer:', error);
       throw error;
@@ -241,7 +227,6 @@ class WebRTCService {
       }
 
       await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-      console.log('ICE candidate added');
     } catch (error) {
       console.error('Failed to add ICE candidate:', error);
     }
@@ -252,8 +237,6 @@ class WebRTCService {
    */
   private async processIceCandidateQueue(): Promise<void> {
     if (this.iceCandidateQueue.length === 0) return;
-
-    console.log(`Processing ${this.iceCandidateQueue.length} queued ICE candidates`);
 
     for (const candidate of this.iceCandidateQueue) {
       try {
@@ -337,8 +320,6 @@ class WebRTCService {
    * Clean up and close connection
    */
   cleanup(): void {
-    console.log('Cleaning up WebRTC connection');
-
     // Stop all local stream tracks
     if (this.localStream) {
       this.localStream.getTracks().forEach((track) => track.stop());

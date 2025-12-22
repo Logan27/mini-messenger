@@ -53,7 +53,8 @@ export const authService = {
 
   async logout(): Promise<void> {
     try {
-      await apiClient.post('/auth/logout');
+      const refreshToken = localStorage.getItem('refreshToken');
+      await apiClient.post('/auth/logout', { refreshToken });
     } finally {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');

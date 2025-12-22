@@ -340,10 +340,12 @@ Group.beforeCreate(async group => {
   try {
     // Generate AES-256 encryption key for group messages (server-side encryption)
     const encryptionService = (await import('../utils/encryption.js')).default;
-    group.encryptionKey = encryptionService.generateAES256Key();
+    if (encryptionService && typeof encryptionService.generateAES256Key === 'function') {
+      group.encryptionKey = encryptionService.generateAES256Key();
+    }
   } catch (error) {
     console.warn('Failed to generate encryption key for group:', error.message);
-    // Continue without encryption key for now
+    // Continue without encryption key for now - don't throw to avoid transaction abort
   }
 });
 

@@ -18,6 +18,7 @@ import ActiveSessions from "@/components/ActiveSessions";
 import TwoFactorSetup from "@/components/TwoFactorSetup";
 import PushNotificationSetup from "@/components/PushNotificationSetup";
 import { NotificationSettings } from "@/components/NotificationSettings";
+import { EncryptionSettings } from "@/components/EncryptionSettings";
 import { Loader2, ArrowLeft, Download, Trash2, AlertTriangle } from "lucide-react";
 import {
   AlertDialog,
@@ -63,14 +64,10 @@ export default function Settings() {
 
   // Handle avatar change and update user context immediately
   const handleAvatarChange = async (url: string) => {
-    console.log('🔵 Avatar changed, url from backend:', url);
     setAvatarUrl(url);
     // Fetch the updated user from the server to ensure consistency
     try {
       const updatedUser = await authService.getCurrentUser();
-      console.log('🔵 Fetched updated user from server:', updatedUser);
-      console.log('🔵 User avatar field:', updatedUser.avatar);
-      console.log('🔵 User profilePicture field:', updatedUser.profilePicture);
       setUser(updatedUser); // AuthContext now handles localStorage automatically
     } catch (error) {
       console.error('Failed to fetch updated user:', error);
@@ -414,6 +411,8 @@ export default function Settings() {
 
               <TwoFactorSetup />
 
+              <EncryptionSettings />
+
               <PushNotificationSetup />
 
               <ActiveSessions />
@@ -639,7 +638,7 @@ export default function Settings() {
                           <p>
                             This action cannot be undone. This will permanently delete your account and remove your data from our servers.
                           </p>
-                          
+
                           <div className="space-y-2">
                             <p className="font-semibold">What will be deleted:</p>
                             <ul className="list-disc list-inside text-sm space-y-1 ml-4">
@@ -679,16 +678,16 @@ export default function Settings() {
                           onClick={async (e) => {
                             e.preventDefault();
                             setIsDeletingAccount(true);
-                            
+
                             try {
                               const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
                               const token = localStorage.getItem('accessToken');
-                              
+
                               await axios.delete(`${apiUrl}/api/users/me`, {
                                 headers: { Authorization: `Bearer ${token}` },
                                 data: { password: deleteConfirmPassword }
                               });
-                              
+
                               toast({
                                 title: "Account deletion requested",
                                 description: "Your account will be deleted in 30 days. You can cancel this within the grace period."

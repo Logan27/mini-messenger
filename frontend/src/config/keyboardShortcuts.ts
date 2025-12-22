@@ -19,7 +19,6 @@ export const navigationShortcuts: KeyboardShortcut[] = [
     description: 'Navigation: Open search',
     action: () => {
       // Will be implemented in components
-      console.log('Search shortcut triggered');
     },
   },
   {
@@ -27,7 +26,6 @@ export const navigationShortcuts: KeyboardShortcut[] = [
     ctrl: true,
     description: 'Navigation: New message',
     action: () => {
-      console.log('New message shortcut triggered');
     },
   },
   {
@@ -36,7 +34,6 @@ export const navigationShortcuts: KeyboardShortcut[] = [
     shift: true,
     description: 'Navigation: Open settings',
     action: () => {
-      console.log('Settings shortcut triggered');
     },
   },
 ];
@@ -50,7 +47,6 @@ export const messagingShortcuts: KeyboardShortcut[] = [
     ctrl: true,
     description: 'Messaging: Send message',
     action: () => {
-      console.log('Send message shortcut triggered');
     },
   },
   {
@@ -58,7 +54,6 @@ export const messagingShortcuts: KeyboardShortcut[] = [
     ctrl: true,
     description: 'Messaging: Search messages',
     action: () => {
-      console.log('Search messages shortcut triggered');
     },
   },
   {
@@ -66,7 +61,6 @@ export const messagingShortcuts: KeyboardShortcut[] = [
     ctrl: true,
     description: 'Messaging: Edit last message',
     action: () => {
-      console.log('Edit message shortcut triggered');
     },
   },
   {
@@ -74,7 +68,6 @@ export const messagingShortcuts: KeyboardShortcut[] = [
     ctrl: true,
     description: 'Messaging: Reply to message',
     action: () => {
-      console.log('Reply shortcut triggered');
     },
   },
 ];
@@ -87,7 +80,6 @@ export const chatSwitchingShortcuts: KeyboardShortcut[] = Array.from({ length: 9
   alt: true,
   description: `Chat: Switch to chat ${i + 1}`,
   action: () => {
-    console.log(`Switch to chat ${i + 1} triggered`);
   },
 }));
 
@@ -101,7 +93,6 @@ export const callShortcuts: KeyboardShortcut[] = [
     shift: true,
     description: 'Call: Start voice call',
     action: () => {
-      console.log('Voice call shortcut triggered');
     },
   },
   {
@@ -110,7 +101,6 @@ export const callShortcuts: KeyboardShortcut[] = [
     shift: true,
     description: 'Call: Start video call',
     action: () => {
-      console.log('Video call shortcut triggered');
     },
   },
   {
@@ -119,7 +109,6 @@ export const callShortcuts: KeyboardShortcut[] = [
     shift: true,
     description: 'Call: Toggle mute',
     action: () => {
-      console.log('Toggle mute shortcut triggered');
     },
   },
 ];
@@ -132,7 +121,6 @@ export const dialogShortcuts: KeyboardShortcut[] = [
     key: 'Escape',
     description: 'Dialog: Close modal/cancel',
     action: () => {
-      console.log('Escape shortcut triggered');
     },
   },
 ];
@@ -146,7 +134,6 @@ export const helpShortcuts: KeyboardShortcut[] = [
     shift: true,
     description: 'Help: Show keyboard shortcuts',
     action: () => {
-      console.log('Help shortcut triggered');
     },
   },
 ];

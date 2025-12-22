@@ -23,6 +23,17 @@ export interface Conversation {
     type: string;
     createdAt: string;
     isOwn: boolean;
+    isEncrypted?: boolean;
+    encryptedContent?: string;
+    encryptionMetadata?: {
+      nonce: string;
+      keys?: Record<string, string>;
+    };
+    metadata?: {
+      encryptedContentOwner?: string;
+      nonceOwner?: string;
+      [key: string]: unknown;
+    };
   };
   messageCount: number;
   unreadCount: number;

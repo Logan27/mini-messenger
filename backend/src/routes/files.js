@@ -9,6 +9,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { authenticate } from '../middleware/auth.js';
 import { File } from '../models/index.js';
+import { queueFileProcessing } from '../services/queueService.js';
+import searchCacheService from '../services/searchCacheService.js';
 import auditService from '../services/auditService.js';
 import fileCleanupService from '../services/fileCleanupService.js';
 import fileUploadService from '../services/fileUploadService.js';
@@ -279,6 +281,23 @@ router.post('/upload', uploadRateLimit, uploadValidation, async (req, res) => {
 
           const savedFile = await File.create(fileData);
           savedFiles.push(savedFile);
+
+          // Queue virus scan (offloaded to worker)
+          if (savedFile.virusScanStatus === 'scanning') {
+            try {
+              await queueFileProcessing({
+                operation: 'virus-scan',
+                fileId: savedFile.id,
+                filePath: savedFile.filePath,
+                userId: savedFile.uploaderId,
+              });
+              logger.info(`Virus scan queued for file ${savedFile.id}`);
+            } catch (queueError) {
+              logger.error(`Failed to queue virus scan for file ${savedFile.id}:`, queueError);
+              // Fallback: try to scan synchronously if queue fails? Or just log error?
+              // For now, we rely on the queue. If queue fails, file remains 'scanning'.
+            }
+          }
 
           // Trigger thumbnail generation for images and documents
           if (savedFile.fileType === 'image' || savedFile.fileType === 'document') {

@@ -81,10 +81,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     return get().appearance.theme;
   },
   setTheme: async (theme: 'light' | 'dark' | 'system') => {
-    console.log('[SettingsStore] Setting theme from', get().appearance.theme, 'to', theme);
     const updatedAppearance = { ...get().appearance, theme };
     set({ appearance: updatedAppearance });
-    console.log('[SettingsStore] State updated, new theme:', get().appearance.theme);
 
     try {
       const currentState = get();
@@ -96,7 +94,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           appearance: currentState.appearance,
         })
       );
-      console.log('[SettingsStore] Theme saved to AsyncStorage');
     } catch (error) {
       console.error('Failed to save theme setting:', error);
     }

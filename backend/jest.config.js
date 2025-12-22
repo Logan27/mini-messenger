@@ -25,6 +25,7 @@ export default {
     '/node_modules/',
     '/coverage/',
     '/tests/integration/',
+    '/tests/integration.skip/',
   ],
   // Clear mocks between tests
   clearMocks: true,

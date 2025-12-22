@@ -399,25 +399,31 @@ class AuthController {
         });
       }
 
-      // FIX BUG-AUTH-003: Verify session belongs to authenticated user
-      const session = await Session.findOne({
-        where: {
-          token,
-          userId: req.user.id, // CRITICAL: Verify ownership
-        },
-      });
+      let session;
+      const { refreshToken } = req.body;
 
-      if (!session) {
-        return res.status(403).json({
-          success: false,
-          error: {
-            type: 'FORBIDDEN',
-            message: 'Session not found or does not belong to you',
+      if (refreshToken) {
+        // Find session using the refresh token
+        session = await Session.findOne({
+          where: {
+            refreshToken,
+            userId: req.user.id,
           },
         });
+      } else {
+        // If no refresh token provided (legacy client), we can't identify the specific DB session
+        // But we can still proceed to blacklist the access token in Redis
+        logger.debug(`Logout called without refreshToken for user ${req.user.id}`);
       }
 
-      await session.destroy();
+      if (session) {
+        await session.destroy();
+      } else if (refreshToken) {
+        // If refresh token was provided but not found, it might be already invalid/removed
+        logger.warn('Logout: Session not found for provided refresh token');
+      }
+
+
 
       try {
         await AuthController.removeSessionFromRedis(token);

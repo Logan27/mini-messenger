@@ -113,7 +113,8 @@ describe('messagingStore', () => {
 
       expect(conversation.id).toBe('user-2');
       expect(conversation.type).toBe('direct');
-      expect(conversation.participants[0].avatar).toBe('bob.jpg');
+      // Avatar is transformed to full URL by getFullAvatarUrl()
+      expect(conversation.participants[0].avatar).toContain('bob.jpg');
       expect(conversation.participants[0].isOnline).toBe(false);
       expect(conversation.unreadCount).toBe(0);
     });
@@ -296,6 +297,7 @@ describe('messagingStore', () => {
         'conv-1',
         'Test message',
         'text',
+        undefined,
         undefined,
         undefined
       );

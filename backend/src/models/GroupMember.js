@@ -29,13 +29,13 @@ export const GroupMember = sequelize.define(
       },
     },
     role: {
-      type: DataTypes.ENUM('admin', 'moderator', 'member'),
-      defaultValue: 'member',
+      type: DataTypes.ENUM('admin', 'moderator', 'user'),
+      defaultValue: 'user',
       allowNull: false,
       validate: {
         isIn: {
-          args: [['admin', 'moderator', 'member']],
-          msg: 'Role must be admin, moderator, or member',
+          args: [['admin', 'moderator', 'user']],
+          msg: 'Role must be admin, moderator, or user',
         },
       },
     },
@@ -284,30 +284,34 @@ GroupMember.countActiveMembers = function (groupId) {
 };
 
 // Hooks
-GroupMember.beforeCreate(async membership => {
+GroupMember.beforeCreate(async (membership, options) => {
   // Validate that user isn't already a member
   const existing = await GroupMember.findOne({
     where: {
       groupId: membership.groupId,
       userId: membership.userId,
     },
+    transaction: options.transaction,
+    paranoid: false, // Check including soft-deleted
   });
 
-  if (existing && existing.isActive) {
-    throw new Error('User is already a member of this group');
-  }
-
-  // If reactivating a previous membership, update joinedAt
-  if (existing && !existing.isActive) {
-    existing.isActive = true;
-    existing.leftAt = null;
-    existing.joinedAt = new Date();
-    await existing.save();
-    throw new Error('Membership reactivated'); // This will prevent the new creation
+  if (existing) {
+    if (existing.isActive) {
+      // User is already an active member, we should skip the creation
+      return false;
+    } else {
+      // If reactivating a previous membership, update joinedAt
+      existing.isActive = true;
+      existing.leftAt = null;
+      existing.joinedAt = new Date();
+      existing.deletedAt = null;
+      await existing.save({ transaction: options.transaction });
+      return false;
+    }
   }
 });
 
-GroupMember.beforeUpdate(async membership => {
+GroupMember.beforeUpdate(async (membership, options) => {
   // Prevent multiple active memberships for same user-group pair
   if (membership.isActive && membership.isActive !== membership._previousDataValues.isActive) {
     const conflicting = await GroupMember.findOne({
@@ -316,6 +320,7 @@ GroupMember.beforeUpdate(async membership => {
         userId: membership.userId,
         isActive: true,
       },
+      transaction: options.transaction,
     });
 
     if (conflicting && conflicting.id !== membership.id) {

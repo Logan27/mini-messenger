@@ -14,34 +14,27 @@ async function shouldShowNotification(): Promise<boolean> {
     const response = await apiClient.get('/notification-settings');
     const settings = response.data?.data?.settings;
 
-    console.log('📞 IncomingCall: Checking notification settings:', settings);
-
     if (!settings) {
-      console.log('📞 IncomingCall: No settings found, defaulting to show');
       return true; // Default to showing if settings not available
     }
 
     // Check global toggle
     if (settings.inAppEnabled === false) {
-      console.log('🔇 IncomingCall: Global in-app notifications disabled');
       return false;
     }
 
     // Check Do Not Disturb
     if (settings.doNotDisturb === true) {
-      console.log('🔇 IncomingCall: Do Not Disturb enabled');
       return false;
     }
 
     // Check push notifications
     if (settings.pushEnabled === false) {
-      console.log('🔇 IncomingCall: Push notifications disabled');
       return false;
     }
 
     // Check call notifications specifically
     if (settings.callNotifications === false) {
-      console.log('🔇 IncomingCall: Call notifications explicitly disabled');
       return false;
     }
 
@@ -60,12 +53,10 @@ async function shouldShowNotification(): Promise<boolean> {
         : (currentTime >= quietHoursStart && currentTime <= quietHoursEnd);
 
       if (isQuietTime) {
-        console.log('🔇 IncomingCall: In quiet hours period');
         return false;
       }
     }
 
-    console.log('✅ IncomingCall: All checks passed, showing notification');
     return true;
   } catch (error) {
     console.error('❌ IncomingCall: Failed to check notification settings:', error);
@@ -121,7 +112,6 @@ export function IncomingCall({
       // Listen for call.ended event (caller cancelled)
       const unsubscribeEnded = socketService.on('call.ended', (data: unknown) => {
         if (data.callId === callId) {
-          console.log('📞 Call ended by caller');
           stopRingtone();
           onOpenChange(false);
           toast.info(`${callerName} cancelled the call`);
@@ -169,10 +159,8 @@ export function IncomingCall({
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            console.log('🎵 Ringtone playing');
           })
           .catch((err) => {
-            console.log('Ringtone playback blocked:', err.message);
           });
       }
 
@@ -180,7 +168,7 @@ export function IncomingCall({
       audioRef.current = audio;
 
     } catch (err) {
-      console.log('Ringtone playback error:', err.message);
+      console.error('Ringtone playback error:', err.message);
     }
   };
 
@@ -190,7 +178,7 @@ export function IncomingCall({
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
       } catch (err) {
-        console.log('Error stopping ringtone:', err);
+        // Error stopping ringtone
       }
       audioRef.current = null;
     }

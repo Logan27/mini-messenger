@@ -62,9 +62,9 @@ class AuditService {
       const auditLog = await AuditLog.create({
         userId: adminId,
         action,
-        resourceType: resource,
+        resource: resource,
         resourceId: resourceId,
-        details,
+        newValues: details,
         ipAddress: ipAddress,
         userAgent: userAgent,
         severity,

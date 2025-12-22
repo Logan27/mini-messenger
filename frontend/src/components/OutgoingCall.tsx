@@ -56,7 +56,6 @@ export function OutgoingCall({
     if (!open || !callId) return;
 
     const unsubscribeResponse = socketService.on('call.response', (data: unknown) => {
-      console.log('📞 Outgoing call - response received:', data);
       
       if (data.callId === callId) {
         const { response, call } = data;
@@ -143,7 +142,6 @@ export function OutgoingCall({
   const handleDialogChange = async (open: boolean) => {
     if (!open && !callEnded) {
       // User is closing dialog without accepting/rejecting - cancel the call
-      console.log('📞 Closing outgoing call dialog - cancelling call');
       await handleCancel();
     } else {
       onOpenChange(open);

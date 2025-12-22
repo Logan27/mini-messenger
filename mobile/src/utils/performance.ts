@@ -173,13 +173,11 @@ class PerformanceOptimizer {
     const currentMetrics = this.getCurrentMetrics();
     if (currentMetrics.memoryUsage.used > currentMetrics.memoryUsage.total * 0.7) {
       // Disable complex animations
-      console.log('Optimizing animations for better performance');
     }
   }
 
   private reduceBackgroundPerformance(): void {
     // Reduce timers and background tasks
-    console.log('Reducing background performance');
   }
 
   public getCurrentMetrics(): PerformanceMetrics {

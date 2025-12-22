@@ -53,13 +53,9 @@ const FileAttachmentPicker: React.FC<FileAttachmentPickerProps> = ({
 
   const handlePickImage = async (useCamera: boolean) => {
     try {
-      console.log(`[FileAttachmentPicker] ${useCamera ? 'Camera' : 'Gallery'} - Requesting permissions...`);
-
       const permissionResult = useCamera
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      console.log(`[FileAttachmentPicker] Permission result:`, permissionResult);
 
       if (!permissionResult.granted) {
         Alert.alert(
@@ -70,8 +66,6 @@ const FileAttachmentPicker: React.FC<FileAttachmentPickerProps> = ({
         );
         return;
       }
-
-      console.log(`[FileAttachmentPicker] Launching ${useCamera ? 'camera' : 'image library'}...`);
 
       const result = useCamera
         ? await ImagePicker.launchCameraAsync({
@@ -87,11 +81,7 @@ const FileAttachmentPicker: React.FC<FileAttachmentPickerProps> = ({
             allowsMultipleSelection: true,
           });
 
-      console.log(`[FileAttachmentPicker] Picker result:`, result);
-
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        console.log(`[FileAttachmentPicker] Processing ${result.assets.length} asset(s)...`);
-
         // Handle multiple selections from gallery
         for (const asset of result.assets) {
           const extension = asset.uri.split('.').pop()?.toLowerCase() || 'jpg';
@@ -107,8 +97,6 @@ const FileAttachmentPicker: React.FC<FileAttachmentPickerProps> = ({
           });
         }
         onClose();
-      } else {
-        console.log(`[FileAttachmentPicker] User canceled or no assets selected`);
       }
     } catch (error: any) {
       console.error('[FileAttachmentPicker] Image picker error:', error);

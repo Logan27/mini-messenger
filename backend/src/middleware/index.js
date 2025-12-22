@@ -5,7 +5,7 @@ import helmet from 'helmet';
 
 import { config } from '../config/index.js';
 
-import MessageEncryptionMiddleware from './messageEncryption.js';
+
 import rateLimitMiddleware, {
   apiRateLimit,
   authRateLimit,
@@ -143,6 +143,5 @@ export {
   userRateLimit,
   enhancedAuthRateLimit,
   distributedRateLimit,
-  // Message encryption middleware
-  MessageEncryptionMiddleware,
+
 };

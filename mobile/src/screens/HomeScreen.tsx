@@ -87,11 +87,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       updateMessage(updatedMessage);
     };
 
-    wsService.on('message', handleNewMessage);
+    wsService.on('message.new', handleNewMessage);
     wsService.on('messageUpdate', handleMessageUpdate);
 
     return () => {
-      wsService.off('message', handleNewMessage);
+      wsService.off('message.new', handleNewMessage);
       wsService.off('messageUpdate', handleMessageUpdate);
     };
   }, []);
@@ -282,7 +282,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <Image
               source={{ uri: fullAvatarUri }}
               style={styles.avatar}
-              onError={(error) => console.log('Contact avatar load error:', error.nativeEvent.error)}
             />
           ) : (
             <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary }]}>

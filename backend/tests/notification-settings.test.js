@@ -107,13 +107,16 @@ describe('NotificationSettings', () => {
         systemNotifications: true,
       });
 
-      // Should receive message notification
+      // Mock isInQuietHours to return false (outside quiet hours) for initial tests
+      jest.spyOn(settings, 'isInQuietHours').mockReturnValue(false);
+
+      // Should receive message notification (when outside quiet hours)
       expect(settings.shouldReceiveNotification('message', 'inApp')).toBe(true);
 
-      // Should not receive call notification
+      // Should not receive call notification (disabled in settings)
       expect(settings.shouldReceiveNotification('call', 'inApp')).toBe(false);
 
-      // Should not receive during quiet hours (mock current time)
+      // Should not receive during quiet hours
       jest.spyOn(settings, 'isInQuietHours').mockReturnValue(true);
       expect(settings.shouldReceiveNotification('message', 'inApp')).toBe(false);
     });

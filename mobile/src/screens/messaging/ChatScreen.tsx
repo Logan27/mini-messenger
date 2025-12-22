@@ -39,11 +39,119 @@ import { extractFirstUrl, fetchLinkMetadata, containsUrl } from '../../utils/lin
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftMessages';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
+import { encryptionService } from '../../services/encryptionService';
+import { encryptionAPI } from '../../services/api';
 
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../types';
 
 type ChatScreenProps = StackScreenProps<RootStackParamList, 'Chat'>;
+
+const EncryptedMessageContent = ({ message, isMyMessage, style }: { message: Message, isMyMessage: boolean, style: any }) => {
+  const [decryptedContent, setDecryptedContent] = useState<string | null>(null);
+  const [error, setError] = useState<boolean>(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const decrypt = async () => {
+      if (!message.isEncrypted || !message.encryptedContent || decryptedContent) return;
+
+      try {
+        const metadata = message.encryptionMetadata || {};
+        const senderKey = message.senderId === message.recipientId ? null : null; // Logic to get sender public key?
+        // Wait, for decryption we need SENDER's public key. 
+        // We might not have it easily available here if it's not in message metadata.
+        // It should be fetched.
+        // Simplified for this prototype: We need to know who sent it.
+        // The message object has senderId.
+
+        // We need to fetch the sender's public key if we don't have it.
+        // This is async and expensive to do for every message if not cached.
+        // Ideally we cache it in a store.
+
+        // For now, let's assume valid decryption needs sender public key.
+        // BUT messagingStore doesn't expose it easily?
+        // Actually, if it's a 1:1 chat, it's the OTHER user's key if incoming.
+        // If it's outgoing, we encrypted it, so we can decrypt it with OUR private key + Recipient public key (if using box).
+        // Wait, box is authenticated encryption.
+        // Decrypt(box, nonce, SENDER_PUB, RECIPIENT_PRIV).
+        // If I am recipient, I use SENDER_PUB.
+        // If I am sender, I use RECIPIENT_PUB (to decrypt what I sent? No, I can't decrypt what I sent unless I saved the ephemeral keys or stored plain text locally or re-encrypted for myself).
+        // Standard signal/E2E: Send to self (encrypt for self) OR store plaintext.
+        // My implementation plan didn't specify multi-recipient or self-encryption.
+        // "Old unencrypted messages will typically remain readable."
+        // "Encrypt Messages on Send: Encrypt content using recipient's public key".
+        // If I only encrypt for recipient, I (sender) CANNOT decrypt it later unless I also encrypt for myself.
+        // Box encryption: shared secret.
+        // Sender uses (SenderPriv, RecipientPub). Recipient uses (RecipientPriv, SenderPub). SAME Shared Key.
+        // So YES, Sender CAN decrypt it using (SenderPriv, RecipientPub).
+
+        // So we need "Other Party Public Key".
+        // If 1:1 chat:
+        // - If I am sender: Key is RecipientPub.
+        // - If I am receiver: Key is SenderPub.
+        // So it is ALWAYS the key of the 'other' person in the 1:1 chat.
+        // (Assuming 1:1).
+
+        // How do we get that key here efficiently?
+        // We can fetch it via API or passed from parent?
+        // Let's fetch local cached key if possible, or API.
+
+        let otherUserId = isMyMessage ? message.recipientId : message.senderId;
+        // Check if cached
+        const cachedKey = await AsyncStorage.getItem(`public_key_${otherUserId}`);
+        let key = cachedKey;
+
+        if (!key) {
+          try {
+            const res = await encryptionAPI.getPublicKey(otherUserId);
+            if (res.data?.data?.publicKey) {
+              key = res.data.data.publicKey;
+              await AsyncStorage.setItem(`public_key_${otherUserId}`, key);
+            }
+          } catch (fetchErr) {
+            console.error('Failed to fetch public key for decryption', fetchErr);
+            // Don't set error yet, maybe we can decrypt later or retry
+          }
+        }
+
+        if (key && message.encryptedContent && metadata.nonce) {
+          const text = await encryptionService.decrypt(message.encryptedContent, metadata.nonce, key);
+          if (isMounted) setDecryptedContent(text);
+        } else {
+          if (isMounted) setError(true);
+        }
+
+      } catch (e) {
+        console.error('Decryption failed', e);
+        if (isMounted) setError(true);
+      }
+    };
+
+    decrypt();
+
+    return () => { isMounted = false; };
+  }, [message]);
+
+  if (!message.isEncrypted) {
+    return <Text style={style}>{message.content}</Text>;
+  }
+
+  if (error) {
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Text style={[style, { color: 'red', fontStyle: 'italic' }]}>⚠️ Decryption failed</Text>
+      </View>
+    );
+  }
+
+  if (!decryptedContent) {
+    return <Text style={[style, { fontStyle: 'italic', opacity: 0.7 }]}>🔒 Decrypting...</Text>;
+  }
+
+  return <Text style={style}>{decryptedContent}</Text>;
+};
 
 const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const { conversationId } = route.params;
@@ -112,6 +220,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
   const [linkPreviewsLoading, setLinkPreviewsLoading] = useState<Set<string>>(new Set());
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [showChatOptionsMenu, setShowChatOptionsMenu] = useState(false);
+  const [recipientPublicKey, setRecipientPublicKey] = useState<string | null>(null); // State for E2E key
 
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -126,6 +235,27 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
 
   const conversation = conversationId ? conversations?.find(c => c.id === conversationId) : undefined;
   const conversationMessages = (conversationId && messages?.[conversationId]) || [];
+
+  // Fetch recipient public key for E2E encryption
+  useEffect(() => {
+    const fetchPublicKey = async () => {
+      if (conversationId && conversation?.type === 'direct') {
+        const otherParticipant = conversation.participants.find(p => p.id !== user?.id);
+        if (otherParticipant) {
+          try {
+            const res = await encryptionAPI.getPublicKey(otherParticipant.id);
+            if (res.data?.data?.publicKey) {
+              setRecipientPublicKey(res.data.data.publicKey);
+              await AsyncStorage.setItem(`public_key_${otherParticipant.id}`, res.data.data.publicKey);
+            }
+          } catch (e) {
+            // Failed to fetch public key for E2E
+          }
+        }
+      }
+    };
+    fetchPublicKey();
+  }, [conversationId, conversation?.type, user]);
 
   // Track messages that have been marked as read to avoid duplicate API calls
   const markedAsReadRef = useRef<Set<string>>(new Set());
@@ -302,7 +432,34 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
         setEditingMessage(null);
       } else {
         // Send new message
-        await sendMessage(conversationId, messageToSend, replyTo?.id);
+        let finalContent = messageToSend;
+        let encryptionData = undefined;
+
+        // Encrypt if we have the key
+        if (recipientPublicKey) {
+          try {
+            // Encode message for encryption
+            const { ciphertext, nonce } = await encryptionService.encrypt(messageToSend, recipientPublicKey);
+            encryptionData = {
+              isEncrypted: true,
+              encryptedContent: ciphertext,
+              encryptionMetadata: { nonce, algorithm: 'x25519-xsalsa20-poly1305' }
+            };
+            // Set content to a placeholder that indicates encryption
+            // This ensures older clients don't show "null" or empty bubbles if they don't support E2E
+            finalContent = '🔒 Encrypted Message';
+          } catch (err) {
+            console.error('Encryption failed', err);
+            Alert.alert(
+              'Encryption Error',
+              'Failed to encrypt message. Please try again or check your security settings.'
+            );
+            setIsSending(false);
+            return;
+          }
+        }
+
+        await sendMessage(conversationId, finalContent, replyTo?.id, undefined, encryptionData);
         setReplyToMessage(null);
 
         // Always scroll to top (offset 0) to show the new message in inverted list
@@ -865,8 +1022,6 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
               />
               {message.content && message.content !== '📷 Photo' && (
                 <Text style={[
-                  styles.messageText,
-                  isMyMessage ? styles.myMessageText : styles.otherMessageText,
                   { marginTop: 8 }
                 ]}>
                   {message.content}
@@ -949,12 +1104,14 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ route, navigation }) => {
             </Text>
           ) : (
             <>
-              <Text style={[
-                styles.messageText,
-                isMyMessage ? styles.myMessageText : styles.otherMessageText,
-              ]}>
-                {message.content}
-              </Text>
+              <EncryptedMessageContent
+                message={message}
+                isMyMessage={isMyMessage}
+                style={[
+                  styles.messageText,
+                  isMyMessage ? styles.myMessageText : styles.otherMessageText,
+                ]}
+              />
               {/* Link Preview */}
               {message.linkPreview && (
                 <LinkPreview

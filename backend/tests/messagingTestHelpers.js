@@ -42,9 +42,9 @@ export class MessagingTestHelpers {
     const defaultData = {
       name: `TestGroup${Date.now()}`,
       description: 'Test group for integration testing',
-      createdBy: null, // Will be set when adding creator
+      creatorId: groupData.creatorId || groupData.createdBy || null,
       isPrivate: false,
-      maxMembers: 50,
+      maxMembers: 20,
       ...groupData,
     };
 
@@ -52,8 +52,8 @@ export class MessagingTestHelpers {
     this.testGroups.set(group.id, group);
 
     // Add creator as first member if specified
-    if (groupData.createdBy) {
-      await this.addUserToGroup(group.id, groupData.createdBy, 'admin');
+    if (defaultData.creatorId) {
+      await this.addUserToGroup(group.id, defaultData.creatorId, 'admin');
     }
 
     return group;
@@ -62,12 +62,16 @@ export class MessagingTestHelpers {
   /**
    * Add a user to a group
    */
-  async addUserToGroup(groupId, userId, role = 'member') {
-    const membership = await GroupMember.create({
-      groupId,
-      userId,
-      role,
-      joinedAt: new Date(),
+  async addUserToGroup(groupId, userId, role = 'user') {
+    const [membership] = await GroupMember.findOrCreate({
+      where: {
+        groupId,
+        userId,
+      },
+      defaults: {
+        role,
+        joinedAt: new Date(),
+      },
     });
 
     return membership;
@@ -88,8 +92,8 @@ export class MessagingTestHelpers {
         lastName: `Member${i}`,
       });
 
-      await this.addUserToGroup(group.id, user.id, i === 0 ? 'admin' : 'member');
-      users.push({ user, role: i === 0 ? 'admin' : 'member' });
+      await this.addUserToGroup(group.id, user.id, i === 0 ? 'admin' : 'user');
+      users.push({ user, role: i === 0 ? 'admin' : 'user' });
     }
 
     return { group, users };
@@ -122,8 +126,9 @@ export class MessagingTestHelpers {
   async createTestFile(fileData = {}) {
     // Create a temporary test file
     const tempDir = path.join(process.cwd(), 'temp');
-    const fileName = `testfile_${Date.now()}.txt`;
-    const filePath = path.join(tempDir, fileName);
+    const storedFileName = `stored_${Date.now()}_${Math.random().toString(36).substring(7)}.txt`;
+    const originalFileName = fileData.originalName || `testfile_${Date.now()}.txt`;
+    const filePath = path.join(tempDir, storedFileName);
 
     try {
       await fs.mkdir(tempDir, { recursive: true });
@@ -132,15 +137,38 @@ export class MessagingTestHelpers {
       console.error('Error creating test file:', error);
     }
 
+    // Get file size
+    let fileSize = 1024;
+    try {
+      const stats = await fs.stat(filePath);
+      fileSize = stats.size;
+    } catch {
+      // Use default size if stat fails
+    }
+
+    // Determine fileType from mimeType
+    let fileType = 'document'; // default
+    const mimeType = fileData.mimeType || 'text/plain';
+    if (mimeType.startsWith('image/')) fileType = 'image';
+    else if (mimeType.startsWith('video/')) fileType = 'video';
+    else if (mimeType.startsWith('audio/')) fileType = 'audio';
+
     const defaultData = {
-      originalName: fileName,
-      mimeType: 'text/plain',
-      size: 1024,
-      uploadedBy: null,
-      isPublic: false,
+      filename: storedFileName,
+      originalName: originalFileName,
+      filePath: filePath,
+      fileSize: fileSize,
+      mimeType: mimeType,
+      fileType: fileType,
+      uploaderId: fileData.uploaderId || null, // Must be set by caller or in fileData
       virusScanStatus: 'clean',
       ...fileData,
     };
+
+    // Validate required uploaderId
+    if (!defaultData.uploaderId) {
+      throw new Error('uploaderId is required to create a test file');
+    }
 
     const fileRecord = await File.create(defaultData);
     this.testFiles.set(fileRecord.id, { record: fileRecord, path: filePath });
@@ -150,8 +178,14 @@ export class MessagingTestHelpers {
 
   /**
    * Create test file with different types for comprehensive testing
+   * @param {string} fileType - Type of file to create
+   * @param {string} uploaderId - UUID of the user uploading the file (required)
    */
-  async createTestFileByType(fileType = 'text') {
+  async createTestFileByType(fileType = 'text', uploaderId = null) {
+    if (!uploaderId) {
+      throw new Error('uploaderId is required to create a test file');
+    }
+
     const fileTypes = {
       text: { ext: '.txt', content: 'Test text file content', mime: 'text/plain' },
       image: { ext: '.png', content: 'fake-png-content', mime: 'image/png' },
@@ -161,20 +195,12 @@ export class MessagingTestHelpers {
 
     const config = fileTypes[fileType] || fileTypes.text;
     const fileName = `test_${fileType}_${Date.now()}${config.ext}`;
-    const tempDir = path.join(process.cwd(), 'temp');
-    const filePath = path.join(tempDir, fileName);
-
-    try {
-      await fs.mkdir(tempDir, { recursive: true });
-      await fs.writeFile(filePath, config.content);
-    } catch (error) {
-      console.error(`Error creating test ${fileType} file:`, error);
-    }
 
     return this.createTestFile({
       originalName: fileName,
       mimeType: config.mime,
-      size: config.content.length,
+      fileSize: config.content.length,
+      uploaderId: uploaderId,
     });
   }
 

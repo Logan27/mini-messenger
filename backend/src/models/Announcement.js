@@ -6,9 +6,10 @@ export const Announcement = sequelize.define(
   'Announcement',
   {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
+      allowNull: false,
     },
     title: {
       type: DataTypes.STRING,
@@ -16,6 +17,11 @@ export const Announcement = sequelize.define(
     },
     message: {
       type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    priority: {
+      type: DataTypes.ENUM('low', 'normal', 'high', 'urgent'),
+      defaultValue: 'normal',
       allowNull: false,
     },
     link: {
@@ -39,6 +45,7 @@ export const Announcement = sequelize.define(
     tableName: 'announcements',
     timestamps: true,
     underscored: true,
+    paranoid: false,
   }
 );
 

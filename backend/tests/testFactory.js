@@ -153,6 +153,25 @@ class TestFactory {
   }
 
   /**
+   * Create file
+   */
+  async createFile(uploader, overrides = {}) {
+    const file = await File.create({
+      uploaderId: uploader.id,
+      filename: `test-file-${Date.now()}.txt`,
+      originalName: 'test-file.txt',
+      filePath: `/uploads/test-file-${Date.now()}.txt`,
+      fileSize: 1024,
+      mimeType: 'text/plain',
+      fileType: 'document',
+      ...overrides,
+    });
+
+    this.createdRecords.files.push(file);
+    return file;
+  }
+
+  /**
    * Create group
    */
   async createGroup(creator, overrides = {}) {
@@ -175,7 +194,7 @@ class TestFactory {
   /**
    * Add user to group
    */
-  async addGroupMember(group, user, role = 'member') {
+  async addGroupMember(group, user, role = 'user') {
     const member = await GroupMember.create({
       groupId: group.id,
       userId: user.id,
@@ -216,35 +235,35 @@ class TestFactory {
     try {
       // Clean up in reverse order of dependencies
       for (const settings of this.createdRecords.notificationSettings) {
-        await settings.destroy({ force: true }).catch(() => {});
+        await settings.destroy({ force: true }).catch(() => { });
       }
 
       for (const member of this.createdRecords.groupMembers) {
-        await member.destroy({ force: true }).catch(() => {});
+        await member.destroy({ force: true }).catch(() => { });
       }
 
       for (const group of this.createdRecords.groups) {
-        await group.destroy({ force: true }).catch(() => {});
+        await group.destroy({ force: true }).catch(() => { });
       }
 
       for (const message of this.createdRecords.messages) {
-        await message.destroy({ force: true }).catch(() => {});
+        await message.destroy({ force: true }).catch(() => { });
       }
 
       for (const file of this.createdRecords.files) {
-        await file.destroy({ force: true }).catch(() => {});
+        await file.destroy({ force: true }).catch(() => { });
       }
 
       for (const call of this.createdRecords.calls) {
-        await call.destroy({ force: true }).catch(() => {});
+        await call.destroy({ force: true }).catch(() => { });
       }
 
       for (const session of this.createdRecords.sessions) {
-        await session.destroy({ force: true }).catch(() => {});
+        await session.destroy({ force: true }).catch(() => { });
       }
 
       for (const user of this.createdRecords.users) {
-        await user.destroy({ force: true }).catch(() => {});
+        await user.destroy({ force: true }).catch(() => { });
       }
 
       // Reset tracking arrays

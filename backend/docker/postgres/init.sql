@@ -2121,6 +2121,8 @@ ALTER TABLE ONLY public.users
 -- Seed Data
 --
 
+SET search_path = public;
+
 -- Insert default admin user (password: 'admin_password' - CHANGE THIS!)
 -- Password hash generated with bcryptjs (rounds: 12)
 INSERT INTO users (username, email, password_hash, first_name, last_name, role, email_verified)

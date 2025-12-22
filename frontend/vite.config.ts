@@ -9,6 +9,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 3000,
+    allowedHosts: [
+      "messenger.logan27.store",
+      ".logan27.store"
+    ],
     watch: {
       usePolling: true,
       interval: 1000,

@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS messages (
     edited_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP WITH TIME ZONE,
+    deleted_at TIMESTAMP WITH TIME ZONE,
 
     CONSTRAINT messages_recipient_or_group CHECK (
         (recipient_id IS NOT NULL AND group_id IS NULL) OR
@@ -96,7 +97,8 @@ CREATE TABLE IF NOT EXISTS groups (
     created_by UUID NOT NULL REFERENCES users(id),
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 -- Create group_members table
@@ -107,6 +109,7 @@ CREATE TABLE IF NOT EXISTS group_members (
     role user_role DEFAULT 'user',
     joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     unread_count INTEGER DEFAULT 0,
+    deleted_at TIMESTAMP WITH TIME ZONE,
 
     UNIQUE(group_id, user_id)
 );
@@ -245,7 +248,8 @@ CREATE TABLE IF NOT EXISTS contacts (
     is_favorite BOOLEAN DEFAULT false,
     last_contact_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX IF NOT EXISTS idx_contacts_user ON contacts(user_id);

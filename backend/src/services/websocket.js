@@ -125,20 +125,23 @@ class WebSocketService {
       });
 
       // Set up Redis adapter for horizontal scaling
+      /*
       if (config.redis.url) {
         try {
           const pubClient = this.redisClient.duplicate();
           const subClient = this.redisSubscriber.duplicate();
 
           this.io.adapter(createAdapter(pubClient, subClient));
-          console.log('📡 WebSocket server initialized with Redis adapter for scaling');
+          console.log('≡ƒôí WebSocket server initialized with Redis adapter for scaling');
         } catch (error) {
-          console.error('❌ Failed to initialize Redis adapter:', error);
-          console.log('📡 WebSocket server initialized without Redis adapter');
+          console.error('Γ¥î Failed to initialize Redis adapter:', error);
+          console.log('≡ƒôí WebSocket server initialized without Redis adapter');
         }
       } else {
-        console.log('📡 WebSocket server initialized');
+        console.log('≡ƒôí WebSocket server initialized');
       }
+      */
+      console.log('≡ƒôí WebSocket server initialized (Redis adapter disabled for testing)');
 
       // Set up authentication middleware
       this.io.use(this.authenticateSocket.bind(this));

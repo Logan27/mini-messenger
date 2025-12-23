@@ -350,25 +350,21 @@ router.post(
 
             // Emit to recipient for direct messages
             if (recipientId) {
-              logger.info('📤 Broadcasting message.new to recipient', {
-                messageId: messageData.id,
-                recipientId,
-                room: `user:${recipientId}`,
-              });
-              io.to(`user:${recipientId}`).emit('message.new', messageData);
+              logger.info(`📤 WS Broadcast: sending message.new to user:${recipientId}`, { messageId: messageData.id });
+              const recipientEmitResult = io.to(`user:${recipientId}`).emit('message.new', messageData);
+              logger.info(`📤 WS Broadcast: recipient emit call returned: ${recipientEmitResult}`);
 
               // Also emit to sender for multi-device sync
-              logger.info('📤 Broadcasting message.new to sender', {
-                messageId: messageData.id,
-                senderId,
-                room: `user:${senderId}`,
-              });
-              io.to(`user:${senderId}`).emit('message.new', messageData);
+              logger.info(`📤 WS Broadcast: sending message.new to user:${senderId}`, { messageId: messageData.id });
+              const senderEmitResult = io.to(`user:${senderId}`).emit('message.new', messageData);
+              logger.info(`📤 WS Broadcast: sender emit call returned: ${senderEmitResult}`);
             }
 
             // Emit to group members for group messages
             if (groupId) {
-              io.to(`group:${groupId}`).emit('message.new', messageData);
+              logger.info(`📤 WS Broadcast: sending message.new to group:${groupId}`, { messageId: messageData.id });
+              const groupEmitResult = io.to(`group:${groupId}`).emit('message.new', messageData);
+              logger.info(`📤 WS Broadcast: group emit call returned: ${groupEmitResult}`);
             }
           }
         } catch (wsError) {

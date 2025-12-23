@@ -76,7 +76,12 @@ class SocketService {
     });
 
     this.socket.on('error', (error) => {
-      console.error('❌ WebSocket error:', error);
+      console.error('≡ƒî║ WebSocket error:', error);
+    });
+
+    // Global event logger for debugging
+    this.socket.onAny((eventName, ...args) => {
+      console.log(`≡ƒôí [Socket] Received event: ${eventName}`, args);
     });
 
     // Set up message event listeners

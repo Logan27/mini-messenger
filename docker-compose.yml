@@ -136,7 +136,7 @@ services:
         VITE_SOCKET_URL: https://messenger.logan27.store
     container_name: messenger-frontend
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - VITE_API_URL=https://messenger.logan27.store/api
       - VITE_SOCKET_URL=https://messenger.logan27.store
     restart: unless-stopped

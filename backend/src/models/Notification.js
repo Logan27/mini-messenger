@@ -276,7 +276,7 @@ Notification.findByUserId = function (userId, options = {}) {
     };
   }
 
-  const { User } = await import('./index.js');
+  const User = this.sequelize.models.User;
 
   return this.findAll({
     where: whereClause,

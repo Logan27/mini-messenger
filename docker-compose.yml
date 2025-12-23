@@ -151,7 +151,6 @@ services:
       - "${FRONTEND_PORT:-3000}:3000"
     volumes:
       - ./frontend:/app
-      - /app/node_modules
     depends_on:
       backend:
         condition: service_healthy

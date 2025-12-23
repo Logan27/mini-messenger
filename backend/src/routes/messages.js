@@ -350,20 +350,29 @@ router.post(
 
             // Emit to recipient for direct messages
             if (recipientId) {
-              logger.info(`📤 WS Broadcast: sending message.new to user:${recipientId}`, { messageId: messageData.id });
-              const recipientEmitResult = io.to(`user:${recipientId}`).emit('message.new', messageData);
+              const recipientRoom = `user:${recipientId}`;
+              const senderRoom = `user:${senderId}`;
+              
+              // Log room occupancy
+              const recipientRoomSize = io.sockets.adapter.rooms.get(recipientRoom)?.size || 0;
+              const senderRoomSize = io.sockets.adapter.rooms.get(senderRoom)?.size || 0;
+              
+              logger.info(`📤 WS Broadcast: room ${recipientRoom} has ${recipientRoomSize} clients`, { messageId: messageData.id });
+              const recipientEmitResult = io.to(recipientRoom).emit('message.new', messageData);
               logger.info(`📤 WS Broadcast: recipient emit call returned: ${recipientEmitResult}`);
 
-              // Also emit to sender for multi-device sync
-              logger.info(`📤 WS Broadcast: sending message.new to user:${senderId}`, { messageId: messageData.id });
-              const senderEmitResult = io.to(`user:${senderId}`).emit('message.new', messageData);
+              logger.info(`📤 WS Broadcast: room ${senderRoom} has ${senderRoomSize} clients`, { messageId: messageData.id });
+              const senderEmitResult = io.to(senderRoom).emit('message.new', messageData);
               logger.info(`📤 WS Broadcast: sender emit call returned: ${senderEmitResult}`);
             }
 
             // Emit to group members for group messages
             if (groupId) {
-              logger.info(`📤 WS Broadcast: sending message.new to group:${groupId}`, { messageId: messageData.id });
-              const groupEmitResult = io.to(`group:${groupId}`).emit('message.new', messageData);
+              const groupRoom = `group:${groupId}`;
+              const groupRoomSize = io.sockets.adapter.rooms.get(groupRoom)?.size || 0;
+              
+              logger.info(`📤 WS Broadcast: room ${groupRoom} has ${groupRoomSize} clients`, { messageId: messageData.id });
+              const groupEmitResult = io.to(groupRoom).emit('message.new', messageData);
               logger.info(`📤 WS Broadcast: group emit call returned: ${groupEmitResult}`);
             }
           }

@@ -901,6 +901,7 @@ class WebSocketService {
 
   // Broadcast message to specific user across all servers
   async broadcastToUser(userId, event, data) {
+    console.log(`📡 WebSocketService.broadcastToUser: userId=${userId}, event=${event}`);
     // Skip if WebSocket service is not properly initialized
     if (!this.io) {
       console.warn('⚠️ WebSocket service: this.io is undefined');

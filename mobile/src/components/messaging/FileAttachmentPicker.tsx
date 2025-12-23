@@ -60,8 +60,7 @@ const FileAttachmentPicker: React.FC<FileAttachmentPickerProps> = ({
       if (!permissionResult.granted) {
         Alert.alert(
           'Permission Required',
-          `Please grant ${
-            useCamera ? 'camera' : 'photo library'
+          `Please grant ${useCamera ? 'camera' : 'photo library'
           } permission to continue.`
         );
         return;
@@ -69,25 +68,25 @@ const FileAttachmentPicker: React.FC<FileAttachmentPickerProps> = ({
 
       const result = useCamera
         ? await ImagePicker.launchCameraAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            quality: 0.8,
-            allowsEditing: false,
-            allowsMultipleSelection: false,
-          })
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.8,
+          allowsEditing: false,
+          allowsMultipleSelection: false,
+        })
         : await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            quality: 0.8,
-            allowsEditing: false,
-            allowsMultipleSelection: true,
-          });
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.8,
+          allowsEditing: false,
+          allowsMultipleSelection: true,
+        });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         // Handle multiple selections from gallery
         for (const asset of result.assets) {
           const extension = asset.uri.split('.').pop()?.toLowerCase() || 'jpg';
           const mimeType = extension === 'png' ? 'image/png' :
-                          extension === 'webp' ? 'image/webp' :
-                          extension === 'gif' ? 'image/gif' : 'image/jpeg';
+            extension === 'webp' ? 'image/webp' :
+              extension === 'gif' ? 'image/gif' : 'image/jpeg';
 
           onFileSelected({
             uri: asset.uri,
@@ -213,83 +212,81 @@ const FileAttachmentPicker: React.FC<FileAttachmentPickerProps> = ({
         >
           <View style={styles.handle} />
 
-              <Text style={styles.title}>Attach File</Text>
+          <Text style={styles.title}>Attach File</Text>
 
-              {/* Camera */}
-              <TouchableOpacity
-                style={styles.option}
-                onPress={() => handlePickImage(true)}
-              >
-                <View style={[styles.iconContainer, { backgroundColor: '#ef4444' }]}>
-                  <Ionicons name="camera" size={24} color="#fff" />
-                </View>
-                <View style={styles.optionContent}>
-                  <Text style={styles.optionTitle}>Camera</Text>
-                  <Text style={styles.optionDescription}>
-                    Take a photo with your camera
-                  </Text>
-                </View>
-              </TouchableOpacity>
+          {/* Camera */}
+          <TouchableOpacity
+            style={styles.option}
+            onPress={() => handlePickImage(true)}
+          >
+            <View style={[styles.iconContainer, { backgroundColor: '#ef4444' }]}>
+              <Ionicons name="camera" size={24} color="#fff" />
+            </View>
+            <View style={styles.optionContent}>
+              <Text style={styles.optionTitle}>Camera</Text>
+              <Text style={styles.optionDescription}>
+                Take a photo with your camera
+              </Text>
+            </View>
+          </TouchableOpacity>
 
-              {/* Photo Library */}
-              <TouchableOpacity
-                style={styles.option}
-                onPress={() => handlePickImage(false)}
-              >
-                <View style={[styles.iconContainer, { backgroundColor: '#8b5cf6' }]}>
-                  <Ionicons name="images" size={24} color="#fff" />
-                </View>
-                <View style={styles.optionContent}>
-                  <Text style={styles.optionTitle}>Photo Library</Text>
-                  <Text style={styles.optionDescription}>
-                    Choose from your photos
-                  </Text>
-                </View>
-              </TouchableOpacity>
+          {/* Photo Library */}
+          <TouchableOpacity
+            style={styles.option}
+            onPress={() => handlePickImage(false)}
+          >
+            <View style={[styles.iconContainer, { backgroundColor: '#8b5cf6' }]}>
+              <Ionicons name="images" size={24} color="#fff" />
+            </View>
+            <View style={styles.optionContent}>
+              <Text style={styles.optionTitle}>Photo Library</Text>
+              <Text style={styles.optionDescription}>
+                Choose from your photos
+              </Text>
+            </View>
+          </TouchableOpacity>
 
-              {/* Document */}
-              <TouchableOpacity
-                style={styles.option}
-                onPress={handlePickDocument}
-              >
-                <View style={[styles.iconContainer, { backgroundColor: '#3b82f6' }]}>
-                  <Ionicons name="document-text" size={24} color="#fff" />
-                </View>
-                <View style={styles.optionContent}>
-                  <Text style={styles.optionTitle}>Document</Text>
-                  <Text style={styles.optionDescription}>
-                    Share PDF, Word, Excel, or text files
-                  </Text>
-                </View>
-              </TouchableOpacity>
+          {/* Document */}
+          <TouchableOpacity
+            style={styles.option}
+            onPress={handlePickDocument}
+          >
+            <View style={[styles.iconContainer, { backgroundColor: '#3b82f6' }]}>
+              <Ionicons name="document-text" size={24} color="#fff" />
+            </View>
+            <View style={styles.optionContent}>
+              <Text style={styles.optionTitle}>Document</Text>
+              <Text style={styles.optionDescription}>
+                Share PDF, Word, Excel, or text files
+              </Text>
+            </View>
+          </TouchableOpacity>
 
-              {/* Video */}
-              <TouchableOpacity
-                style={styles.option}
-                onPress={handlePickVideo}
-              >
-                <View style={[styles.iconContainer, { backgroundColor: '#f59e0b' }]}>
-                  <Ionicons name="videocam" size={24} color="#fff" />
-                </View>
-                <View style={styles.optionContent}>
-                  <Text style={styles.optionTitle}>Video</Text>
-                  <Text style={styles.optionDescription}>
-                    Share a video (max 60 sec, 10MB)
-                  </Text>
-                </View>
-              </TouchableOpacity>
+          {/* Video */}
+          <TouchableOpacity
+            style={styles.option}
+            onPress={handlePickVideo}
+          >
+            <View style={[styles.iconContainer, { backgroundColor: '#f59e0b' }]}>
+              <Ionicons name="videocam" size={24} color="#fff" />
+            </View>
+            <View style={styles.optionContent}>
+              <Text style={styles.optionTitle}>Video</Text>
+              <Text style={styles.optionDescription}>
+                Share a video (max 60 sec, 10MB)
+              </Text>
+            </View>
+          </TouchableOpacity>
 
-              {/* Cancel */}
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={onClose}
-              >
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
+          {/* Cancel */}
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={onClose}
+          >
+            <Text style={styles.cancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </Pressable>
     </Modal>
   );
 };

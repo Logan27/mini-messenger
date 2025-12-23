@@ -167,6 +167,7 @@ router.get(
               ? {
                   id: contactUser.id,
                   username: contactUser.username,
+                  avatar: contactUser.avatar,
                   profilePicture: contactUser.avatar,
                   onlineStatus: contactUser.status,
                   lastSeen: contactUser.lastLoginAt,
@@ -1381,17 +1382,17 @@ router.get(
           nickname: contact.nickname,
           notes: contact.notes,
           isFavorite: contact.isFavorite,
-          user: contact.contact
-            ? {
-                id: contact.contact.id,
-                username: contact.contact.username,
-                firstName: contact.contact.firstName,
-                lastName: contact.contact.lastName,
-                profilePicture: contact.contact.avatar,
-                onlineStatus: contact.contact.status,
-              }
-            : null,
-        })),
+                                  user: contact.contact
+                                  ? {
+                                      id: contact.contact.id,
+                                      username: contact.contact.username,
+                                      firstName: contact.contact.firstName,
+                                      lastName: contact.contact.lastName,
+                                      avatar: contact.contact.avatar,
+                                      profilePicture: contact.contact.avatar,
+                                      onlineStatus: contact.contact.status,
+                                    }
+                                  : null,        })),
         pagination: {
           currentPage: parseInt(page),
           totalPages,

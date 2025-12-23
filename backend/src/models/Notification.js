@@ -25,6 +25,15 @@ export const Notification = sequelize.define(
         },
       },
     },
+    senderId: {
+      type: DataTypes.UUID,
+      field: 'sender_id',
+      allowNull: true,
+      references: {
+        model: 'users',
+        key: 'id',
+      },
+    },
     type: {
       type: DataTypes.ENUM('message', 'call', 'admin', 'system'),
       allowNull: false,
@@ -198,6 +207,7 @@ Notification.prototype.isExpired = function () {
 Notification.createNotification = async function (notificationData) {
   const {
     userId,
+    senderId,
     type,
     title,
     content,
@@ -218,6 +228,7 @@ Notification.createNotification = async function (notificationData) {
 
   return await this.create({
     userId,
+    senderId,
     type,
     title,
     content,
@@ -265,8 +276,17 @@ Notification.findByUserId = function (userId, options = {}) {
     };
   }
 
+  const { User } = await import('./index.js');
+
   return this.findAll({
     where: whereClause,
+    include: [
+      {
+        model: User,
+        as: 'sender',
+        attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+      },
+    ],
     order: [
       [
         sequelize.literal(

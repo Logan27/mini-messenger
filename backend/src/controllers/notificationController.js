@@ -62,7 +62,23 @@ class NotificationController {
         success: true,
         message: 'Notifications retrieved successfully',
         data: {
-          notifications,
+          notifications: notifications.map(n => ({
+            id: n.id,
+            userId: n.userId,
+            senderId: n.senderId,
+            senderName: n.sender ? (n.sender.firstName || n.sender.username) : undefined,
+            senderAvatar: n.sender ? n.sender.avatar : undefined,
+            type: n.type,
+            category: n.category,
+            title: n.title,
+            content: n.content,
+            body: n.content, // Alias for frontend
+            priority: n.priority,
+            read: n.read,
+            data: n.data,
+            createdAt: n.createdAt,
+            expiresAt: n.expiresAt
+          })),
           pagination: {
             currentPage: parseInt(page),
             totalPages: Math.ceil(totalCount / parseInt(limit)),
@@ -339,6 +355,7 @@ class NotificationController {
     try {
       const {
         userId,
+        senderId,
         type,
         title,
         content,
@@ -397,6 +414,7 @@ class NotificationController {
       const notification = await notificationService.createNotification(
         {
           userId,
+          senderId,
           type,
           title,
           content,
@@ -408,6 +426,15 @@ class NotificationController {
         userId
       );
 
+      // Get sender info if available
+      let sender = null;
+      if (notification.senderId) {
+        const { User } = await import('../models/index.js');
+        sender = await User.findByPk(notification.senderId, {
+          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar']
+        });
+      }
+
       // Emit WebSocket event for real-time delivery
       await this.emitNotificationUpdate(userId, 'notification:new', {
         notification: {
@@ -418,6 +445,9 @@ class NotificationController {
           priority: notification.priority,
           category: notification.category,
           createdAt: notification.createdAt,
+          senderId: notification.senderId,
+          senderName: sender ? (sender.firstName || sender.username) : undefined,
+          senderAvatar: sender ? sender.avatar : undefined,
         },
       });
 

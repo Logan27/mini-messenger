@@ -277,6 +277,11 @@ Notification.belongsTo(User, {
   as: 'user',
 });
 
+Notification.belongsTo(User, {
+  foreignKey: 'senderId',
+  as: 'sender',
+});
+
 // NotificationSettings associations
 NotificationSettings.belongsTo(User, {
   foreignKey: 'userId',

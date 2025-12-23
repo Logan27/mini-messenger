@@ -518,10 +518,9 @@ router.get('/:id', downloadRateLimit, downloadValidation, async (req, res) => {
     // Log file download for audit
     await auditService.logSecurityEvent({
       userId,
-      eventType: 'file_access',
+      action: 'file_download',
       severity: 'low',
-      metadata: {
-        action: 'file_download',
+      details: {
         fileId: file.id,
         filename: file.filename,
         originalName: file.originalName,
@@ -775,21 +774,21 @@ router.get('/', async (req, res) => {
       include:
         conversationWith || groupId
           ? [
-              {
-                model: Message,
-                as: 'message',
-                where: messageWhere,
-                required: true,
-                attributes: ['id', 'senderId', 'recipientId', 'groupId', 'createdAt'],
-                include: [
-                  {
-                    model: User,
-                    as: 'sender',
-                    attributes: ['id', 'username', 'avatar'],
-                  },
-                ],
-              },
-            ]
+            {
+              model: Message,
+              as: 'message',
+              where: messageWhere,
+              required: true,
+              attributes: ['id', 'senderId', 'recipientId', 'groupId', 'createdAt'],
+              include: [
+                {
+                  model: User,
+                  as: 'sender',
+                  attributes: ['id', 'username', 'avatar'],
+                },
+              ],
+            },
+          ]
           : [],
     });
 
@@ -812,10 +811,10 @@ router.get('/', async (req, res) => {
         uploadedAt: file.createdAt,
         sender: file.message?.sender
           ? {
-              id: file.message.sender.id,
-              username: file.message.sender.username,
-              avatar: file.message.sender.avatar,
-            }
+            id: file.message.sender.id,
+            username: file.message.sender.username,
+            avatar: file.message.sender.avatar,
+          }
           : undefined,
       })),
       pagination: {
@@ -1144,10 +1143,9 @@ router.post('/:id/delete', authenticate, async (req, res) => {
     // Log file deletion
     await auditService.logSecurityEvent({
       userId,
-      eventType: 'file_deletion',
+      action: 'file_marked_for_deletion',
       severity: 'low',
-      metadata: {
-        action: 'file_marked_for_deletion',
+      details: {
         fileId: file.id,
         filename: file.filename,
         originalName: file.originalName,

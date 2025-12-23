@@ -13,8 +13,25 @@
  * - POST /api/groups/:id/leave - Leave group
  */
 
-import request from 'supertest';
-import app from '../src/app.js';
+import { jest } from '@jest/globals';
+
+// Mock WebSocket service to prevent "WebSocket server not initialized" error
+// Must be defined BEFORE importing app
+jest.unstable_mockModule('../src/services/websocket.js', () => ({
+    initializeWebSocket: jest.fn(),
+    getIO: jest.fn().mockReturnValue({
+        to: jest.fn().mockReturnThis(),
+        emit: jest.fn(),
+    }),
+    getWebSocketService: jest.fn().mockReturnValue({
+        broadcastToUser: jest.fn(),
+    }),
+    WS_EVENTS: {},
+    CONNECTION_STATES: {},
+}));
+
+const request = (await import('supertest')).default;
+const { default: app } = await import('../src/app.js');
 
 describe('Groups API', () => {
     const { factory: testFactory } = global.testUtils;
@@ -28,8 +45,7 @@ describe('Groups API', () => {
     });
 
     describe('POST /api/groups', () => {
-        // Skipped: Transaction rollback error (500) needs debugging
-        it.skip('should create a new group', async () => {
+        it('should create a new group', async () => {
             const userAuth = await testFactory.createAuthenticatedUser();
 
             const response = await request(app)
@@ -38,8 +54,12 @@ describe('Groups API', () => {
                 .send({
                     name: 'Test Group',
                     description: 'A test group',
-                })
-                .expect(201);
+                });
+
+            if (response.status !== 201) {
+                console.log('Create Group Error:', JSON.stringify(response.body, null, 2));
+            }
+            expect(response.status).toBe(201);
 
             expect(response.body.success).toBe(true);
             expect(response.body.data.name).toBe('Test Group');
@@ -73,6 +93,7 @@ describe('Groups API', () => {
     });
 
     describe('GET /api/groups', () => {
+        // Unskipped: Testing user groups listing
         it('should get user groups', async () => {
             const userAuth = await testFactory.createAuthenticatedUser();
 
@@ -88,7 +109,8 @@ describe('Groups API', () => {
                 .expect(200);
 
             expect(response.body.success).toBe(true);
-            expect(Array.isArray(response.body.data)).toBe(true);
+            // Response returns { data: { groups: [...], pagination: {...} } }
+            expect(Array.isArray(response.body.data.groups)).toBe(true);
         });
 
         it('should require authentication', async () => {
@@ -105,7 +127,7 @@ describe('Groups API', () => {
                 .set('Authorization', userAuth.authHeader)
                 .expect(200);
 
-            expect(response.body.pagination).toBeDefined();
+            expect(response.body.data.pagination).toBeDefined();
         });
     });
 
@@ -229,7 +251,7 @@ describe('Groups API', () => {
             const response = await request(app)
                 .post(`/api/groups/${group.id}/members`)
                 .set('Authorization', userAuth.authHeader)
-                .send({ userId: newMember.id });
+                .send({ userId: newMember.id, role: 'user' });
 
             expect([200, 201]).toContain(response.status);
         });
@@ -242,7 +264,7 @@ describe('Groups API', () => {
                 .set('Authorization', userAuth.authHeader)
                 .expect(200);
 
-            expect(Array.isArray(response.body.data)).toBe(true);
+            expect(Array.isArray(response.body.data.members)).toBe(true);
         });
 
         it('should remove member from group', async () => {
@@ -254,7 +276,7 @@ describe('Groups API', () => {
             await request(app)
                 .post(`/api/groups/${group.id}/members`)
                 .set('Authorization', userAuth.authHeader)
-                .send({ userId: newMember.id });
+                .send({ userId: newMember.id, role: 'user' });
 
             // Remove member
             const response = await request(app)
@@ -283,7 +305,7 @@ describe('Groups API', () => {
             await request(app)
                 .post(`/api/groups/${groupId}/members`)
                 .set('Authorization', creatorAuth.authHeader)
-                .send({ userId: memberAuth.user.id });
+                .send({ userId: memberAuth.user.id, role: 'user' });
 
             // Member leaves
             const response = await request(app)

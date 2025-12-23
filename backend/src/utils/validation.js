@@ -212,15 +212,15 @@ export const groupValidation = {
       'any.required': 'User ID is required',
     }),
 
-    role: Joi.string().valid('admin', 'moderator', 'member').default('member').optional().messages({
-      'any.only': 'Role must be admin, moderator, or member',
+    role: Joi.string().valid('admin', 'moderator', 'user').default('user').optional().messages({
+      'any.only': 'Role must be admin, moderator, or user',
     }),
   }),
 
   // Update member role schema
   updateMemberRole: Joi.object({
-    role: Joi.string().valid('admin', 'moderator', 'member').required().messages({
-      'any.only': 'Role must be admin, moderator, or member',
+    role: Joi.string().valid('admin', 'moderator', 'user').required().messages({
+      'any.only': 'Role must be admin, moderator, or user',
       'any.required': 'Role is required',
     }),
   }),

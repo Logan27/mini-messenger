@@ -432,6 +432,7 @@ router.post(
                 username: messageWithSender.sender.username,
                 firstName: messageWithSender.sender.firstName,
                 lastName: messageWithSender.sender.lastName,
+                avatar: messageWithSender.sender.avatar,
               }
               : null,
           },
@@ -1092,6 +1093,7 @@ router.put(
               username: message.sender.username,
               firstName: message.sender.firstName,
               lastName: message.sender.lastName,
+              avatar: message.sender.avatar,
             }
             : null,
         },
@@ -1757,6 +1759,7 @@ router.get(
             username: message.sender.username,
             firstName: message.sender.firstName,
             lastName: message.sender.lastName,
+            avatar: message.sender.avatar,
           }
           : null,
         group: message.Group
@@ -1932,6 +1935,7 @@ router.get(
                 username: otherUser.username,
                 firstName: otherUser.firstName,
                 lastName: otherUser.lastName,
+                avatar: otherUser.avatar,
                 profilePicture: otherUser.avatar,
                 onlineStatus: otherUser.status,
               }
@@ -1984,7 +1988,7 @@ router.get(
               {
                 model: User,
                 as: 'sender',
-                attributes: ['id', 'username'],
+                attributes: ['id', 'username', 'avatar'],
               },
             ],
             attributes: ['id', 'content', 'messageType', 'createdAt', 'senderId', 'isEncrypted', 'encryptedContent', 'encryptionMetadata'],
@@ -2001,15 +2005,14 @@ router.get(
 
           return {
             type: 'group',
-            group: gm.group
-              ? {
-                id: gm.group.id,
-                name: gm.group.name,
-                description: gm.group.description,
-                avatar: gm.group.avatar,
-                creatorId: gm.group.creatorId,
-              }
-              : null,
+            group: {
+              id: gm.group.id,
+              name: gm.group.name,
+              description: gm.group.description,
+              avatar: gm.group.avatar,
+              profilePicture: gm.group.avatar,
+              creatorId: gm.group.creatorId,
+            },
             userRole: gm.role, // Include user's role in the group (admin, member, etc.)
             lastMessage: lastMessage
               ? {
@@ -2021,6 +2024,7 @@ router.get(
                   ? {
                     id: lastMessage.sender.id,
                     username: lastMessage.sender.username,
+                    avatar: lastMessage.sender.avatar,
                   }
                   : null,
                 isOwn: lastMessage.senderId === userId,
@@ -2158,23 +2162,21 @@ router.post(
       const io = getIO();
       if (io) {
         const reactionData = {
-          messageId: message.id,
+          messageId,
+          emoji,
+          userId,
+          action: userIndex === -1 ? 'added' : 'removed',
           reactions: reactions, // Use the updated reactions object, not message.reactions
-          userId: userId,
-          emoji: emoji,
-          action: action,
+          timestamp: new Date().toISOString(),
         };
 
-        // Notify sender
+        // Broadcast to sender
         io.to(`user:${message.senderId}`).emit('message.reaction', reactionData);
-
-        // Notify recipient if direct message
-        if (message.recipientId) {
+        
+        // Broadcast to recipient or group
+        if (message.recipientId && message.recipientId !== message.senderId) {
           io.to(`user:${message.recipientId}`).emit('message.reaction', reactionData);
-        }
-
-        // Notify group if group message
-        if (message.groupId) {
+        } else if (message.groupId) {
           io.to(`group:${message.groupId}`).emit('message.reaction', reactionData);
         }
       }

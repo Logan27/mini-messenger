@@ -189,6 +189,7 @@ class GroupsController {
         throw error;
       }
     } catch (error) {
+      console.error('!!! CREATE GROUP ERROR:', error);
       logger.error('Error creating group:', {
         error: error.message,
         stack: error.stack,
@@ -201,7 +202,6 @@ class GroupsController {
         error: {
           type: 'INTERNAL_ERROR',
           message: 'Failed to create group',
-          debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
         },
       });
     }
@@ -779,7 +779,7 @@ class GroupsController {
       });
     } catch (error) {
       await transaction.rollback();
-      // FIX BUG-G001: Use logger instead of console.error
+      console.error('!!! ADD MEMBER ERROR:', error);
       logger.error('Error adding member:', {
         error: error.message,
         stack: error.stack,

@@ -1080,9 +1080,11 @@ router.post('/me/avatar', authenticate, upload.single('avatar'), async (req, res
 
       // Extract path starting from 'uploads/'
       if (avatarPath.includes('uploads/')) {
-        avatarPath = `/${avatarPath.substring(avatarPath.indexOf('uploads/'))}`;
+        avatarPath = '/api/uploads/' + avatarPath.split('uploads/').pop();
       } else if (!avatarPath.startsWith('/')) {
-        avatarPath = `/${avatarPath}`;
+        avatarPath = `/api/uploads/${avatarPath}`;
+      } else if (!avatarPath.startsWith('/api/')) {
+        avatarPath = `/api${avatarPath}`;
       }
 
       logger.info('Avatar path generated', { filePath: processedFile.filePath, avatarPath });

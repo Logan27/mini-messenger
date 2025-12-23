@@ -115,8 +115,37 @@ export default function NotificationCenter() {
       });
     };
 
+    const handleWSNotification = (data: any) => {
+      const { notification } = data;
+      if (!notification) return;
+
+      const mappedNotification: Notification = {
+        id: notification.id,
+        type: notification.type,
+        title: notification.title,
+        body: notification.content,
+        senderId: notification.senderId,
+        senderName: notification.senderName,
+        senderAvatar: notification.senderAvatar,
+        createdAt: notification.createdAt,
+        read: false
+      };
+
+      setNotifications((prev) => [mappedNotification, ...prev]);
+      setUnreadCount((prev) => prev + 1);
+
+      toast.info(mappedNotification.title, {
+        description: mappedNotification.body,
+      });
+    };
+
+    const unsubscribe = socketService.on('notification:new', handleWSNotification);
+
     window.addEventListener('notification' as keyof WindowEventMap, handleNotification as EventListener);
-    return () => window.removeEventListener('notification' as keyof WindowEventMap, handleNotification as EventListener);
+    return () => {
+      window.removeEventListener('notification' as keyof WindowEventMap, handleNotification as EventListener);
+      unsubscribe();
+    };
   }, [notificationSettings]);
 
   // Mark notification as read

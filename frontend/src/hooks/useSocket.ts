@@ -82,35 +82,49 @@ export function useMessageListener(activeChat?: string) {
         }
       }
 
-      // Always invalidate conversations to update unread counts and last message
-      // Small delay to ensure backend has committed the message to database
-      setTimeout(() => {
-        // Use refetchQueries to force immediate refetch
-        queryClient.refetchQueries({ queryKey: ['conversations'] });
-        queryClient.refetchQueries({ queryKey: ['contacts'] });
-      }, 100);
+      // Refetch conversations to update unread counts
+      queryClient.refetchQueries({ queryKey: ['conversations'] });
     });
 
-    // Listen for soft deleted messages
-    const unsubscribeSoftDeleted = socketService.on('message_soft_deleted', (data: unknown) => {
+    // Listen for message reactions
+    const unsubscribeReaction = socketService.on('message.reaction', (data: { messageId: string; reactions: Record<string, string[]> }) => {
 
-      // Invalidate messages query to refetch and remove deleted message
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
-    });
+      // Update messages cache
+      queryClient.setQueriesData({ queryKey: ['messages'] }, (old: any) => {
+        if (!old) return old;
+        
+        // Handle paginated data structure if necessary
+        if (old.pages) {
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              data: page.data.map((msg: any) => 
+                msg.id === data.messageId ? { ...msg, reactions: data.reactions } : msg
+              )
+            }))
+          };
+        }
 
-    // Listen for hard deleted messages
-    const unsubscribeHardDeleted = socketService.on('message_hard_deleted', (data: unknown) => {
+        // Handle flat array structure
+        if (Array.isArray(old.data)) {
+          return {
+            ...old,
+            data: old.data.map((msg: any) => 
+              msg.id === data.messageId ? { ...msg, reactions: data.reactions } : msg
+            )
+          };
+        }
 
-      // Invalidate messages query to refetch and remove deleted message
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        return old;
+      });
     });
 
     return () => {
       unsubscribeNew();
       unsubscribeSoftDeleted();
       unsubscribeHardDeleted();
+      unsubscribeReaction();
     };
   }, [activeChat, queryClient]);
 }

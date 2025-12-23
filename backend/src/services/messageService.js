@@ -185,7 +185,7 @@ class MessageService {
         // Broadcast to group room with member information
         getIO()
           .to(`group:${groupId}`)
-          .emit(WS_EVENTS.GROUP_MESSAGE, {
+          .emit('message.new', {
             ...enhancedMessage,
             groupMembers: groupMembers.map(m => ({
               id: m.userId,

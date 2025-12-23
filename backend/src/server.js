@@ -9,7 +9,7 @@ import { config } from './config/index.js';
 import { initializeRedis, closeRedis } from './config/redis.js';
 import { initializeLogger } from './utils/logger.js';
 
-const numCPUs = 1; // Force 1 worker for testing real-time sync
+const numCPUs = os?.cpus().length || 1;
 
 const startWorker = async () => {
   let server;

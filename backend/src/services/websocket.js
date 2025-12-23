@@ -326,6 +326,7 @@ class WebSocketService {
       const userRoom = `user:${socket.userId}`;
       await socket.join(userRoom);
       console.log(`✅ User ${socket.userId} joined room: ${userRoom}`);
+      console.log(`📡 Socket ${socket.id} current rooms:`, Array.from(socket.rooms));
 
       // Join user's groups (for real-time group events)
       await this.joinUserGroups(socket);

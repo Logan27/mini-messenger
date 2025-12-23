@@ -138,9 +138,10 @@ services:
     #     VITE_SOCKET_URL: ${VITE_SOCKET_URL:-http://localhost:4000}
     command: >
              sh -c "apk add --no-cache git curl &&
+             rm -rf node_modules package-lock.json &&
              npm install &&
              echo 'Dependencies installed.' &&
-             npx vite --host 0.0.0.0 --force"
+             npm run dev -- --host 0.0.0.0 --force"
     container_name: messenger-frontend
     environment:
       - NODE_ENV=production

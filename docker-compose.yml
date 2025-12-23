@@ -92,9 +92,9 @@ services:
       SESSION_SECRET: ${SESSION_SECRET:-your-session-secret-change-in-production}
       CLAMAV_HOST: clamav
       CLAMAV_PORT: 3310
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      CORS_ORIGIN: https://messenger.logan27.store
       CORS_CREDENTIALS: "true"
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      FRONTEND_URL: https://messenger.logan27.store
       MOBILE_APP_SECRET: ${MOBILE_APP_SECRET:-dev_mobile_secret_change_in_production}
       CSRF_SECRET: ${CSRF_SECRET:-your-csrf-secret-change-this-in-production}
       FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
@@ -143,9 +143,9 @@ services:
              npm run dev -- --host 0.0.0.0 --force"
     container_name: messenger-frontend
     environment:
-      - NODE_ENV=development
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:4000/api}
-      - VITE_SOCKET_URL=${VITE_SOCKET_URL:-http://localhost:4000}
+      - NODE_ENV=production
+      - VITE_API_URL=https://messenger.logan27.store/api
+      - VITE_SOCKET_URL=https://messenger.logan27.store
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-3000}:3000"

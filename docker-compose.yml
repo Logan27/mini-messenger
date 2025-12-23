@@ -103,6 +103,7 @@ services:
       MAX_FILE_SIZE: ${MAX_FILE_SIZE:-10485760}
       AUTO_VERIFY_EMAIL: ${AUTO_VERIFY_EMAIL:-true}
       TRUST_PROXY: "true"
+      RATE_LIMIT_MAX_REQUESTS: 1000
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/logs:/app/logs

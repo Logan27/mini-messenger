@@ -15,8 +15,13 @@ RUN npm ci
 COPY . .
 
 # Build arguments for environment variables
-ARG VITE_API_URL=http://localhost:4000/api
-ARG VITE_SOCKET_URL=http://localhost:4000
+ARG VITE_API_URL
+ARG VITE_SOCKET_URL
+
+# Set environment variables for build time
+ENV NODE_ENV=production
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_SOCKET_URL=$VITE_SOCKET_URL
 
 # Create .env file for build
 RUN echo "VITE_API_URL=${VITE_API_URL}" > .env && \

@@ -39,7 +39,10 @@ export const fileService = {
   },
 
   getFileUrl(filePath: string) {
-    const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:4000';
+    const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || '';
+    if (!baseUrl) {
+      console.warn('VITE_API_URL is missing, file URLs may be incorrect');
+    }
     return `${baseUrl}${filePath}`;
   },
 };

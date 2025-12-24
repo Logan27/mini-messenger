@@ -27,6 +27,8 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:-https://messenger.logan27.store/api}
         VITE_SOCKET_URL: ${VITE_SOCKET_URL:-https://messenger.logan27.store}
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"  # Production nginx listens on port 80
     environment:
       - NODE_ENV=production
       - VITE_API_URL=${VITE_API_URL:-https://messenger.logan27.store/api}

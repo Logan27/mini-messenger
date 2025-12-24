@@ -1,0 +1,573 @@
+﻿
+> messenger-backend@1.0.0 test
+> cross-env NODE_ENV=test DB_HOST=127.0.0.1 NODE_OPTIONS=--experimental-vm-modules jest tests/groups.test.js
+
+  console.log
+    ≡ƒöì Database config: {
+      host: '127.0.0.1',
+      port: 5432,
+      database: 'messenger',
+      username: 'messenger',
+      dialect: 'postgres'
+    }
+
+      at src/config/database.js:43:11
+
+  console.log
+    Γ£à Sequelize instance created for test environment
+
+      at src/config/database.js:51:11
+
+2025-12-22T22:23:40.621Z [[33mwarn[39m]: Firebase Admin SDK not initialized. Push notifications will not work. Please configure Firebase credentials in environment variables or service account file.
+2025-12-22T22:23:42.577Z [[32minfo[39m]: Queue service initialized with retry logic and scheduled jobs
+2025-12-22T22:23:42.602Z [[32minfo[39m]: Notification settings cache cleanup initialized
+2025-12-22T22:23:42.603Z [[32minfo[39m]: Auto cleanup for expired notifications started
+2025-12-22T22:23:42.619Z [[32minfo[39m]: Data retention job scheduled.
+  console.log
+    ≡ƒôÜ Swagger UI will be available at /api-docs
+
+      at src/app.js:186:11
+
+node.exe : (node:4120) ExperimentalWarning: VM Modules is 
+an experimental feature and might change at any time
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:4120) E 
+   xp...nge at any time:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(Use `node --trace-warnings ...` to show where the warning 
+was created)
+  console.log
+    Γ£à Test database connected
+
+      at initializeTestDatabase (tests/setup.js:39:13)
+
+2025-12-22T22:23:43.469Z [[32minfo[39m]: Authentication successful for user: testuser17664422228125c9y94 (93776af4-b338-4ccb-9121-4e260e38b071)
+2025-12-22T22:23:43.472Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "93776af4-b338-4ccb-9121-4e260e38b071"
+}
+2025-12-22T22:23:43.487Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "b20bde1b-e054-42e7-938e-4428f151869a"
+}
+2025-12-22T22:23:43.493Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T22:23:43.529Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "93776af4-b338-4ccb-9121-4e260e38b071",
+  "groupId": "b20bde1b-e054-42e7-938e-4428f151869a",
+  "name": "Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+[2025-12-22 23:23:43] [6da133ea-842b-46c0-b3c9-b071a9a7c14f] POST /api/groups 201 - 84ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:43 +0000] "POST /api/groups HTTP/1.1" 201 - "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 23:23:43] [da15bace-bf0e-4f49-9ace-3f1c9b72d405] POST /api/groups 401 - 1ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:43 +0000] "POST /api/groups HTTP/1.1" 401 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T22:23:44.522Z [[32minfo[39m]: Authentication successful for user: testuser1766442223945h1m67b (31a4573e-d8ff-4f28-b69e-1bd392c055b5)
+[2025-12-22 23:23:44] [58eb65b6-bde5-4a85-b83a-3caf3153a7f9] POST /api/groups 400 - 9ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:44 +0000] "POST /api/groups HTTP/1.1" 400 160 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T22:23:45.159Z [[32minfo[39m]: Authentication successful for user: testuser1766442224562f1c91p (9fede818-57da-4581-ae06-5c7437b4d114)
+2025-12-22T22:23:45.159Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "9fede818-57da-4581-ae06-5c7437b4d114"
+}
+2025-12-22T22:23:45.168Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "64cadb02-cd3c-44a8-8c9e-0e7ad003f35e"
+}
+2025-12-22T22:23:45.171Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T22:23:45.187Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "9fede818-57da-4581-ae06-5c7437b4d114",
+  "groupId": "64cadb02-cd3c-44a8-8c9e-0e7ad003f35e",
+  "name": "AB",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+[2025-12-22 23:23:45] [e830baff-0421-4998-96e7-1fb88d9bcbdb] POST /api/groups 201 - 35ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:45 +0000] "POST /api/groups HTTP/1.1" 201 - "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 23:23:45] [b36b835e-286a-42ef-91ff-8c6f70393204] GET /api/groups 401 - 1ms - GET /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:45 +0000] "GET /api/groups HTTP/1.1" 401 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T22:23:46.058Z [[32minfo[39m]: Authentication successful for user: testuser17664422254859o26e5 (e9334fc0-c96f-4ece-9ac1-d68b82a9c8d1)
+[2025-12-22 23:23:46] [18121d48-7789-4202-8d7c-49cc41cc7f5c] GET /api/groups?page=1&limit=10 200 - 23ms - GET /api/groups?page=1&limit=10
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:46 +0000] "GET /api/groups?page=1&limit=10 HTTP/1.1" 200 156 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T22:23:46.649Z [[32minfo[39m]: Authentication successful for user: testuser17664422260910uohi5 (1c2eb63a-a8fd-4b32-a17b-14d40439d9d8)
+2025-12-22T22:23:46.649Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "1c2eb63a-a8fd-4b32-a17b-14d40439d9d8"
+}
+2025-12-22T22:23:46.657Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "25ef5d4d-c575-4e47-bfa4-fb02077c5fbb"
+}
+2025-12-22T22:23:46.661Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T22:23:46.685Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "1c2eb63a-a8fd-4b32-a17b-14d40439d9d8",
+  "groupId": "25ef5d4d-c575-4e47-bfa4-fb02077c5fbb",
+  "name": "Detail Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+[2025-12-22 23:23:46] [f22ffdaf-41a0-4919-8bea-2fcbd74cfe46] POST /api/groups 201 - 43ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:46 +0000] "POST /api/groups HTTP/1.1" 201 - "-" "-"
+2025-12-22T22:23:46.701Z [[32minfo[39m]: Authentication successful for user: testuser17664422260910uohi5 (1c2eb63a-a8fd-4b32-a17b-14d40439d9d8)
+[2025-12-22 23:23:46] [88d548a4-a777-4e08-9fae-853d197aac1a] GET /api/groups/25ef5d4d-c575-4e47-bfa4-fb02077c5fbb 200 - 26ms - GET /api/groups/25ef5d4d-c575-4e47-bfa4-fb02077c5fbb
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:46 +0000] "GET /api/groups/25ef5d4d-c575-4e47-bfa4-fb02077c5fbb HTTP/1.1" 200 - "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 23:23:47] [3aee3c20-894f-4dec-9c09-0b6a1d20288c] GET /api/groups/00000000-0000-0000-0000-000000000000 401 - 3ms - GET /api/groups/00000000-0000-0000-0000-000000000000
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:47 +0000] "GET /api/groups/00000000-0000-0000-0000-000000000000 HTTP/1.1" 401 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T22:23:47.640Z [[32minfo[39m]: Authentication successful for user: testuser1766442227045s9ycxk (1e1abfb0-d1fd-4f33-baa1-6f55e58af606)
+[2025-12-22 23:23:47] [b3a142cd-bdff-4e7a-bf3e-eb8371954dee] GET /api/groups/00000000-0000-0000-0000-000000000000 403 - 10ms - GET /api/groups/00000000-0000-0000-0000-000000000000
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:47 +0000] "GET /api/groups/00000000-0000-0000-0000-000000000000 HTTP/1.1" 403 103 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T22:23:48.247Z [[32minfo[39m]: Authentication successful for user: testuser1766442227663ym53gm (63ab590b-e825-402a-8217-584d50639c09)
+2025-12-22T22:23:48.247Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "63ab590b-e825-402a-8217-584d50639c09"
+}
+2025-12-22T22:23:48.255Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "b889eebc-a825-4f55-88ef-c5ce898043d5"
+}
+2025-12-22T22:23:48.258Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T22:23:48.274Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "63ab590b-e825-402a-8217-584d50639c09",
+  "groupId": "b889eebc-a825-4f55-88ef-c5ce898043d5",
+  "name": "Update Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+[2025-12-22 23:23:48] [3b3e6904-4456-4de0-a26d-05989659b287] POST /api/groups 201 - 33ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:48 +0000] "POST /api/groups HTTP/1.1" 201 - "-" "-"
+2025-12-22T22:23:48.293Z [[32minfo[39m]: Authentication successful for user: testuser1766442227663ym53gm (63ab590b-e825-402a-8217-584d50639c09)
+2025-12-22T22:23:48.309Z [[32minfo[39m]: Group updated
+{
+  "userId": "63ab590b-e825-402a-8217-584d50639c09",
+  "groupId": "b889eebc-a825-4f55-88ef-c5ce898043d5",
+  "updates": {
+    "name": "Updated Name"
+  }
+}
+[2025-12-22 23:23:48] [41531bbe-79b2-4bc1-8325-b6322ead991b] PUT /api/groups/b889eebc-a825-4f55-88ef-c5ce898043d5 200 - 32ms - PUT /api/groups/b889eebc-a825-4f55-88ef-c5ce898043d5
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:48 +0000] "PUT /api/groups/b889eebc-a825-4f55-88ef-c5ce898043d5 HTTP/1.1" 200 - "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 23:23:48] [cd537783-f2be-44d6-b3ad-7401a46b9b06] PUT /api/groups/00000000-0000-0000-0000-000000000000 401 - 1ms - PUT /api/groups/00000000-0000-0000-0000-000000000000
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:48 +0000] "PUT /api/groups/00000000-0000-0000-0000-000000000000 HTTP/1.1" 401 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T22:23:49.209Z [[32minfo[39m]: Authentication successful for user: testuser1766442228629gix3gr (ec282a71-a5e3-4b68-be84-b460a346761d)
+2025-12-22T22:23:49.209Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "ec282a71-a5e3-4b68-be84-b460a346761d"
+}
+2025-12-22T22:23:49.217Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "96e6daf5-1837-4c4b-85b0-072dd288abbd"
+}
+2025-12-22T22:23:49.220Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T22:23:49.236Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "ec282a71-a5e3-4b68-be84-b460a346761d",
+  "groupId": "96e6daf5-1837-4c4b-85b0-072dd288abbd",
+  "name": "Delete Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+[2025-12-22 23:23:49] [142ca045-d592-4246-b68c-ae963d3361e6] POST /api/groups 201 - 34ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:49 +0000] "POST /api/groups HTTP/1.1" 201 - "-" "-"
+2025-12-22T22:23:49.252Z [[32minfo[39m]: Authentication successful for user: testuser1766442228629gix3gr (ec282a71-a5e3-4b68-be84-b460a346761d)
+2025-12-22T22:23:49.271Z [[32minfo[39m]: Group deleted
+{
+  "userId": "ec282a71-a5e3-4b68-be84-b460a346761d",
+  "groupId": "96e6daf5-1837-4c4b-85b0-072dd288abbd",
+  "name": "Delete Test Group"
+}
+[2025-12-22 23:23:49] [f7696622-3e8f-4b3e-8dbd-a3f3c9295bb1] DELETE /api/groups/96e6daf5-1837-4c4b-85b0-072dd288abbd 200 - 25ms - DELETE /api/groups/96e6daf5-1837-4c4b-85b0-072dd288abbd
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:49 +0000] "DELETE /api/groups/96e6daf5-1837-4c4b-85b0-072dd288abbd HTTP/1.1" 200 55 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 23:23:49] [9ecc2dbc-c998-4972-8122-0e20595acd01] DELETE /api/groups/00000000-0000-0000-0000-000000000000 401 - 2ms - DELETE /api/groups/00000000-0000-0000-0000-000000000000
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:49 +0000] "DELETE /api/groups/00000000-0000-0000-0000-000000000000 HTTP/1.1" 401 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T22:23:50.136Z [[32minfo[39m]: Authentication successful for user: testuser1766442229579md0d1g (c0b50b49-b773-4ebc-8ed9-dcd688860c8a)
+2025-12-22T22:23:50.137Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "c0b50b49-b773-4ebc-8ed9-dcd688860c8a"
+}
+2025-12-22T22:23:50.143Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "17c9a1d9-b635-4e77-9756-5d729e1300e9"
+}
+2025-12-22T22:23:50.147Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T22:23:50.163Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "c0b50b49-b773-4ebc-8ed9-dcd688860c8a",
+  "groupId": "17c9a1d9-b635-4e77-9756-5d729e1300e9",
+  "name": "Member Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+[2025-12-22 23:23:50] [d39ff276-4115-4a6e-8a77-b6a8c456d494] POST /api/groups 201 - 32ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:50 +0000] "POST /api/groups HTTP/1.1" 201 - "-" "-"
+2025-12-22T22:23:50.782Z [[32minfo[39m]: Authentication successful for user: testuser1766442229579md0d1g (c0b50b49-b773-4ebc-8ed9-dcd688860c8a)
+2025-12-22T22:23:50.786Z [[31merror[39m]: DEBUG addMember inputs:
+{
+  "groupId": "17c9a1d9-b635-4e77-9756-5d729e1300e9",
+  "memberId": "8264d5dc-8ca8-41db-b92d-3ed19acd2c9c",
+  "role": "user",
+  "roleType": "string",
+  "body": {
+    "userId": "8264d5dc-8ca8-41db-b92d-3ed19acd2c9c",
+    "role": "user"
+  }
+}
+2025-12-22T22:23:50.822Z [[32minfo[39m]: Group member added
+{
+  "userId": "c0b50b49-b773-4ebc-8ed9-dcd688860c8a",
+  "groupId": "17c9a1d9-b635-4e77-9756-5d729e1300e9",
+  "addedMemberId": "8264d5dc-8ca8-41db-b92d-3ed19acd2c9c",
+  "role": "user"
+}
+[2025-12-22 23:23:50] [9c580a58-f25d-4dca-9270-19d271770f56] POST /api/groups/17c9a1d9-b635-4e77-9756-5d729e1300e9/members 201 - 47ms - POST /api/groups/17c9a1d9-b635-4e77-9756-5d729e1300e9/members
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:50 +0000] "POST /api/groups/17c9a1d9-b635-4e77-9756-5d729e1300e9/members HTTP/1.1" 201 - "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T22:23:51.667Z [[32minfo[39m]: Authentication successful for user: testuser1766442231121d2ggz (c8c8ac74-790f-4b20-8ac1-98ce5356b770)
+2025-12-22T22:23:51.667Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "c8c8ac74-790f-4b20-8ac1-98ce5356b770"
+}
+2025-12-22T22:23:51.675Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "a8520168-d0a8-4821-9cba-835e47a53819"
+}
+2025-12-22T22:23:51.678Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T22:23:51.705Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "c8c8ac74-790f-4b20-8ac1-98ce5356b770",
+  "groupId": "a8520168-d0a8-4821-9cba-835e47a53819",
+  "name": "Member Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+[2025-12-22 23:23:51] [642b0db0-e324-4e32-a645-179de724fa96] POST /api/groups 201 - 45ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:51 +0000] "POST /api/groups HTTP/1.1" 201 - "-" "-"
+2025-12-22T22:23:51.724Z [[32minfo[39m]: Authentication successful for user: testuser1766442231121d2ggz (c8c8ac74-790f-4b20-8ac1-98ce5356b770)
+[2025-12-22 23:23:51] [ebd80e06-3a92-48f6-942c-3cd2e48dcca7] GET /api/groups/a8520168-d0a8-4821-9cba-835e47a53819/members 200 - 17ms - GET /api/groups/a8520168-d0a8-4821-9cba-835e47a53819/members
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:51 +0000] "GET /api/groups/a8520168-d0a8-4821-9cba-835e47a53819/members HTTP/1.1" 200 810 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T22:23:52.619Z [[32minfo[39m]: Authentication successful for user: testuser176644223203029f8tj (07028abd-9e7e-4244-b971-ff44515ee21e)
+2025-12-22T22:23:52.620Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "07028abd-9e7e-4244-b971-ff44515ee21e"
+}
+2025-12-22T22:23:52.626Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "7e9d8255-befe-4f63-81b0-790e6a98c977"
+}
+2025-12-22T22:23:52.629Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T22:23:52.644Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "07028abd-9e7e-4244-b971-ff44515ee21e",
+  "groupId": "7e9d8255-befe-4f63-81b0-790e6a98c977",
+  "name": "Member Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+[2025-12-22 23:23:52] [03fba4cc-09d3-474a-b72b-77c75bcdced3] POST /api/groups 201 - 31ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:52 +0000] "POST /api/groups HTTP/1.1" 201 - "-" "-"
+2025-12-22T22:23:53.213Z [[32minfo[39m]: Authentication successful for user: testuser176644223203029f8tj (07028abd-9e7e-4244-b971-ff44515ee21e)
+2025-12-22T22:23:53.216Z [[31merror[39m]: DEBUG addMember inputs:
+{
+  "groupId": "7e9d8255-befe-4f63-81b0-790e6a98c977",
+  "memberId": "f0f967d6-169d-4231-9cae-f00611878deb",
+  "role": "user",
+  "roleType": "string",
+  "body": {
+    "userId": "f0f967d6-169d-4231-9cae-f00611878deb",
+    "role": "user"
+  }
+}
+2025-12-22T22:23:53.252Z [[32minfo[39m]: Group member added
+{
+  "userId": "07028abd-9e7e-4244-b971-ff44515ee21e",
+  "groupId": "7e9d8255-befe-4f63-81b0-790e6a98c977",
+  "addedMemberId": "f0f967d6-169d-4231-9cae-f00611878deb",
+  "role": "user"
+}
+[2025-12-22 23:23:53] [7ded5a87-f634-421a-b1f3-dc6cfb93d225] POST /api/groups/7e9d8255-befe-4f63-81b0-790e6a98c977/members 201 - 45ms - POST /api/groups/7e9d8255-befe-4f63-81b0-790e6a98c977/members
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:53 +0000] "POST /api/groups/7e9d8255-befe-4f63-81b0-790e6a98c977/members HTTP/1.1" 201 - "-" "-"
+2025-12-22T22:23:53.268Z [[32minfo[39m]: Authentication successful for user: testuser176644223203029f8tj (07028abd-9e7e-4244-b971-ff44515ee21e)
+2025-12-22T22:23:53.284Z [[32minfo[39m]: Group member removed
+{
+  "userId": "07028abd-9e7e-4244-b971-ff44515ee21e",
+  "groupId": "7e9d8255-befe-4f63-81b0-790e6a98c977",
+  "removedMemberId": "f0f967d6-169d-4231-9cae-f00611878deb"
+}
+[2025-12-22 23:23:53] [4fd36832-b513-4840-92af-4095a8bfa45f] DELETE /api/groups/7e9d8255-befe-4f63-81b0-790e6a98c977/members/f0f967d6-169d-4231-9cae-f00611878deb 200 - 23ms - DELETE /api/groups/7e9d8255-befe-4f63-81b0-790e6a98c977/members/f0f967d6-169d-4231-9cae-f00611878deb
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:53 +0000] "DELETE /api/groups/7e9d8255-befe-4f63-81b0-790e6a98c977/members/f0f967d6-169d-4231-9cae-f00611878deb HTTP/1.1" 200 56 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T22:23:54.815Z [[32minfo[39m]: Authentication successful for user: testuser1766442233593ust5df (11450aba-5128-4458-ae82-fa027efef0b1)
+2025-12-22T22:23:54.816Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "11450aba-5128-4458-ae82-fa027efef0b1"
+}
+2025-12-22T22:23:54.822Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "77a30bc8-ed8a-4b9d-8e7a-4b0f9cadf5e1"
+}
+2025-12-22T22:23:54.826Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T22:23:54.841Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "11450aba-5128-4458-ae82-fa027efef0b1",
+  "groupId": "77a30bc8-ed8a-4b9d-8e7a-4b0f9cadf5e1",
+  "name": "Leave Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+[2025-12-22 23:23:54] [f6a23555-a478-4e8b-9c84-1d46aca40539] POST /api/groups 201 - 31ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:54 +0000] "POST /api/groups HTTP/1.1" 201 - "-" "-"
+2025-12-22T22:23:54.855Z [[32minfo[39m]: Authentication successful for user: testuser1766442233593ust5df (11450aba-5128-4458-ae82-fa027efef0b1)
+2025-12-22T22:23:54.858Z [[31merror[39m]: DEBUG addMember inputs:
+{
+  "groupId": "77a30bc8-ed8a-4b9d-8e7a-4b0f9cadf5e1",
+  "memberId": "4e0a730f-60e9-44b2-b694-b0504a684c17",
+  "role": "user",
+  "roleType": "string",
+  "body": {
+    "userId": "4e0a730f-60e9-44b2-b694-b0504a684c17",
+    "role": "user"
+  }
+}
+2025-12-22T22:23:54.895Z [[32minfo[39m]: Group member added
+{
+  "userId": "11450aba-5128-4458-ae82-fa027efef0b1",
+  "groupId": "77a30bc8-ed8a-4b9d-8e7a-4b0f9cadf5e1",
+  "addedMemberId": "4e0a730f-60e9-44b2-b694-b0504a684c17",
+  "role": "user"
+}
+[2025-12-22 23:23:54] [d489c4b3-444e-499a-9c0a-3cfed017c73e] POST /api/groups/77a30bc8-ed8a-4b9d-8e7a-4b0f9cadf5e1/members 201 - 45ms - POST /api/groups/77a30bc8-ed8a-4b9d-8e7a-4b0f9cadf5e1/members
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:54 +0000] "POST /api/groups/77a30bc8-ed8a-4b9d-8e7a-4b0f9cadf5e1/members HTTP/1.1" 201 - "-" "-"
+2025-12-22T22:23:54.909Z [[32minfo[39m]: Authentication successful for user: testuser1766442234226bg8lt (4e0a730f-60e9-44b2-b694-b0504a684c17)
+2025-12-22T22:23:54.927Z [[32minfo[39m]: Group member left
+{
+  "userId": "4e0a730f-60e9-44b2-b694-b0504a684c17",
+  "groupId": "77a30bc8-ed8a-4b9d-8e7a-4b0f9cadf5e1"
+}
+[2025-12-22 23:23:54] [8f7a1d1c-1381-47ae-8150-08aab6443889] POST /api/groups/77a30bc8-ed8a-4b9d-8e7a-4b0f9cadf5e1/leave 200 - 23ms - POST /api/groups/77a30bc8-ed8a-4b9d-8e7a-4b0f9cadf5e1/leave
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:54 +0000] "POST /api/groups/77a30bc8-ed8a-4b9d-8e7a-4b0f9cadf5e1/leave HTTP/1.1" 200 56 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 23:23:55] [c7d49320-94c2-4a26-b11c-f3e4240119c7] POST /api/groups/00000000-0000-0000-0000-000000000000/leave 401 - 3ms - POST /api/groups/00000000-0000-0000-0000-000000000000/leave
+::ffff:127.0.0.1 - - [22/Dec/2025:22:23:55 +0000] "POST /api/groups/00000000-0000-0000-0000-000000000000/leave HTTP/1.1" 401 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+PASS tests/groups.test.js (16.702 s)
+  Groups API
+    POST /api/groups
+      ΓêÜ should create a new group (1113 ms)
+      ΓêÜ should require authentication (19 ms)
+      ΓêÜ should require group name (617 ms)
+      ΓêÜ should validate name length (908 ms)
+    GET /api/groups
+      ΓêÜ should require authentication (14 ms)
+      ΓêÜ should support pagination (606 ms)
+      Γùï skipped should get user groups
+    GET /api/groups/:id
+      ΓêÜ should get group details (933 ms)
+      ΓêÜ should require authentication (20 ms)
+      ΓêÜ should return 404 or 403 for non-existent group 
+(618 ms)
+    PUT /api/groups/:id
+      ΓêÜ should update group as admin (953 ms)
+      ΓêÜ should require authentication (11 ms)
+    DELETE /api/groups/:id
+      ΓêÜ should delete group as creator (930 ms)
+      ΓêÜ should require authentication (18 ms)
+    Group Members
+      ΓêÜ should add member to group (1543 ms)
+      ΓêÜ should get group members (908 ms)
+      ΓêÜ should remove member from group (1562 ms)
+    POST /api/groups/:id/leave
+      ΓêÜ should leave a group (1647 ms)
+      ΓêÜ should require authentication (34 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       1 skipped, 18 passed, 19 total
+Snapshots:   0 total
+Time:        16.836 s
+Ran all test suites matching /tests\\groups.test.js/i.
+Force exiting Jest: Have you considered using 
+`--detectOpenHandles` to detect async operations that kept 
+running after all tests finished?

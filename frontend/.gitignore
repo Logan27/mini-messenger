@@ -31,7 +31,12 @@ coverage
 playwright-report
 test-results
 
-# Environment variables
+# Environment variables (keep examples tracked)
 .env
 .env.local
+.env.development
+.env.production
 .env.*.local
+!.env.example
+!.env.development.example
+!.env.production.example

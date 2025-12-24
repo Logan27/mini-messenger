@@ -218,15 +218,31 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
     };
   }, [recipientId, groupId, queryClient, user]);
 
+  // Check for saved scroll position to optimize initial load
+  // This allows us to start loading from the saved position instead of newest
+  const conversationId = recipientId || groupId;
+  const savedScrollMessageId = conversationId
+    ? localStorage.getItem(`chat_scroll_${conversationId}`)
+    : null;
+
   return useInfiniteQuery<BackendMessage[], Error, InfiniteData<FrontendMessage[]>>({
     queryKey: ['messages', recipientId, groupId],
-    queryFn: ({ pageParam }) =>
-      messageService.getMessages({
+    queryFn: ({ pageParam }) => {
+      // For initial load (pageParam undefined), use saved position if available
+      const isInitialLoad = pageParam === undefined;
+
+      return messageService.getMessages({
         recipientId,
         groupId,
         limit,
-        before: pageParam as string | undefined,
-      }),
+        // If initial load with saved position, use `after` to load from saved position forward
+        // Otherwise use `before` for paginating backwards (loading older messages)
+        ...(isInitialLoad && savedScrollMessageId
+          ? { after: savedScrollMessageId }
+          : { before: pageParam as string | undefined }
+        ),
+      });
+    },
     getNextPageParam: (lastPage) => {
       // If there are more messages, return the oldest message ID
       if (lastPage && lastPage.length === limit) {
@@ -236,6 +252,12 @@ export function useMessages({ recipientId, groupId, limit = 20 }: UseMessagesPar
     },
     initialPageParam: undefined,
     enabled: !!(recipientId || groupId),
+    // CRITICAL: Prevent unnecessary refetches - WebSocket handles real-time updates
+    staleTime: Infinity, // Data never goes stale automatically (WebSocket pushes updates)
+    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+    refetchOnWindowFocus: false, // Don't refetch when user returns to tab
+    refetchOnMount: false, // Don't refetch when component remounts (chat switch)
+    refetchOnReconnect: false, // Don't refetch on network reconnect (WebSocket handles this)
     select: (data) => {
 
       return {

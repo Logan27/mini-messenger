@@ -51,5 +51,6 @@ export function useConversations(params?: { page?: number; limit?: number }) {
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
     staleTime: 0, // Always refetch when invalidated (for real-time unread counts)
+    placeholderData: (previousData) => previousData,
   });
 }

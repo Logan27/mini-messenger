@@ -12,7 +12,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Switch } from '@/components/ui/switch';
 import {
   Menu,
   Settings,
@@ -91,17 +90,28 @@ export const MainMenu = () => {
           <Separator />
 
           <div className="flex flex-col py-2">
-            <button
-              type="button"
-              className="flex items-center justify-between gap-3 px-6 py-3 text-base font-normal cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors bg-transparent border-0 w-full"
+            <div
+              role="button"
+              tabIndex={0}
+              className="flex items-center justify-between gap-3 px-6 py-3 text-base font-normal cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors w-full"
               onClick={toggleTheme}
+              onKeyDown={(e) => e.key === 'Enter' && toggleTheme()}
             >
               <div className="flex items-center gap-3">
                 {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
                 <span>Night Mode</span>
               </div>
-              <Switch checked={isDark} className="pointer-events-none" />
-            </button>
+              {/* Visual-only switch indicator to avoid button-in-button nesting */}
+              <div
+                className={`inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors ${isDark ? 'bg-primary' : 'bg-input'
+                  }`}
+              >
+                <div
+                  className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${isDark ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                />
+              </div>
+            </div>
           </div>
 
           <Separator />

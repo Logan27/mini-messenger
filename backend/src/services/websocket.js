@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import { createAdapter } from 'socket.io-redis-adapter';
+import { createAdapter } from '@socket.io/redis-adapter';
 
 import { config } from '../config/index.js';
 import { getRedisClient, getRedisSubscriber } from '../config/redis.js';
@@ -101,6 +101,7 @@ class WebSocketService {
   }
 
   async initialize(server) {
+    console.log(`≡ƒôí WebSocketService.initialize called on PID ${process.pid}`);
     try {
       // Initialize Redis clients
       this.redisClient = getRedisClient();

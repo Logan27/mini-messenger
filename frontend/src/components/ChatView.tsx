@@ -34,6 +34,7 @@ import { useAddReaction } from "@/hooks/useReactions";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/hooks/use-toast";
 import { useMuteContact, useUnmuteContact, useMuteGroup, useUnmuteGroup, useBlockContact, useRemoveContact, useContacts } from "@/hooks/useContacts";
+import { useChatScroll } from "@/hooks/useChatScroll";
 import { useQueryClient } from "@tanstack/react-query";
 import { socketService } from "@/services/socket.service";
 import { toast as sonnerToast } from "sonner";
@@ -88,7 +89,6 @@ export const ChatView = ({
   // Use useReducer to ensure state updates trigger re-renders
   const [isTyping, setIsTyping] = useReducer((_: boolean, newValue: boolean) => newValue, false);
   const [, forceUpdate] = useReducer(x => x + 1, 0);
-  const [showScrollButton, setShowScrollButton] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [showFileGallery, setShowFileGallery] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
@@ -119,21 +119,30 @@ export const ChatView = ({
   const [mobileSearchResults, setMobileSearchResults] = useState([]);
   const [mobileSearchLoading, setMobileSearchLoading] = useState(false);
   const [recipientPublicKey, setRecipientPublicKey] = useState<string | null>(null); // State for E2E key
-  const [shouldRestoreScroll, setShouldRestoreScroll] = useState(true); // Always try to restore scroll position on initial load
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Use the new clean scroll hook
+  const {
+    messagesContainerRef,
+    messagesEndRef,
+    messageRefs,
+    isReady: isScrollReady,
+    showScrollButton,
+    scrollToBottom,
+  } = useChatScroll({
+    messages,
+    isLoadingMessages,
+    isLoadingMore,
+    hasMoreMessages,
+    onLoadMore,
+    conversationId: recipientId || groupId || undefined,
+  });
+
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const inputRef = useRef<HTMLInputElement>(null);
   const markedAsReadRef = useRef<Set<string>>(new Set()); // Track which messages we've marked as read
   const isTypingRef = useRef<boolean>(false); // Track if we're currently in typing state
   const isMountedRef = useRef<boolean>(false); // Track if component is actually mounted and visible
-  const isInitialLoadRef = useRef<boolean>(true); // Track if this is the initial message load
-  const previousMessageCountRef = useRef<number>(0); // Track previous message count
-  const wasLoadingMoreRef = useRef<boolean>(false); // Track if we were loading more messages
-  const scrollBeforePaginationRef = useRef<{ messageId: string; offset: number } | null>(null); // Track scroll position before pagination
-  const lastPaginationCompleteRef = useRef<number>(0); // Track when pagination last completed
-  const lastScrolledMessageIdRef = useRef<string>(''); // Track which message we last scrolled for (to prevent duplicate scrolls on status updates)
+
 
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -176,9 +185,7 @@ export const ChatView = ({
   }, [refetchContacts]);
   const queryClient = useQueryClient();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  // Note: scrollToBottom is now provided by useChatScroll hook
 
   // Track when component is mounted and visible
   useEffect(() => {
@@ -188,117 +195,6 @@ export const ChatView = ({
       isMountedRef.current = false;
     };
   }, []);
-
-  // Auto-load more messages on scroll to top
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container || !hasMoreMessages || isLoadingMore || !onLoadMore) return;
-
-    let previousScrollHeight = 0;
-    let previousScrollTop = 0;
-    let isLoading = false;
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-
-      // Save current scroll position when getting close to top (within 200px)
-      // This happens BEFORE we trigger loading, ensuring we capture the right position
-      if (scrollTop < 200 && !isLoading && !scrollBeforePaginationRef.current) {
-        const viewportTop = scrollTop;
-        let closestMessage = null;
-        let closestDistance = Infinity;
-
-        messageRefs.current.forEach((element, messageId) => {
-          const rect = element.getBoundingClientRect();
-          const containerRect = container.getBoundingClientRect();
-          const messageTop = rect.top - containerRect.top + scrollTop;
-          const distance = Math.abs(messageTop - viewportTop);
-
-          if (distance < closestDistance) {
-            closestDistance = distance;
-            closestMessage = { messageId, offset: messageTop - viewportTop };
-          }
-        });
-
-        if (closestMessage) {
-          scrollBeforePaginationRef.current = closestMessage;
-        }
-      }
-
-      // Check if scrolled near top (within 100px) to trigger loading
-      const isNearTop = scrollTop < 100;
-
-      if (isNearTop && !isLoading) {
-        isLoading = true;
-        previousScrollHeight = scrollHeight;
-        previousScrollTop = scrollTop;
-
-        // Position should already be saved from above
-
-        onLoadMore();
-      }
-    };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [hasMoreMessages, isLoadingMore, onLoadMore]);
-
-  // Restore scroll position after loading more messages (but not on initial load)
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-
-    // Only run when we've just finished loading more messages
-    // (transition from isLoadingMore=true to isLoadingMore=false)
-    const justFinishedLoading = wasLoadingMoreRef.current && !isLoadingMore;
-
-    // Update the ref for next time
-    wasLoadingMoreRef.current = isLoadingMore;
-
-    // Don't run if:
-    // - No container
-    // - Still loading
-    // - Initial load
-    // - Didn't just finish loading more messages
-    if (!container || isLoadingMore || isInitialLoadRef.current || !justFinishedLoading) return;
-
-    // Maintain scroll position: restore to the exact position before pagination started
-    const timer = setTimeout(() => {
-      const savedPosition = scrollBeforePaginationRef.current;
-
-      if (savedPosition) {
-        const { messageId, offset } = savedPosition;
-        const savedElement = messageRefs.current.get(messageId);
-
-        if (savedElement) {
-          // Get the message's current position
-          const rect = savedElement.getBoundingClientRect();
-          const containerRect = container.getBoundingClientRect();
-          const currentMessageTop = rect.top - containerRect.top;
-
-          // Calculate how much to scroll to restore the exact position
-          const scrollAdjustment = currentMessageTop - offset;
-          container.scrollTop += scrollAdjustment;
-
-
-          // Clear the saved position and mark pagination as just completed
-          scrollBeforePaginationRef.current = null;
-          lastPaginationCompleteRef.current = Date.now();
-          return;
-        }
-      }
-
-      // Fallback: keep first message at top (if no saved position)
-      const firstMessage = container.querySelector('[data-message-id]');
-      if (firstMessage) {
-        firstMessage.scrollIntoView({ block: 'start', behavior: 'auto' });
-      }
-
-      // Mark pagination as just completed
-      lastPaginationCompleteRef.current = Date.now();
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [isLoadingMore, recipientId, groupId]);
 
   // Focus input when chat opens or recipient changes
   useEffect(() => {
@@ -332,20 +228,6 @@ export const ChatView = ({
       }
     }
   }, [recipientId]);
-
-  // Reset initial load flag when conversation changes
-  useEffect(() => {
-    // Only reset if conversation actually changed (not just component re-render)
-    const conversationId = recipientId || groupId;
-    const previousConversationId = localStorage.getItem('lastConversationId');
-
-    if (conversationId !== previousConversationId) {
-      isInitialLoadRef.current = true;
-      previousMessageCountRef.current = 0;
-      setShouldRestoreScroll(true); // We want to restore scroll position for new conversations
-      localStorage.setItem('lastConversationId', conversationId || '');
-    }
-  }, [recipientId, groupId]);
 
   // Save scroll position when user scrolls (message-based) - REDUNDANT/REMOVED
   // The other useEffect below (around line 850) handles scroll position saving (center-based)
@@ -470,191 +352,7 @@ export const ChatView = ({
     fetchKey();
   }, [recipientId, isGroup]);
 
-  // Smart scroll: only scroll to bottom for new messages, not on initial load or when loading history
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container || messages.length === 0) return;
-
-    const currentMessageCount = messages.length;
-    const previousMessageCount = previousMessageCountRef.current;
-
-    // First load: restore scroll position or scroll to bottom if no saved position
-    if (isInitialLoadRef.current && currentMessageCount > 0 && !isLoadingMessages && !isLoadingMore) {
-      // Use setTimeout to ensure DOM is fully rendered (more reliable than requestAnimationFrame)
-      const timer = setTimeout(() => {
-        const conversationId = recipientId || groupId || 'global';
-        const savedMessageId = localStorage.getItem(`chat_scroll_${conversationId}`);
-
-        if (shouldRestoreScroll && savedMessageId) {
-          // Try to restore saved message position
-          const savedElement = messageRefs.current.get(savedMessageId);
-          if (savedElement && messagesContainerRef.current) {
-            savedElement.scrollIntoView({ behavior: 'auto', block: 'center' });
-            isInitialLoadRef.current = false;
-            setShouldRestoreScroll(false); // Only restore once per conversation change
-          } else if (hasMoreMessages && onLoadMore && !isLoadingMore) {
-            // Saved message not in current page, load more pages to find it
-            onLoadMore();
-            // Don't set isInitialLoadRef to false yet - we'll retry when more messages load
-          } else if (!hasMoreMessages) {
-            // No more messages to load, saved message doesn't exist (might be deleted)
-            scrollToBottom();
-            isInitialLoadRef.current = false;
-            setShouldRestoreScroll(false);
-          }
-          // else: isLoadingMore is true, wait for it to complete
-        } else {
-          // Scroll to bottom for new chats or when no saved position
-          scrollToBottom();
-          isInitialLoadRef.current = false;
-          setShouldRestoreScroll(false); // Only restore once per conversation change
-        }
-      }, 100); // 100ms delay to ensure DOM is fully painted
-
-      previousMessageCountRef.current = currentMessageCount;
-      return () => clearTimeout(timer);
-    }
-
-    // New message arrived (count increased)
-    if (currentMessageCount > previousMessageCount && !isInitialLoadRef.current) {
-
-      // Skip if we're currently loading more messages (pagination)
-      // The separate pagination effect will handle scroll restoration
-      if (isLoadingMore || wasLoadingMoreRef.current) {
-        previousMessageCountRef.current = currentMessageCount;
-        return;
-      }
-
-      // Skip if pagination just completed (within 500ms)
-      // This handles the race condition where messages increase right after pagination
-      const timeSincePagination = Date.now() - lastPaginationCompleteRef.current;
-      if (timeSincePagination < 500) {
-        previousMessageCountRef.current = currentMessageCount;
-        return;
-      }
-
-      // Get the latest message to check if it's from the current user
-      // Scan from the end to find the actual newest message (in case of timing issues)
-      let latestMessage = messages[messages.length - 1];
-      let isOwnMessage = latestMessage?.isOwn;
-
-      // Also check the last few messages in case the newest isn't at the very end yet
-      for (let i = messages.length - 1; i >= Math.max(0, messages.length - 5); i--) {
-        if (messages[i] && new Date(messages[i].timestamp) > new Date(latestMessage.timestamp)) {
-          latestMessage = messages[i];
-          isOwnMessage = messages[i].isOwn;
-        }
-      }
-
-
-
-      // Skip auto-scroll for optimistic (temp) messages - wait for server confirmation
-      // This prevents scrolling before the message is actually sent
-      const isTempMessage = latestMessage?.id?.startsWith('temp-');
-
-      if (isTempMessage) {
-        previousMessageCountRef.current = currentMessageCount;
-        return;
-      }
-
-      // Check scroll position BEFORE DOM updates
-      // We need to check if user was at bottom BEFORE the new message was added
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-
-      // Threshold: if within 150px of bottom, consider it "at bottom"
-      // This ensures users who are reading recent messages get auto-scrolled
-      // but users reading history don't get yanked to the bottom
-      const isNearBottom = distanceFromBottom < 150;
-
-      // Check if this is a RECENT own message (sent within last 5 seconds)
-      const messageAge = Date.now() - new Date(latestMessage.timestamp).getTime();
-      const isRecentOwnMessage = isOwnMessage && messageAge < 5000;
-
-      // Auto-scroll rules:
-      // - ALWAYS scroll for RECENT own messages (sent within 5 seconds)
-      // - Scroll for incoming messages ONLY if user was already near the bottom
-      const shouldScroll = isRecentOwnMessage || isNearBottom;
-
-      if (shouldScroll) {
-        const container = messagesContainerRef.current;
-        if (!container) return;
-
-        const hasFileMessage = latestMessage?.messageType === 'file';
-        const oldScrollHeight = container.scrollHeight;
-
-
-        // Use MutationObserver to detect when DOM actually changes
-        let hasScrolled = false;
-        let mutationTimer: NodeJS.Timeout | null = null;
-
-        const observer = new MutationObserver((mutations) => {
-          // Skip if we already scrolled
-          if (hasScrolled) return;
-
-          const newScrollHeight = container.scrollHeight;
-          const heightDiff = newScrollHeight - oldScrollHeight;
-
-
-          // Clear previous timer - wait for mutations to stabilize
-          if (mutationTimer) {
-            clearTimeout(mutationTimer);
-          }
-
-          // Debounce: wait for mutations to stop for 50ms before scrolling
-          mutationTimer = setTimeout(() => {
-            // Double-check with RAF to ensure layout is 100% complete
-            requestAnimationFrame(() => {
-              const finalHeight = container.scrollHeight;
-
-              container.scrollTo({
-                top: finalHeight,
-                behavior: "smooth"
-              });
-
-              hasScrolled = true;
-
-              // Disconnect observer after successful scroll
-              observer.disconnect();
-            });
-          }, 50); // Wait 50ms after last mutation
-        });
-
-        // Observe the messages container for DOM changes
-        observer.observe(container, {
-          childList: true,      // Watch for added/removed children
-          subtree: true,        // Watch all descendants
-          characterData: true,  // Watch for text changes
-          attributes: true,     // Watch for attribute changes (e.g., class changes)
-        });
-
-        // Fallback timeout in case observer doesn't fire (e.g., message already rendered)
-        // Use longer timeout for files to allow images to load
-        const fallbackTimeout = hasFileMessage ? 1000 : 500;
-        setTimeout(() => {
-          const finalScrollHeight = container.scrollHeight;
-          const finalHeightDiff = finalScrollHeight - oldScrollHeight;
-
-
-          // If height changed but observer didn't fire, scroll now
-          if (finalHeightDiff > 0 || finalScrollHeight !== oldScrollHeight) {
-            container.scrollTo({
-              top: finalScrollHeight,
-              behavior: "smooth"
-            });
-          }
-
-          // Clean up observer and timer
-          if (mutationTimer) {
-            clearTimeout(mutationTimer);
-          }
-          observer.disconnect();
-        }, fallbackTimeout);
-      }
-    }
-
-    previousMessageCountRef.current = currentMessageCount;
-  }, [messages, recipientId, groupId, shouldRestoreScroll, isLoadingMore, isLoadingMessages, hasMoreMessages, onLoadMore]);
+  // Note: Smart scroll and scroll position saving are now handled by useChatScroll hook
 
   // Periodic sync for contact status (including mute state)
   useEffect(() => {
@@ -667,70 +365,6 @@ export const ChatView = ({
 
     return () => clearInterval(syncInterval);
   }, [contacts, recipientId, groupId, refetchContacts]);
-
-  // Auto-scroll when typing indicator appears/disappears
-  useEffect(() => {
-    // Disabled to prevent scrolling away from reading position
-    /*
-    if (isTyping) {
-      scrollToBottom();
-    }
-    */
-  }, [isTyping]);
-
-  useEffect(() => {
-    let scrollTimeout: NodeJS.Timeout;
-
-    const handleScroll = () => {
-      if (messagesContainerRef.current) {
-        const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-        setShowScrollButton(!isNearBottom);
-
-        // Debounce the scroll position saving
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => {
-          const savedScrollKey = `chat_scroll_${recipientId || groupId}`;
-
-          // If user is at the bottom, clear saved position so they stay at bottom on reload
-          if (isNearBottom) {
-            localStorage.removeItem(savedScrollKey);
-            return;
-          }
-
-          // Save the message ID that's currently in the center of the viewport
-          const viewportCenter = scrollTop + clientHeight / 2;
-
-          // Find the message closest to the viewport center
-          let closestMessage = null;
-          let closestDistance = Infinity;
-
-          messageRefs.current.forEach((element, messageId) => {
-            const rect = element.getBoundingClientRect();
-            const containerRect = messagesContainerRef.current!.getBoundingClientRect();
-            const messageCenter = rect.top - containerRect.top + scrollTop + rect.height / 2;
-            const distance = Math.abs(messageCenter - viewportCenter);
-
-            if (distance < closestDistance) {
-              closestDistance = distance;
-              closestMessage = messageId;
-            }
-          });
-
-          if (closestMessage) {
-            localStorage.setItem(savedScrollKey, closestMessage);
-          }
-        }, 200); // Wait 200ms after scrolling stops
-      }
-    };
-
-    const container = messagesContainerRef.current;
-    container?.addEventListener("scroll", handleScroll);
-    return () => {
-      container?.removeEventListener("scroll", handleScroll);
-      clearTimeout(scrollTimeout);
-    };
-  }, [recipientId, groupId]); // Removed 'messages' dependency to prevent listener thrashing
 
   // Listen for typing indicators
   useEffect(() => {
@@ -867,7 +501,9 @@ export const ChatView = ({
           ? { groupId, content: contentToSend, replyToId: replyingTo?.id }
           : { recipientId, content: contentToSend, replyToId: replyingTo?.id, ...encryptionData };
 
-
+        // Clear any saved scroll position ensures we scroll to bottom on next load/update
+        const storageKey = `chat_scroll_${groupId || recipientId}`;
+        localStorage.removeItem(storageKey);
 
         await sendMessage.mutateAsync(messageData);
         setReplyingTo(null);
@@ -1532,13 +1168,16 @@ export const ChatView = ({
         </div>
       </div >
 
-      {/* Messages */}
-      < div
+      <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-4 bg-muted/30 relative"
+        className={cn(
+          "flex-1 overflow-y-auto p-4 bg-muted/30 relative",
+          // Use visibility:hidden instead of opacity for instant hiding (no flash)
+          !isScrollReady && !isLoadingMessages && messages.length > 0 ? "invisible" : "visible"
+        )}
       >
         {
-          isLoadingMessages ? (
+          isLoadingMessages && messages.length === 0 ? (
             <MessageSkeleton count={6} />
           ) : messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
@@ -1572,29 +1211,6 @@ export const ChatView = ({
                     ref={(el) => {
                       if (el) {
                         messageRefs.current.set(message.id, el);
-
-                        // Auto-scroll when last message element mounts/updates
-                        if (isLastMessage && message.isOwn) {
-                          const messageAge = Date.now() - message.timestamp.getTime();
-                          const isRecentOwnMessage = messageAge < 5000; // 5 seconds
-
-                          // Only scroll if this is a different message than last time
-                          // This prevents scrolling on status updates (read receipts)
-                          if (isRecentOwnMessage && lastScrolledMessageIdRef.current !== message.id) {
-                            lastScrolledMessageIdRef.current = message.id;
-
-                            // Use RAF to ensure layout is complete
-                            requestAnimationFrame(() => {
-                              const container = messagesContainerRef.current;
-                              if (container) {
-                                container.scrollTo({
-                                  top: container.scrollHeight,
-                                  behavior: "smooth"
-                                });
-                              }
-                            });
-                          }
-                        }
                       } else {
                         messageRefs.current.delete(message.id);
                       }
@@ -1651,7 +1267,7 @@ export const ChatView = ({
         {
           showScrollButton && (
             <Button
-              onClick={scrollToBottom}
+              onClick={() => scrollToBottom()}
               size="icon"
               className="fixed bottom-24 right-8 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
             >

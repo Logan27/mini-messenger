@@ -1,0 +1,1954 @@
+﻿
+> messenger-backend@1.0.0 test
+> cross-env NODE_ENV=test DB_HOST=127.0.0.1 NODE_OPTIONS=--experimental-vm-modules jest tests/files.test.js tests/groups.test.js
+
+node.exe : (node:41704) ExperimentalWarning: VM Modules is 
+an experimental feature and might change at any time
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:41704)  
+   Ex...nge at any time:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(Use `node --trace-warnings ...` to show where the warning 
+was created)
+(node:38888) ExperimentalWarning: VM Modules is an 
+experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning 
+was created)
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:54 +0000] "POST /api/files/upload HTTP/1.1" 201 779 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:54 +0000] "POST /api/files/upload HTTP/1.1" 401 87 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:54 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:55 +0000] "POST /api/files/upload HTTP/1.1" 400 89 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:55 +0000] "POST /api/groups HTTP/1.1" 401 87 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:55 +0000] "GET /api/files/b7877d8e-7e4e-4e63-bff5-e61cb8e232e4 HTTP/1.1" 403 25 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:55 +0000] "POST /api/groups HTTP/1.1" 400 160 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:55 +0000] "GET /api/files/398a2c98-5a2c-401f-b725-383b9569c322 HTTP/1.1" 401 87 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:55 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:56 +0000] "GET /api/groups HTTP/1.1" 401 87 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:56 +0000] "GET /api/files/00000000-0000-0000-0000-000000000000 HTTP/1.1" 404 26 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:56 +0000] "DELETE /api/files/44e23f3e-f071-4154-93e9-59eb8221bce5 HTTP/1.1" 404 87 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:56 +0000] "GET /api/groups?page=1&limit=10 HTTP/1.1" 200 156 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:56 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:57 +0000] "GET /api/groups/00000000-0000-0000-0000-000000000000 HTTP/1.1" 401 87 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:57 +0000] "DELETE /api/files/64547ea4-8d4b-4a9c-aa82-728cd5eca339 HTTP/1.1" 404 87 "-" "-"
+FAIL tests/files.test.js (7.553 s)
+  ΓùÅ Console
+
+    console.log
+      ≡ƒöì Database config: {
+        host: '127.0.0.1',
+        port: 5432,
+        database: 'messenger',
+        username: 'messenger',
+        dialect: 'postgres'
+      }
+
+      at src/config/database.js:43:11
+
+    console.log
+      Γ£à Sequelize instance created for test environment
+
+      at src/config/database.js:51:11
+
+    console.log
+      2025-12-22T14:34:52.238Z [[33mwarn[39m]: Firebase 
+Admin SDK not initialized. Push notifications will not 
+work. Please configure Firebase credentials in environment 
+variables or service account file.
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.047Z [[32minfo[39m]: 
+Notification settings cache cleanup initialized
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.049Z [[32minfo[39m]: Auto 
+cleanup for expired notifications started
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.065Z [[32minfo[39m]: Data 
+retention job scheduled.
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒôÜ Swagger UI will be available at /api-docs
+
+      at src/app.js:186:11
+
+    console.log
+      Γ£à Test database connected
+
+      at initializeTestDatabase (tests/setup.js:39:13)
+
+    console.log
+      2025-12-22T14:34:54.627Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser1766414094170l8h8vvk 
+(4f60f6c3-c3ad-4f08-a09a-81f860e59f1f)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.631Z [[32minfo[39m]: Upload 
+directories created successfully
+      {
+        "uploadDir": "./uploads",
+        "tempDir": "./uploads/temp"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.646Z [[32minfo[39m]: ClamAV 
+scanner initialized via daemon connection
+      {
+        "host": "localhost",
+        "port": 3310
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.647Z [[32minfo[39m]: File 
+upload service initialized successfully
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.655Z [[32minfo[39m]: 
+Processing 1 files for user 
+4f60f6c3-c3ad-4f08-a09a-81f860e59f1f
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.657Z [[32minfo[39m]: 
+Processing file: test-file.txt, size: 17, mimetype: 
+text/plain
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.661Z [[32minfo[39m]: File 
+processed successfully
+      {
+        "originalName": "test-file.txt",
+        "secureFilename": 
+"1766414094659_x0lza6d3lgg_test-file.txt",
+        "size": 17,
+        "mimeType": "text/plain",
+        "userId": "4f60f6c3-c3ad-4f08-a09a-81f860e59f1f",
+        "messageId": null
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.662Z [[32minfo[39m]: File 
+processed successfully: test-file.txt
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.669Z [[32minfo[39m]: Virus 
+scan queued for file 79184730-b4bb-4b08-88b0-c9d7183c2e31
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.670Z [[32minfo[39m]: Thumbnail 
+generation queued
+      {
+        "fileId": "79184730-b4bb-4b08-88b0-c9d7183c2e31",
+        "fileType": "document",
+        "mimeType": "text/plain"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.671Z [[32minfo[39m]: File 
+upload completed
+      {
+        "userId": "4f60f6c3-c3ad-4f08-a09a-81f860e59f1f",
+        "action": "file_upload",
+        "fileId": "79184730-b4bb-4b08-88b0-c9d7183c2e31",
+        "filename": 
+"1766414094659_x0lza6d3lgg_test-file.txt",
+        "originalName": "test-file.txt",
+        "fileSize": 17,
+        "mimeType": "text/plain"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.671Z [[32minfo[39m]: Files 
+uploaded successfully
+      {
+        "userId": "4f60f6c3-c3ad-4f08-a09a-81f860e59f1f",
+        "fileCount": 1,
+        "totalSize": 17
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:54] 
+[ff5eb317-0462-4938-b079-85eb3a4655b0] POST 
+/api/files/upload 201 - 62ms - POST /api/files/upload
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.687Z [[33mwarn[39m]: Fallback 
+icon not found for document, using default
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:54.721Z [[32minfo[39m]: Thumbnail 
+generated successfully
+      {
+        "fileId": "79184730-b4bb-4b08-88b0-c9d7183c2e31",
+        "fileType": "document",
+        "thumbnailPath": "uploads\\icons\\generic.png"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:54] 
+[418505a3-6308-4a53-b1e8-55be414c0c8d] POST 
+/api/files/upload 401 - 1ms - POST /api/files/upload
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:55.074Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser176641409473028avl7 
+(acbfbe5e-9086-4859-9d1c-82d15331b557)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:55] 
+[f6415709-32e1-407d-bd17-8bc05bb16b25] POST 
+/api/files/upload 400 - 5ms - POST /api/files/upload
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:55.470Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser1766414095102y08g3 
+(c34cd36f-11b4-4ecc-b127-3b1ebfd94f7e)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:55.510Z [[32minfo[39m]: Audit 
+service initialized successfully
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:55.554Z [[31merror[39m]: Failed 
+to log security event: notNull Violation: AuditLog.action 
+cannot be null
+      {
+        "name": "SequelizeValidationError",
+        "errors": [
+          {
+            "message": "AuditLog.action cannot be null",
+            "type": "notNull Violation",
+            "path": "action",
+            "value": null,
+            "origin": "CORE",
+            "instance": {
+              "id": "97948bc6-5c0c-468e-8d03-62b33ab56df1",
+              "oldValues": null,
+              "newValues": null,
+              "createdAt": "2025-12-22T14:34:55.511Z",
+              "userId": 
+"c34cd36f-11b4-4ecc-b127-3b1ebfd94f7e"
+            },
+            "validatorKey": "is_null",
+            "validatorName": null,
+            "validatorArgs": []
+          }
+        ],
+        "stack": "SequelizeValidationError: notNull 
+Violation: AuditLog.action cannot be null\n    at 
+InstanceValidator._validate (C:\\messenger\\backend\\node_m
+odules\\sequelize\\src\\instance-validator.js:78:13)\n    
+at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)\n    at 
+InstanceValidator._validateAndRunHooks (C:\\messenger\\back
+end\\node_modules\\sequelize\\src\\instance-validator.js:11
+1:7)\n    at InstanceValidator.validate (C:\\messenger\\bac
+kend\\node_modules\\sequelize\\src\\instance-validator.js:9
+3:12)\n    at model.save (C:\\messenger\\backend\\node_modu
+les\\sequelize\\src\\model.js:4077:7)\n    at 
+Function.create (C:\\messenger\\backend\\node_modules\\sequ
+elize\\src\\model.js:2305:12)\n    at 
+AuditService.logSecurityEvent (C:\\messenger\\backend\\src\
+\services\\auditService.js:205:24)\n    at 
+C:\\messenger\\backend\\src\\routes\\files.js:519:5"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:55.555Z [[31merror[39m]: Path 
+traversal attempt detected
+      {
+        "userId": "c34cd36f-11b4-4ecc-b127-3b1ebfd94f7e",
+        "fileId": "b7877d8e-7e4e-4e63-bff5-e61cb8e232e4",
+        "requestedPath": 
+"/uploads/test-file-1766414095458.txt",
+        "resolvedPath": 
+"C:\\uploads\\test-file-1766414095458.txt",
+        "allowedBasePath": 
+"C:\\messenger\\backend\\uploads",
+        "severity": "CRITICAL"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:55.556Z [[31merror[39m]: Failed 
+to log security event: notNull Violation: AuditLog.action 
+cannot be null
+      {
+        "name": "SequelizeValidationError",
+        "errors": [
+          {
+            "message": "AuditLog.action cannot be null",
+            "type": "notNull Violation",
+            "path": "action",
+            "value": null,
+            "origin": "CORE",
+            "instance": {
+              "id": "0f18c714-6d97-4c22-9306-f91130700602",
+              "oldValues": null,
+              "newValues": null,
+              "createdAt": "2025-12-22T14:34:55.555Z",
+              "userId": 
+"c34cd36f-11b4-4ecc-b127-3b1ebfd94f7e"
+            },
+            "validatorKey": "is_null",
+            "validatorName": null,
+            "validatorArgs": []
+          }
+        ],
+        "stack": "SequelizeValidationError: notNull 
+Violation: AuditLog.action cannot be null\n    at 
+InstanceValidator._validate (C:\\messenger\\backend\\node_m
+odules\\sequelize\\src\\instance-validator.js:78:13)\n    
+at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)\n    at 
+InstanceValidator._validateAndRunHooks (C:\\messenger\\back
+end\\node_modules\\sequelize\\src\\instance-validator.js:11
+1:7)\n    at InstanceValidator.validate (C:\\messenger\\bac
+kend\\node_modules\\sequelize\\src\\instance-validator.js:9
+3:12)\n    at model.save (C:\\messenger\\backend\\node_modu
+les\\sequelize\\src\\model.js:4077:7)\n    at 
+Function.create (C:\\messenger\\backend\\node_modules\\sequ
+elize\\src\\model.js:2305:12)\n    at 
+AuditService.logSecurityEvent (C:\\messenger\\backend\\src\
+\services\\auditService.js:205:24)\n    at 
+C:\\messenger\\backend\\src\\routes\\files.js:551:7"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:55] 
+[19197f92-2129-4275-a4c5-ef0bcae3f4b0] GET 
+/api/files/b7877d8e-7e4e-4e63-bff5-e61cb8e232e4 403 - 91ms 
+- GET /api/files/b7877d8e-7e4e-4e63-bff5-e61cb8e232e4
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      [2025-12-22 15:34:55] 
+[13fea445-abfc-4c1e-a803-4089bc75da44] GET 
+/api/files/398a2c98-5a2c-401f-b725-383b9569c322 401 - 1ms 
+- GET /api/files/398a2c98-5a2c-401f-b725-383b9569c322
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:56.249Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser1766414095950lckhsd 
+(2a3aeb29-a6df-475b-9f3e-0e5e74065675)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:56] 
+[3e43fa14-6be3-432e-997d-24028f4f08c2] GET 
+/api/files/00000000-0000-0000-0000-000000000000 404 - 10ms 
+- GET /api/files/00000000-0000-0000-0000-000000000000
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:56.585Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser17664140962669d4dgp 
+(7b800ae1-4fb0-4907-9a57-70b7ea71d2f2)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:56] 
+[3a538d92-ba81-434f-878c-e083ef822c7d] DELETE 
+/api/files/44e23f3e-f071-4154-93e9-59eb8221bce5 404 - 6ms 
+- DELETE /api/files/44e23f3e-f071-4154-93e9-59eb8221bce5
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:57.272Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser1766414096970c7r019 
+(4b21c06e-c674-4473-bdab-62d04ac58931)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:57] 
+[2ed26ca8-88bc-4edd-896f-664a585f6882] DELETE 
+/api/files/64547ea4-8d4b-4a9c-aa82-728cd5eca339 404 - 5ms 
+- DELETE /api/files/64547ea4-8d4b-4a9c-aa82-728cd5eca339
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:57.630Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser176641409728958he6 
+(181eeb84-6bd7-46c0-9fdf-7e5d2800a730)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:57] 
+[dc52b8fd-e05e-4d20-8932-2ca613dd0691] GET 
+/api/files/2b00cec0-695a-43c8-91e1-925207525449/download 
+404 - 6ms - GET 
+/api/files/2b00cec0-695a-43c8-91e1-925207525449/download
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      Download Error: {
+        "success": false,
+        "error": "Not found - 
+/api/files/2b00cec0-695a-43c8-91e1-925207525449/download"
+      }
+
+      at Object.<anonymous> (tests/files.test.js:162:25)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+  ΓùÅ Files API ΓÇ║ POST /api/files/upload/messages ΓÇ║ 
+should require authentication
+
+    read ECONNRESET
+
+
+
+  ΓùÅ Files API ΓÇ║ POST /api/files/upload/messages ΓÇ║ 
+should validate file presence
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:57 +0000] "GET /api/groups/00000000-0000-0000-0000-000000000000 HTTP/1.1" 403 103 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:57 +0000] "GET /api/files/2b00cec0-695a-43c8-91e1-925207525449/download HTTP/1.1" 404 96 "-" "-"
+    Received: undefined
+
+    [0m [90m 73 |[39m                 
+[33m.[39mexpect([35m400[39m)[33m;[39m
+     [90m 74 |[39m
+    [31m[1m>[22m[39m[90m 75 |[39m             expect(
+response[33m.[39mbody[33m.[39msuccess)[33m.[39mtoBe(
+[36mfalse[39m)[33m;[39m
+     [90m    |[39m                                       
+    [31m[1m^[22m[39m
+     [90m 76 |[39m         })[33m;[39m
+     [90m 77 |[39m     })[33m;[39m
+     [90m 78 |[39m[0m
+
+      at Object.<anonymous> (tests/files.test.js:75:43)
+
+  ΓùÅ Files API ΓÇ║ GET /api/files/:id ΓÇ║ should get file 
+details
+
+    expected 200 "OK", got 403 "Forbidden"
+
+    [0m [90m 85 |[39m                 
+[33m.[39m[36mget[39m([32m`/api/files/${file.id}`[39m)
+     [90m 86 |[39m                 [33m.[39m[36mset[3
+9m([32m'Authorization'[39m[33m,[39m 
+userAuth[33m.[39mauthHeader)
+    [31m[1m>[22m[39m[90m 87 |[39m                 
+[33m.[39mexpect([35m200[39m)[33m;[39m
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 88 |[39m
+     [90m 89 |[39m             expect(response[33m.[39m
+body[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m
+;[39m
+     [90m 90 |[39m             expect(response[33m.[39m
+body[33m.[39mdata[33m.[39mid)[33m.[39mtoBe(file[33m.
+[39mid)[33m;[39m[0m
+
+      at Object.<anonymous> (tests/files.test.js:87:18)
+      ----
+      at Test._assertStatus 
+(node_modules/supertest/lib/test.js:252:14)
+      at node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction 
+(node_modules/supertest/lib/test.js:285:13)
+      at Test.assert 
+(node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert 
+(node_modules/supertest/lib/test.js:120:14)
+
+  ΓùÅ Files API ΓÇ║ DELETE /api/files/:id ΓÇ║ should 
+delete file
+
+    expected 200 "OK", got 404 "Not Found"
+
+    [0m [90m 118 |[39m                 [33m.[39m[36md
+elete[39m([32m`/api/files/${file.id}`[39m)
+     [90m 119 |[39m                 [33m.[39m[36mset[
+39m([32m'Authorization'[39m[33m,[39m 
+userAuth[33m.[39mauthHeader)
+    [31m[1m>[22m[39m[90m 120 |[39m                 
+[33m.[39mexpect([35m200[39m)[33m;[39m
+     [90m     |[39m                  [31m[1m^[22m[39m
+     [90m 121 |[39m
+     [90m 122 |[39m             expect(response[33m.[39
+mbody[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33
+m;[39m
+     [90m 123 |[39m         })[33m;[39m[0m
+
+      at Object.<anonymous> (tests/files.test.js:120:18)
+      ----
+      at Test._assertStatus 
+(node_modules/supertest/lib/test.js:252:14)
+      at node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction 
+(node_modules/supertest/lib/test.js:285:13)
+      at Test.assert 
+(node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert 
+(node_modules/supertest/lib/test.js:120:14)
+
+  ΓùÅ Files API ΓÇ║ DELETE /api/files/:id ΓÇ║ should 
+prevent deleting other users files
+
+    expected 403 "Forbidden", got 404 "Not Found"
+
+    [0m [90m 131 |[39m                 [33m.[39m[36md
+elete[39m([32m`/api/files/${file.id}`[39m)
+     [90m 132 |[39m                 [33m.[39m[36mset[
+39m([32m'Authorization'[39m[33m,[39m 
+attacker[33m.[39mauthHeader)
+    [31m[1m>[22m[39m[90m 133 |[39m                 
+[33m.[39mexpect([35m403[39m)[33m;[39m
+     [90m     |[39m                  [31m[1m^[22m[39m
+     [90m 134 |[39m         })[33m;[39m
+     [90m 135 |[39m     })[33m;[39m
+     [90m 136 |[39m[0m
+
+      at Object.<anonymous> (tests/files.test.js:133:18)
+      ----
+      at Test._assertStatus 
+(node_modules/supertest/lib/test.js:252:14)
+      at node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction 
+(node_modules/supertest/lib/test.js:285:13)
+      at Test.assert 
+(node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert 
+(node_modules/supertest/lib/test.js:120:14)
+
+  ΓùÅ Files API ΓÇ║ GET /api/files/:id/download ΓÇ║ should 
+download file
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 404
+
+    [0m [90m 162 |[39m                 
+console[33m.[39mlog([32m'Download 
+Error:'[39m[33m,[39m [33mJSON[39m[33m.[39mstringify(
+response[33m.[39mbody[33m,[39m 
+[36mnull[39m[33m,[39m [35m2[39m))[33m;[39m
+     [90m 163 |[39m             }
+    [31m[1m>[22m[39m[90m 164 |[39m             expect
+(response[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[
+33m;[39m
+     [90m     |[39m                                     
+[31m[1m^[22m[39m
+     [90m 165 |[39m
+     [90m 166 |[39m             expect(response[33m.[39
+mheaders[[32m'content-type'[39m])[33m.[39mtoBeDefined()
+[33m;[39m
+     [90m 167 |[39m[0m
+
+      at Object.<anonymous> (tests/files.test.js:164:37)
+
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:58 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:58 +0000] "PUT /api/groups/00000000-0000-0000-0000-000000000000 HTTP/1.1" 401 87 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:58 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:58 +0000] "DELETE /api/groups/00000000-0000-0000-0000-000000000000 HTTP/1.1" 401 87 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:59 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:34:59 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:35:00 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+::ffff:127.0.0.1 - - [22/Dec/2025:14:35:01 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+FAIL tests/groups.test.js (11.352 s)
+  ΓùÅ Console
+
+    console.log
+      ≡ƒöì Database config: {
+        host: '127.0.0.1',
+        port: 5432,
+        database: 'messenger',
+        username: 'messenger',
+        dialect: 'postgres'
+      }
+
+      at src/config/database.js:43:11
+
+    console.log
+      Γ£à Sequelize instance created for test environment
+
+      at src/config/database.js:51:11
+
+    console.log
+      2025-12-22T14:34:52.221Z [[33mwarn[39m]: Firebase 
+Admin SDK not initialized. Push notifications will not 
+work. Please configure Firebase credentials in environment 
+variables or service account file.
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.165Z [[32minfo[39m]: Queue 
+service initialized with retry logic and scheduled jobs
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.174Z [[32minfo[39m]: 
+Notification settings cache cleanup initialized
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.176Z [[32minfo[39m]: Auto 
+cleanup for expired notifications started
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.190Z [[32minfo[39m]: Data 
+retention job scheduled.
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒôÜ Swagger UI will be available at /api-docs
+
+      at src/app.js:186:11
+
+    console.log
+      Γ£à Test database connected
+
+      at initializeTestDatabase (tests/setup.js:39:13)
+
+    console.log
+      2025-12-22T14:34:54.776Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser1766414094326gvnoom 
+(3554c0ed-f2c8-499c-a0af-ef0a083f2b05)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.778Z [[32minfo[39m]: Create 
+Group Debug - Phase 1:
+      {
+        "userId": "3554c0ed-f2c8-499c-a0af-ef0a083f2b05"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.788Z [[32minfo[39m]: Create 
+Group Debug - Phase 4 (Group Created):
+      {
+        "groupId": "12473668-9615-412a-aa39-05a9de132491"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.791Z [[32minfo[39m]: Create 
+Group Debug - Phase 5 (Creating Creator Membership)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.814Z [[32minfo[39m]: Group 
+created successfully
+      {
+        "userId": "3554c0ed-f2c8-499c-a0af-ef0a083f2b05",
+        "groupId": "12473668-9615-412a-aa39-05a9de132491",
+        "name": "Test Group",
+        "groupType": "private",
+        "initialMembersCount": 0
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:54.817Z [[31merror[39m]: Error 
+creating group:
+      {
+        "error": "WebSocket server not initialized. Call 
+initializeWebSocket() first.",
+        "stack": "Error: WebSocket server not initialized. 
+Call initializeWebSocket() first.\n    at getIO (C:\\messen
+ger\\backend\\src\\services\\websocket.js:1191:11)\n    at 
+createGroup (C:\\messenger\\backend\\src\\controllers\\grou
+psController.js:165:20)\n    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)",
+        "userId": "3554c0ed-f2c8-499c-a0af-ef0a083f2b05",
+        "groupData": {
+          "name": "Test Group",
+          "groupType": "private"
+        }
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:54] 
+[4d2d996e-33be-43c9-9bb1-8879262d42e9] POST /api/groups 
+500 - 59ms - POST /api/groups
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      Create Group Error: {
+        "success": false,
+        "error": {
+          "type": "INTERNAL_ERROR",
+          "message": "Failed to create group"
+        }
+      }
+
+      at Object.<anonymous> (tests/groups.test.js:43:25)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      [2025-12-22 15:34:55] 
+[6ef316c7-5390-4179-9b1f-9cbd18485ed9] POST /api/groups 
+401 - 1ms - POST /api/groups
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:55.574Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser1766414095192113e98 
+(557d99c0-9c5c-4540-8b59-ed3de0c54e59)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:55] 
+[3f88919d-4c82-4947-9050-018f6b8227cf] POST /api/groups 
+400 - 5ms - POST /api/groups
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:55.941Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser17664140955976tv6ds 
+(21dfae45-7d1a-49bc-8b34-2c8c9b1314e3)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:55.942Z [[32minfo[39m]: Create 
+Group Debug - Phase 1:
+      {
+        "userId": "21dfae45-7d1a-49bc-8b34-2c8c9b1314e3"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:55.948Z [[32minfo[39m]: Create 
+Group Debug - Phase 4 (Group Created):
+      {
+        "groupId": "36c5d557-4e3b-431b-897e-0493f968fe08"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:55.950Z [[32minfo[39m]: Create 
+Group Debug - Phase 5 (Creating Creator Membership)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:55.961Z [[32minfo[39m]: Group 
+created successfully
+      {
+        "userId": "21dfae45-7d1a-49bc-8b34-2c8c9b1314e3",
+        "groupId": "36c5d557-4e3b-431b-897e-0493f968fe08",
+        "name": "AB",
+        "groupType": "private",
+        "initialMembersCount": 0
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:55.962Z [[31merror[39m]: Error 
+creating group:
+      {
+        "error": "WebSocket server not initialized. Call 
+initializeWebSocket() first.",
+        "stack": "Error: WebSocket server not initialized. 
+Call initializeWebSocket() first.\n    at getIO (C:\\messen
+ger\\backend\\src\\services\\websocket.js:1191:11)\n    at 
+createGroup (C:\\messenger\\backend\\src\\controllers\\grou
+psController.js:165:20)\n    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)",
+        "userId": "21dfae45-7d1a-49bc-8b34-2c8c9b1314e3",
+        "groupData": {
+          "name": "AB",
+          "groupType": "private"
+        }
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:55] 
+[483bf9e3-1b81-4b32-b387-68ecf47c8cf0] POST /api/groups 
+500 - 25ms - POST /api/groups
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      [2025-12-22 15:34:56] 
+[cdb5b4fb-4d6b-40ac-af60-be825c08124d] GET /api/groups 401 
+- 1ms - GET /api/groups
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:56.582Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser1766414096253wexnu 
+(886b9f81-0940-4441-a980-640f9adf33f0)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:56] 
+[0447870a-976c-4bca-9c76-3a5b79e2aa0d] GET 
+/api/groups?page=1&limit=10 200 - 16ms - GET 
+/api/groups?page=1&limit=10
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:56.978Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser1766414096605w7z5kd 
+(3de6332a-0c10-48f1-b5ac-21f044cae569)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:56.979Z [[32minfo[39m]: Create 
+Group Debug - Phase 1:
+      {
+        "userId": "3de6332a-0c10-48f1-b5ac-21f044cae569"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:56.983Z [[32minfo[39m]: Create 
+Group Debug - Phase 4 (Group Created):
+      {
+        "groupId": "c407fa8e-b43a-4336-9510-63ff418f0d0c"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:56.985Z [[32minfo[39m]: Create 
+Group Debug - Phase 5 (Creating Creator Membership)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:56.994Z [[32minfo[39m]: Group 
+created successfully
+      {
+        "userId": "3de6332a-0c10-48f1-b5ac-21f044cae569",
+        "groupId": "c407fa8e-b43a-4336-9510-63ff418f0d0c",
+        "name": "Detail Test Group",
+        "groupType": "private",
+        "initialMembersCount": 0
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:56.995Z [[31merror[39m]: Error 
+creating group:
+      {
+        "error": "WebSocket server not initialized. Call 
+initializeWebSocket() first.",
+        "stack": "Error: WebSocket server not initialized. 
+Call initializeWebSocket() first.\n    at getIO (C:\\messen
+ger\\backend\\src\\services\\websocket.js:1191:11)\n    at 
+createGroup (C:\\messenger\\backend\\src\\controllers\\grou
+psController.js:165:20)\n    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)",
+        "userId": "3de6332a-0c10-48f1-b5ac-21f044cae569",
+        "groupData": {
+          "name": "Detail Test Group",
+          "groupType": "private"
+        }
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:56] 
+[040f366a-99c2-44c5-9d8e-92fab10ddf39] POST /api/groups 
+500 - 21ms - POST /api/groups
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      [2025-12-22 15:34:57] 
+[cf16142c-4d07-4b77-9224-e27475b4cd91] GET 
+/api/groups/00000000-0000-0000-0000-000000000000 401 - 1ms 
+- GET /api/groups/00000000-0000-0000-0000-000000000000
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:57.598Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser1766414097272rhknc 
+(2e6f7e1c-77bb-4a0a-a9ae-31e91ef88d2d)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:57] 
+[ad475388-bcbf-418b-9e1d-d774c0cf6745] GET 
+/api/groups/00000000-0000-0000-0000-000000000000 403 - 8ms 
+- GET /api/groups/00000000-0000-0000-0000-000000000000
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:58.002Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser1766414097614uisf9d 
+(1a3a3311-fe42-4afa-b568-944cd67ab483)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:58.003Z [[32minfo[39m]: Create 
+Group Debug - Phase 1:
+      {
+        "userId": "1a3a3311-fe42-4afa-b568-944cd67ab483"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:58.007Z [[32minfo[39m]: Create 
+Group Debug - Phase 4 (Group Created):
+      {
+        "groupId": "fb4822f9-33f8-4b47-846e-94750d71e8f6"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:58.011Z [[32minfo[39m]: Create 
+Group Debug - Phase 5 (Creating Creator Membership)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:58.023Z [[32minfo[39m]: Group 
+created successfully
+      {
+        "userId": "1a3a3311-fe42-4afa-b568-944cd67ab483",
+        "groupId": "fb4822f9-33f8-4b47-846e-94750d71e8f6",
+        "name": "Update Test Group",
+        "groupType": "private",
+        "initialMembersCount": 0
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:58.024Z [[31merror[39m]: Error 
+creating group:
+      {
+        "error": "WebSocket server not initialized. Call 
+initializeWebSocket() first.",
+        "stack": "Error: WebSocket server not initialized. 
+Call initializeWebSocket() first.\n    at getIO (C:\\messen
+ger\\backend\\src\\services\\websocket.js:1191:11)\n    at 
+createGroup (C:\\messenger\\backend\\src\\controllers\\grou
+psController.js:165:20)\n    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)",
+        "userId": "1a3a3311-fe42-4afa-b568-944cd67ab483",
+        "groupData": {
+          "name": "Update Test Group",
+          "groupType": "private"
+        }
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:58] 
+[e8ddaa46-6cde-4872-828c-b46ef34d21e7] POST /api/groups 
+500 - 28ms - POST /api/groups
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      [2025-12-22 15:34:58] 
+[81d2dd63-9dc8-4b9d-9710-e758d5776063] PUT 
+/api/groups/00000000-0000-0000-0000-000000000000 401 - 0ms 
+- PUT /api/groups/00000000-0000-0000-0000-000000000000
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:58.584Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser1766414098309of936b 
+(ea8ea6ee-8132-4b00-a6ac-3a78c567c8c3)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:58.584Z [[32minfo[39m]: Create 
+Group Debug - Phase 1:
+      {
+        "userId": "ea8ea6ee-8132-4b00-a6ac-3a78c567c8c3"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:58.588Z [[32minfo[39m]: Create 
+Group Debug - Phase 4 (Group Created):
+      {
+        "groupId": "a8e1e223-36e0-4b5f-be13-f64dbc727e38"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:58.590Z [[32minfo[39m]: Create 
+Group Debug - Phase 5 (Creating Creator Membership)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:58.597Z [[32minfo[39m]: Group 
+created successfully
+      {
+        "userId": "ea8ea6ee-8132-4b00-a6ac-3a78c567c8c3",
+        "groupId": "a8e1e223-36e0-4b5f-be13-f64dbc727e38",
+        "name": "Delete Test Group",
+        "groupType": "private",
+        "initialMembersCount": 0
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:58.598Z [[31merror[39m]: Error 
+creating group:
+      {
+        "error": "WebSocket server not initialized. Call 
+initializeWebSocket() first.",
+        "stack": "Error: WebSocket server not initialized. 
+Call initializeWebSocket() first.\n    at getIO (C:\\messen
+ger\\backend\\src\\services\\websocket.js:1191:11)\n    at 
+createGroup (C:\\messenger\\backend\\src\\controllers\\grou
+psController.js:165:20)\n    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)",
+        "userId": "ea8ea6ee-8132-4b00-a6ac-3a78c567c8c3",
+        "groupData": {
+          "name": "Delete Test Group",
+          "groupType": "private"
+        }
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:58] 
+[e622d3fb-1167-408f-896e-35cad5944585] POST /api/groups 
+500 - 17ms - POST /api/groups
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      [2025-12-22 15:34:58] 
+[cba82cbb-ac82-41fb-8c4e-2d97b9dd7b98] DELETE 
+/api/groups/00000000-0000-0000-0000-000000000000 401 - 0ms 
+- DELETE /api/groups/00000000-0000-0000-0000-000000000000
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:59.162Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser1766414098889ff01q6 
+(5d761d85-06cd-4c25-9816-dddf2dcd6425)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:59.163Z [[32minfo[39m]: Create 
+Group Debug - Phase 1:
+      {
+        "userId": "5d761d85-06cd-4c25-9816-dddf2dcd6425"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:59.167Z [[32minfo[39m]: Create 
+Group Debug - Phase 4 (Group Created):
+      {
+        "groupId": "381c25eb-66a3-41fa-965e-a4f9b9028544"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:59.169Z [[32minfo[39m]: Create 
+Group Debug - Phase 5 (Creating Creator Membership)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:59.176Z [[32minfo[39m]: Group 
+created successfully
+      {
+        "userId": "5d761d85-06cd-4c25-9816-dddf2dcd6425",
+        "groupId": "381c25eb-66a3-41fa-965e-a4f9b9028544",
+        "name": "Member Test Group",
+        "groupType": "private",
+        "initialMembersCount": 0
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:59.177Z [[31merror[39m]: Error 
+creating group:
+      {
+        "error": "WebSocket server not initialized. Call 
+initializeWebSocket() first.",
+        "stack": "Error: WebSocket server not initialized. 
+Call initializeWebSocket() first.\n    at getIO (C:\\messen
+ger\\backend\\src\\services\\websocket.js:1191:11)\n    at 
+createGroup (C:\\messenger\\backend\\src\\controllers\\grou
+psController.js:165:20)\n    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)",
+        "userId": "5d761d85-06cd-4c25-9816-dddf2dcd6425",
+        "groupData": {
+          "name": "Member Test Group",
+          "groupType": "private"
+        }
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:59] 
+[011d7084-229f-4e13-a553-9fd30acf050b] POST /api/groups 
+500 - 19ms - POST /api/groups
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:34:59.739Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser1766414099456jyd0yb 
+(eb04a1ae-789c-44a8-bc4d-b63dc86b11e7)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:59.740Z [[32minfo[39m]: Create 
+Group Debug - Phase 1:
+      {
+        "userId": "eb04a1ae-789c-44a8-bc4d-b63dc86b11e7"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:59.743Z [[32minfo[39m]: Create 
+Group Debug - Phase 4 (Group Created):
+      {
+        "groupId": "bcf3c422-b4d5-40cd-b61e-25b9e7c15f3b"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:59.745Z [[32minfo[39m]: Create 
+Group Debug - Phase 5 (Creating Creator Membership)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:59.753Z [[32minfo[39m]: Group 
+created successfully
+      {
+        "userId": "eb04a1ae-789c-44a8-bc4d-b63dc86b11e7",
+        "groupId": "bcf3c422-b4d5-40cd-b61e-25b9e7c15f3b",
+        "name": "Member Test Group",
+        "groupType": "private",
+        "initialMembersCount": 0
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:34:59.753Z [[31merror[39m]: Error 
+creating group:
+      {
+        "error": "WebSocket server not initialized. Call 
+initializeWebSocket() first.",
+        "stack": "Error: WebSocket server not initialized. 
+Call initializeWebSocket() first.\n    at getIO (C:\\messen
+ger\\backend\\src\\services\\websocket.js:1191:11)\n    at 
+createGroup (C:\\messenger\\backend\\src\\controllers\\grou
+psController.js:165:20)\n    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)",
+        "userId": "eb04a1ae-789c-44a8-bc4d-b63dc86b11e7",
+        "groupData": {
+          "name": "Member Test Group",
+          "groupType": "private"
+        }
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:34:59] 
+[52369529-a734-4988-9f4e-aaf838b27fe8] POST /api/groups 
+500 - 17ms - POST /api/groups
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:35:00.307Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser17664141000360myco 
+(1827ede6-9d7a-4b32-8526-dd4663d86da7)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:35:00.307Z [[32minfo[39m]: Create 
+Group Debug - Phase 1:
+      {
+        "userId": "1827ede6-9d7a-4b32-8526-dd4663d86da7"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:35:00.311Z [[32minfo[39m]: Create 
+Group Debug - Phase 4 (Group Created):
+      {
+        "groupId": "804896fe-5ff4-4d46-b528-b1f50c2fd148"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:35:00.312Z [[32minfo[39m]: Create 
+Group Debug - Phase 5 (Creating Creator Membership)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:35:00.320Z [[32minfo[39m]: Group 
+created successfully
+      {
+        "userId": "1827ede6-9d7a-4b32-8526-dd4663d86da7",
+        "groupId": "804896fe-5ff4-4d46-b528-b1f50c2fd148",
+        "name": "Member Test Group",
+        "groupType": "private",
+        "initialMembersCount": 0
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:35:00.321Z [[31merror[39m]: Error 
+creating group:
+      {
+        "error": "WebSocket server not initialized. Call 
+initializeWebSocket() first.",
+        "stack": "Error: WebSocket server not initialized. 
+Call initializeWebSocket() first.\n    at getIO (C:\\messen
+ger\\backend\\src\\services\\websocket.js:1191:11)\n    at 
+createGroup (C:\\messenger\\backend\\src\\controllers\\grou
+psController.js:165:20)\n    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)",
+        "userId": "1827ede6-9d7a-4b32-8526-dd4663d86da7",
+        "groupData": {
+          "name": "Member Test Group",
+          "groupType": "private"
+        }
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:35:00] 
+[fe77e45d-897b-4dae-b06f-3537b652ca99] POST /api/groups 
+500 - 16ms - POST /api/groups
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      2025-12-22T14:35:01.156Z [[32minfo[39m]: 
+Authentication successful for user: 
+testuser1766414100605lt6ku9 
+(69452466-16ea-4e40-8f45-b2f47201bfdd)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:35:01.157Z [[32minfo[39m]: Create 
+Group Debug - Phase 1:
+      {
+        "userId": "69452466-16ea-4e40-8f45-b2f47201bfdd"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:35:01.160Z [[32minfo[39m]: Create 
+Group Debug - Phase 4 (Group Created):
+      {
+        "groupId": "1a55b369-7e2c-429d-be1f-151b246808e4"
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:35:01.162Z [[32minfo[39m]: Create 
+Group Debug - Phase 5 (Creating Creator Membership)
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:35:01.170Z [[32minfo[39m]: Group 
+created successfully
+      {
+        "userId": "69452466-16ea-4e40-8f45-b2f47201bfdd",
+        "groupId": "1a55b369-7e2c-429d-be1f-151b246808e4",
+        "name": "Leave Test Group",
+        "groupType": "private",
+        "initialMembersCount": 0
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      2025-12-22T14:35:01.170Z [[31merror[39m]: Error 
+creating group:
+      {
+        "error": "WebSocket server not initialized. Call 
+initializeWebSocket() first.",
+        "stack": "Error: WebSocket server not initialized. 
+Call initializeWebSocket() first.\n    at getIO (C:\\messen
+ger\\backend\\src\\services\\websocket.js:1191:11)\n    at 
+createGroup (C:\\messenger\\backend\\src\\controllers\\grou
+psController.js:165:20)\n    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)",
+        "userId": "69452466-16ea-4e40-8f45-b2f47201bfdd",
+        "groupData": {
+          "name": "Leave Test Group",
+          "groupType": "private"
+        }
+      }
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      [2025-12-22 15:35:01] 
+[69843997-91d3-400c-8482-c7177559864e] POST /api/groups 
+500 - 18ms - POST /api/groups
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+    console.log
+      [2025-12-22 15:35:01] 
+[66f96cc1-a47c-41f7-8b53-bcd3a88b2786] POST 
+/api/groups/00000000-0000-0000-0000-000000000000/leave 401 
+- 0ms - POST 
+/api/groups/00000000-0000-0000-0000-000000000000/leave
+
+      at Console.log (node_modules/winston/lib/winston/tran
+sports/console.js:87:23)
+
+    console.log
+      ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:253:13)
+
+    console.log
+      Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup 
+(tests/testDatabaseSeeder.js:302:15)
+
+  ΓùÅ Groups API ΓÇ║ POST /api/groups ΓÇ║ should create a 
+new group
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 201
+    Received: 500
+
+    [0m [90m 43 |[39m                 
+console[33m.[39mlog([32m'Create Group 
+Error:'[39m[33m,[39m [33mJSON[39m[33m.[39mstringify(
+response[33m.[39mbody[33m,[39m 
+[36mnull[39m[33m,[39m [35m2[39m))[33m;[39m
+     [90m 44 |[39m             }
+    [31m[1m>[22m[39m[90m 45 |[39m             expect(
+response[33m.[39mstatus)[33m.[39mtoBe([35m201[39m)[3
+3m;[39m
+     [90m    |[39m                                     
+[31m[1m^[22m[39m
+     [90m 46 |[39m
+     [90m 47 |[39m             expect(response[33m.[39m
+body[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m
+;[39m
+     [90m 48 |[39m             expect(response[33m.[39m
+body[33m.[39mdata[33m.[39mname)[33m.[39mtoBe([32m'Te
+st Group'[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (tests/groups.test.js:45:37)
+::ffff:127.0.0.1 - - [22/Dec/2025:14:35:01 +0000] "POST /api/groups/00000000-0000-0000-0000-000000000000/leave HTTP/1.1" 401 87 "-" "-"
+
+  ΓùÅ Groups API ΓÇ║ GET /api/groups ΓÇ║ should support 
+pagination
+
+    expect(received).toBeDefined()
+
+    Received: undefined
+
+    [0m [90m 110 |[39m                 
+[33m.[39mexpect([35m200[39m)[33m;[39m
+     [90m 111 |[39m
+    [31m[1m>[22m[39m[90m 112 |[39m             expect
+(response[33m.[39mbody[33m.[39mpagination)[33m.[39mto
+BeDefined()[33m;[39m
+     [90m     |[39m                                      
+        [31m[1m^[22m[39m
+     [90m 113 |[39m         })[33m;[39m
+     [90m 114 |[39m     })[33m;[39m
+     [90m 115 |[39m[0m
+
+      at Object.<anonymous> (tests/groups.test.js:112:46)
+
+A worker process has failed to exit gracefully and has 
+been force exited. This is likely caused by tests leaking 
+due to improper teardown. Try running with 
+--detectOpenHandles to find leaks. Active timers can also 
+cause this, ensure that .unref() was called on them.
+Test Suites: 2 failed, 2 total
+Tests:       8 failed, 1 skipped, 19 passed, 28 total
+Snapshots:   0 total
+Time:        12.282 s, estimated 16 s
+Ran all test suites matching 
+/tests\\files.test.js|tests\\groups.test.js/i.
+Force exiting Jest: Have you considered using 
+`--detectOpenHandles` to detect async operations that kept 
+running after all tests finished?

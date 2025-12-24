@@ -1,0 +1,834 @@
+﻿  console.log
+    ≡ƒöì Database config: {
+      host: 'localhost',
+      port: 5432,
+      database: 'messenger',
+      username: 'messenger',
+      dialect: 'postgres'
+    }
+
+      at src/config/database.js:43:11
+
+  console.log
+    Γ£à Sequelize instance created for test environment
+
+      at src/config/database.js:51:11
+
+2025-12-22T12:33:17.557Z [[33mwarn[39m]: Firebase Admin SDK not initialized. Push notifications will not work. Please configure Firebase credentials in environment variables or service account file.
+2025-12-22T12:33:18.710Z [[32minfo[39m]: Queue service initialized with retry logic and scheduled jobs
+2025-12-22T12:33:18.720Z [[32minfo[39m]: Notification settings cache cleanup initialized
+2025-12-22T12:33:18.721Z [[32minfo[39m]: Auto cleanup for expired notifications started
+2025-12-22T12:33:18.730Z [[32minfo[39m]: Data retention job scheduled.
+  console.log
+    ≡ƒôÜ Swagger UI will be available at /api-docs
+
+      at src/app.js:186:11
+
+node.exe : (node:39296) ExperimentalWarning: VM Modules is 
+an experimental feature and might change at any time
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:39296)  
+   Ex...nge at any time:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(Use `node --trace-warnings ...` to show where the warning 
+was created)
+  console.log
+    Γ£à Test database connected
+
+      at initializeTestDatabase (tests/setup.js:39:13)
+
+2025-12-22T12:33:20.048Z [[32minfo[39m]: Authentication successful for user: sender1766406798874 (50e8a8f5-53ab-44d4-80ee-f4b234a71c7b)
+2025-12-22T12:33:20.052Z [[32minfo[39m]: ≡ƒô¼ POST /api/messages route hit
+{
+  "body": {
+    "content": "Hello, this is a test message!",
+    "recipientId": "ae734f5d-eb1d-49e4-b052-60e3c6810a24"
+  },
+  "userId": "50e8a8f5-53ab-44d4-80ee-f4b234a71c7b",
+  "username": "sender1766406798874"
+}
+2025-12-22T12:33:20.057Z [[32minfo[39m]: ≡ƒöì DEBUG ENCRYPTION VALUES:
+{
+  "hasEncryptedContent": false,
+  "finalValue": false,
+  "hasEncryptedContentOwner": false,
+  "hasNonceOwner": false
+}
+2025-12-22T12:33:20.098Z [[32minfo[39m]: ≡ƒö╡ Attempting to broadcast message
+{
+  "messageId": "cfabb20f-96ea-481f-83d9-1165dc1a8415",
+  "recipientId": "ae734f5d-eb1d-49e4-b052-60e3c6810a24",
+  "senderId": "50e8a8f5-53ab-44d4-80ee-f4b234a71c7b"
+}
+2025-12-22T12:33:20.099Z [[33mwarn[39m]: WebSocket broadcast failed for new message
+{
+  "messageId": "cfabb20f-96ea-481f-83d9-1165dc1a8415",
+  "error": "WebSocket server not initialized. Call initializeWebSocket() first."
+}
+[2025-12-22 13:33:20] [0cd0e9b9-d453-45f5-a80f-dc7a737bd368] POST /api/messages 201 - 63ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 201 776 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [4e3313bd-ac7e-4f1b-b1fb-bde9f8ee43da] POST /api/messages 401 - 1ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [ae4aa31a-1677-4a5b-8591-d1449c7fe77a] POST /api/messages 401 - 5ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [e94cff64-c1c1-434d-8886-9a83b105ec65] POST /api/messages 401 - 3ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [a4100cba-f6db-41c2-93e2-8f956108e725] POST /api/messages 401 - 4ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [e8630c88-390d-4242-9a68-49c714b4b07b] POST /api/messages 401 - 4ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [fc61c4fe-380d-49f8-a002-40824907c328] POST /api/messages 401 - 4ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [62b9fb92-e2ca-44ab-8249-154e5f800e73] POST /api/messages 401 - 4ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+[2025-12-22 13:33:20] [ba65dcd8-da16-4faa-86c5-9024ad2b98a5] POST /api/messages 401 - 4ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+[2025-12-22 13:33:20] [feac6e30-57c8-471d-8596-25c9fadc1e1c] POST /api/messages 401 - 3ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+[2025-12-22 13:33:20] [36f32199-c0ba-4c87-8eb6-dd902fb6cbfc] POST /api/messages 401 - 4ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+[2025-12-22 13:33:20] [0d2be2fd-7957-48f1-bdfd-2293d77a00ab] GET /api/messages?conversationWith=ae734f5d-eb1d-49e4-b052-60e3c6810a24 401 - 4ms - GET /api/messages?conversationWith=ae734f5d-eb1d-49e4-b052-60e3c6810a24
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "GET /api/messages?conversationWith=ae734f5d-eb1d-49e4-b052-60e3c6810a24 HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [b928fe7f-60b2-4e2b-8c8a-f0c2d776ec95] GET /api/messages 401 - 3ms - GET /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "GET /api/messages HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [134e4e74-a806-4a9c-8468-41b2acc5fff2] GET /api/messages?conversationWith=ae734f5d-eb1d-49e4-b052-60e3c6810a24&limit=2&page=1 401 - 3ms - GET /api/messages?conversationWith=ae734f5d-eb1d-49e4-b052-60e3c6810a24&limit=2&page=1
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "GET /api/messages?conversationWith=ae734f5d-eb1d-49e4-b052-60e3c6810a24&limit=2&page=1 HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [d79e7df1-987b-4429-9a30-edaccdd78275] GET /api/messages?conversationWith=ae734f5d-eb1d-49e4-b052-60e3c6810a24&limit=1 401 - 3ms - GET /api/messages?conversationWith=ae734f5d-eb1d-49e4-b052-60e3c6810a24&limit=1
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "GET /api/messages?conversationWith=ae734f5d-eb1d-49e4-b052-60e3c6810a24&limit=1 HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [4c31dada-25f4-4fe2-b9be-899282404dda] POST /api/messages 401 - 5ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [16e83f26-75f0-477d-91cb-1b53d2294acc] POST /api/messages 401 - 7ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [f856e921-0113-47e8-8866-e96597fd6871] POST /api/messages 401 - 4ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [fbb39076-08f6-4a52-ac4f-23b41b3907d2] POST /api/messages 401 - 3ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [51aec4cb-f3f8-4bd7-8873-ea6274f9cf51] POST /api/messages 401 - 4ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+[2025-12-22 13:33:20] [7e0d0059-a629-4592-b935-d4e41aec31d0] GET /api/messages?groupId=bce2bc9d-78e7-4150-b46b-6cee4f7d7a95 401 - 4ms - GET /api/messages?groupId=bce2bc9d-78e7-4150-b46b-6cee4f7d7a95
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "GET /api/messages?groupId=bce2bc9d-78e7-4150-b46b-6cee4f7d7a95 HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [15c7b837-55df-4a8e-9599-8f0b91cf71fc] GET /api/messages?groupId=bce2bc9d-78e7-4150-b46b-6cee4f7d7a95 401 - 3ms - GET /api/messages?groupId=bce2bc9d-78e7-4150-b46b-6cee4f7d7a95
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "GET /api/messages?groupId=bce2bc9d-78e7-4150-b46b-6cee4f7d7a95 HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [f38bf601-a60c-4f76-907c-63627e790a83] POST /api/messages 401 - 4ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [c74ea4d1-c6cb-41f6-b087-53dc85cff9ba] POST /api/messages 401 - 3ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 13:33:20] [051458de-5711-4178-b8cb-220b60bd5889] POST /api/messages 401 - 4ms - POST /api/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:12:33:20 +0000] "POST /api/messages HTTP/1.1" 401 78 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+FAIL tests/integration/messaging.integration.test.js
+  Messaging Integration Tests
+    1-to-1 Messaging
+      POST /api/messages - Send Message
+        ΓêÜ should send a direct message successfully (179 
+ms)
+        ΓêÜ should require authentication (18 ms)
+        ├ù should require either recipientId or groupId 
+(24 ms)
+        ├ù should reject messages with both recipientId 
+and groupId (21 ms)
+        ├ù should validate content length (min 1 char) (20 
+ms)
+        ├ù should reject invalid recipient UUID (20 ms)
+        ├ù should return 404 for non-existent recipient 
+(20 ms)
+      GET /api/messages - Retrieve Messages
+        ├ù should retrieve conversation messages (22 ms)
+        ├ù should require conversationWith or groupId 
+parameter (19 ms)
+        ├ù should paginate results (21 ms)
+        ├ù should return messages with correct structure 
+(29 ms)
+    Group Messaging
+      POST /api/messages - Send Group Message
+        ├ù should send a group message successfully (35 ms)
+        ├ù should allow group members to send messages (31 
+ms)
+        ├ù should reject messages from non-members (22 ms)
+        ├ù should return 404 for non-existent group (19 ms)
+      GET /api/messages - Retrieve Group Messages
+        ├ù should retrieve group messages (17 ms)
+        ├ù should reject group message retrieval from 
+non-members (17 ms)
+    Message Validation
+      ├ù should validate message type enum (19 ms)
+      ├ù should accept valid message types (18 ms)
+    Reply Messages
+      ├ù should create a reply to a message (19 ms)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ 1-to-1 Messaging ΓÇ║ 
+POST /api/messages - Send Message ΓÇ║ should require 
+either recipientId or groupId
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 401
+
+    [0m [90m  98 |[39m           })[33m;[39m
+     [90m  99 |[39m
+    [31m[1m>[22m[39m[90m 100 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m400[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 101 |[39m         expect(response[33m.[39mbod
+y[33m.[39msuccess)[33m.[39mtoBe([36mfalse[39m)[33m;
+[39m
+     [90m 102 |[39m       })[33m;[39m
+     [90m 103 |[39m[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:100:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ 1-to-1 Messaging ΓÇ║ 
+POST /api/messages - Send Message ΓÇ║ should reject 
+messages with both recipientId and groupId
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 401
+
+    [0m [90m 112 |[39m           })[33m;[39m
+     [90m 113 |[39m
+    [31m[1m>[22m[39m[90m 114 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m400[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 115 |[39m         expect(response[33m.[39mbod
+y[33m.[39msuccess)[33m.[39mtoBe([36mfalse[39m)[33m;
+[39m
+     [90m 116 |[39m       })[33m;[39m
+     [90m 117 |[39m[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:114:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ 1-to-1 Messaging ΓÇ║ 
+POST /api/messages - Send Message ΓÇ║ should validate 
+content length (min 1 char)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 401
+
+    [0m [90m 125 |[39m           })[33m;[39m
+     [90m 126 |[39m
+    [31m[1m>[22m[39m[90m 127 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m400[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 128 |[39m       })[33m;[39m
+     [90m 129 |[39m
+     [90m 130 |[39m       it([32m'should reject invalid 
+recipient UUID'[39m[33m,[39m [36masync[39m () 
+[33m=>[39m {[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:127:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ 1-to-1 Messaging ΓÇ║ 
+POST /api/messages - Send Message ΓÇ║ should reject 
+invalid recipient UUID
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 401
+
+    [0m [90m 137 |[39m           })[33m;[39m
+     [90m 138 |[39m
+    [31m[1m>[22m[39m[90m 139 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m400[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 140 |[39m       })[33m;[39m
+     [90m 141 |[39m
+     [90m 142 |[39m       it([32m'should return 404 for 
+non-existent recipient'[39m[33m,[39m [36masync[39m () 
+[33m=>[39m {[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:139:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ 1-to-1 Messaging ΓÇ║ 
+POST /api/messages - Send Message ΓÇ║ should return 404 
+for non-existent recipient
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 404
+    Received: 401
+
+    [0m [90m 149 |[39m           })[33m;[39m
+     [90m 150 |[39m
+    [31m[1m>[22m[39m[90m 151 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m404[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 152 |[39m         expect(response[33m.[39mbod
+y[33m.[39msuccess)[33m.[39mtoBe([36mfalse[39m)[33m;
+[39m
+     [90m 153 |[39m       })[33m;[39m
+     [90m 154 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:151:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ 1-to-1 Messaging ΓÇ║ 
+GET /api/messages - Retrieve Messages ΓÇ║ should retrieve 
+conversation messages
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 401
+
+    [0m [90m 183 |[39m           [33m.[39mquery({ 
+conversationWith[33m:[39m recipient[33m.[39mid 
+})[33m;[39m
+     [90m 184 |[39m
+    [31m[1m>[22m[39m[90m 185 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 186 |[39m         expect(response[33m.[39mbod
+y[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[
+39m
+     [90m 187 |[39m         expect(response[33m.[39mbod
+y[33m.[39mdata)[33m.[39mtoBeDefined()[33m;[39m
+     [90m 188 |[39m         expect([33mArray[39m[33m.
+[39misArray(response[33m.[39mbody[33m.[39mdata))[33m.
+[39mtoBe([36mtrue[39m)[33m;[39m[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:185:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ 1-to-1 Messaging ΓÇ║ 
+GET /api/messages - Retrieve Messages ΓÇ║ should require 
+conversationWith or groupId parameter
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 401
+
+    [0m [90m 196 |[39m           [33m.[39m[36mset[39
+m([32m'Authorization'[39m[33m,[39m 
+senderAuth[33m.[39mauthHeader)[33m;[39m
+     [90m 197 |[39m
+    [31m[1m>[22m[39m[90m 198 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m400[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 199 |[39m       })[33m;[39m
+     [90m 200 |[39m
+     [90m 201 |[39m       it([32m'should paginate 
+results'[39m[33m,[39m [36masync[39m () [33m=>[39m 
+{[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:198:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ 1-to-1 Messaging ΓÇ║ 
+GET /api/messages - Retrieve Messages ΓÇ║ should paginate 
+results
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 401
+
+    [0m [90m 205 |[39m           [33m.[39mquery({ 
+conversationWith[33m:[39m 
+recipient[33m.[39mid[33m,[39m limit[33m:[39m 
+[35m2[39m[33m,[39m page[33m:[39m [35m1[39m 
+})[33m;[39m
+     [90m 206 |[39m
+    [31m[1m>[22m[39m[90m 207 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 208 |[39m         expect(response[33m.[39mbod
+y[33m.[39mdata[33m.[39mlength)[33m.[39mtoBeLessThanOr
+Equal([35m2[39m)[33m;[39m
+     [90m 209 |[39m         expect(response[33m.[39mbod
+y[33m.[39mpagination[33m.[39mcurrentPage)[33m.[39mtoB
+e([35m1[39m)[33m;[39m
+     [90m 210 |[39m       })[33m;[39m[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:207:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ 1-to-1 Messaging ΓÇ║ 
+GET /api/messages - Retrieve Messages ΓÇ║ should return 
+messages with correct structure
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 401
+
+    [0m [90m 216 |[39m           [33m.[39mquery({ 
+conversationWith[33m:[39m 
+recipient[33m.[39mid[33m,[39m limit[33m:[39m 
+[35m1[39m })[33m;[39m
+     [90m 217 |[39m
+    [31m[1m>[22m[39m[90m 218 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 219 |[39m         [36mconst[39m message 
+[33m=[39m response[33m.[39mbody[33m.[39mdata[[35m0[
+39m][33m;[39m
+     [90m 220 |[39m
+     [90m 221 |[39m         expect(message)[33m.[39mtoH
+aveProperty([32m'id'[39m)[33m;[39m[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:218:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ Group Messaging ΓÇ║ 
+POST /api/messages - Send Group Message ΓÇ║ should send a 
+group message successfully
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 201
+    Received: 401
+
+    [0m [90m 240 |[39m           })[33m;[39m
+     [90m 241 |[39m
+    [31m[1m>[22m[39m[90m 242 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m201[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 243 |[39m         expect(response[33m.[39mbod
+y[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[
+39m
+     [90m 244 |[39m         expect(response[33m.[39mbod
+y[33m.[39mdata[33m.[39mgroupId)[33m.[39mtoBe(group[3
+3m.[39mid)[33m;[39m
+     [90m 245 |[39m         expect(response[33m.[39mbod
+y[33m.[39mdata[33m.[39mrecipientId)[33m.[39mtoBeNull(
+)[33m;[39m[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:242:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ Group Messaging ΓÇ║ 
+POST /api/messages - Send Group Message ΓÇ║ should allow 
+group members to send messages
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 201
+    Received: 401
+
+    [0m [90m 255 |[39m           })[33m;[39m
+     [90m 256 |[39m
+    [31m[1m>[22m[39m[90m 257 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m201[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 258 |[39m       })[33m;[39m
+     [90m 259 |[39m
+     [90m 260 |[39m       it([32m'should reject 
+messages from non-members'[39m[33m,[39m [36masync[39m 
+() [33m=>[39m {[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:257:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ Group Messaging ΓÇ║ 
+POST /api/messages - Send Group Message ΓÇ║ should reject 
+messages from non-members
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 403
+    Received: 401
+
+    [0m [90m 268 |[39m           })[33m;[39m
+     [90m 269 |[39m
+    [31m[1m>[22m[39m[90m 270 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m403[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 271 |[39m         expect(response[33m.[39mbod
+y[33m.[39msuccess)[33m.[39mtoBe([36mfalse[39m)[33m;
+[39m
+     [90m 272 |[39m       })[33m;[39m
+     [90m 273 |[39m[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:270:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ Group Messaging ΓÇ║ 
+POST /api/messages - Send Group Message ΓÇ║ should return 
+404 for non-existent group
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 404
+    Received: 401
+
+    [0m [90m 281 |[39m           })[33m;[39m
+     [90m 282 |[39m
+    [31m[1m>[22m[39m[90m 283 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m404[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 284 |[39m       })[33m;[39m
+     [90m 285 |[39m     })[33m;[39m
+     [90m 286 |[39m[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:283:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ Group Messaging ΓÇ║ 
+GET /api/messages - Retrieve Group Messages ΓÇ║ should 
+retrieve group messages
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 401
+
+    [0m [90m 303 |[39m           [33m.[39mquery({ 
+groupId[33m:[39m group[33m.[39mid })[33m;[39m
+     [90m 304 |[39m
+    [31m[1m>[22m[39m[90m 305 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 306 |[39m         expect(response[33m.[39mbod
+y[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[
+39m
+     [90m 307 |[39m         expect(response[33m.[39mbod
+y[33m.[39mdata)[33m.[39mtoBeDefined()[33m;[39m
+     [90m 308 |[39m         expect([33mArray[39m[33m.
+[39misArray(response[33m.[39mbody[33m.[39mdata))[33m.
+[39mtoBe([36mtrue[39m)[33m;[39m[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:305:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ Group Messaging ΓÇ║ 
+GET /api/messages - Retrieve Group Messages ΓÇ║ should 
+reject group message retrieval from non-members
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 403
+    Received: 401
+
+    [0m [90m 315 |[39m           [33m.[39mquery({ 
+groupId[33m:[39m group[33m.[39mid })[33m;[39m
+     [90m 316 |[39m
+    [31m[1m>[22m[39m[90m 317 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m403[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 318 |[39m       })[33m;[39m
+     [90m 319 |[39m     })[33m;[39m
+     [90m 320 |[39m   })[33m;[39m[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:317:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ Message Validation 
+ΓÇ║ should validate message type enum
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 401
+
+    [0m [90m 331 |[39m         })[33m;[39m
+     [90m 332 |[39m
+    [31m[1m>[22m[39m[90m 333 |[39m       expect(respo
+nse[33m.[39mstatus)[33m.[39mtoBe([35m400[39m)[33m;[
+39m
+     [90m     |[39m                               
+[31m[1m^[22m[39m
+     [90m 334 |[39m     })[33m;[39m
+     [90m 335 |[39m
+     [90m 336 |[39m     it([32m'should accept valid 
+message types'[39m[33m,[39m [36masync[39m () 
+[33m=>[39m {[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:333:31)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ Message Validation 
+ΓÇ║ should accept valid message types
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 201
+    Received: 401
+
+    [0m [90m 347 |[39m           })[33m;[39m
+     [90m 348 |[39m
+    [31m[1m>[22m[39m[90m 349 |[39m         expect(res
+ponse[33m.[39mstatus)[33m.[39mtoBe([35m201[39m)[33m;
+[39m
+     [90m     |[39m                                 
+[31m[1m^[22m[39m
+     [90m 350 |[39m       }
+     [90m 351 |[39m     })[33m;[39m
+     [90m 352 |[39m   })[33m;[39m[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:349:33)
+
+  ΓùÅ Messaging Integration Tests ΓÇ║ Reply Messages ΓÇ║ 
+should create a reply to a message
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 201
+    Received: 401
+
+    [0m [90m 363 |[39m         })[33m;[39m
+     [90m 364 |[39m
+    [31m[1m>[22m[39m[90m 365 |[39m       expect(origi
+nalResponse[33m.[39mstatus)[33m.[39mtoBe([35m201[39m)
+[33m;[39m
+     [90m     |[39m                                      
+ [31m[1m^[22m[39m
+     [90m 366 |[39m       [36mconst[39m 
+originalMessageId [33m=[39m originalResponse[33m.[39mbo
+dy[33m.[39mdata[33m.[39mid[33m;[39m
+     [90m 367 |[39m
+     [90m 368 |[39m       [90m// Send a reply[39m[0m
+
+      at Object.<anonymous> 
+(tests/integration/messaging.integration.test.js:365:39)
+
+Test Suites: 1 failed, 1 total
+Tests:       18 failed, 2 passed, 20 total
+Snapshots:   0 total
+Time:        4.471 s, estimated 5 s
+Ran all test suites matching /messaging/i.

@@ -58,18 +58,18 @@ export function GroupSettings({
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  
+
   // Form fields
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
   const [groupAvatar, setGroupAvatar] = useState('');
   const [newAvatarFile, setNewAvatarFile] = useState<File | null>(null);
   const [newAvatarPreview, setNewAvatarPreview] = useState<string | null>(null);
-  
+
   // Delete confirmation
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -145,7 +145,7 @@ export function GroupSettings({
         },
       });
 
-      return response.data.url || response.data.fileName;
+      return response.data.data?.fileUrl || response.data.data?.fileName || response.data.url || response.data.fileName;
     } catch (err) {
       toast.error('Failed to upload avatar');
       console.error('Avatar upload error:', err);
@@ -208,7 +208,7 @@ export function GroupSettings({
       toast.success('Group settings updated successfully');
       onGroupUpdated?.();
       onOpenChange(false);
-      
+
       // Reset form
       setNewAvatarFile(null);
       setNewAvatarPreview(null);

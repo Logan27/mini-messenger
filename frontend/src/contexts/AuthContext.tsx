@@ -94,6 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
 
+      // Set loading to false after authentication check is complete
+      setIsLoading(false);
+
       return () => {
         unsubscribeUserUpdate();
       };

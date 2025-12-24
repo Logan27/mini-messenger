@@ -86,11 +86,15 @@ backend.backup/
 .idea/
 *.code-workspace
 
-# Environment files (keep examples)
+# Environment files (keep examples tracked, ignore actual configs)
 .env
 .env.local
+.env.development
 .env.production
+.env.*.local
 !.env.example
+!.env.development.example
+!.env.production.example
 
 # Firebase credentials
 firebase-service-account.json
@@ -132,3 +136,26 @@ speckit.*.md
 Thumbs.db
 
 mobile/google-services.json
+
+# Additional temporary and debug files
+backend/uploads/download-*.txt
+backend/user-debug.txt
+backend/user-test-output.txt
+backend/users-final.txt
+current_schema_dump.sql
+frontend/.auth/
+frontend/build_log.txt
+frontend/check_socket.js
+frontend/e2e-output*.txt
+frontend/test_output.txt
+frontend/tsc_log.txt
+schema_dump.txt
+debug_message_creation.js
+auth.json
+backend/debug-all-*.txt
+backend/tests/download-test-*.txt
+backend/all-final.txt
+backend/dump_env.js
+backend/failed-trace.txt
+
+

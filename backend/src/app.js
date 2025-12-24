@@ -127,6 +127,14 @@ app.use(
     immutable: false, // Allow updates
   })
 );
+// Also serve at /api/uploads for compatibility with avatar paths stored in database
+app.use(
+  '/api/uploads',
+  express.static(uploadPath, {
+    maxAge: '1d', // Cache for 1 day
+    immutable: false, // Allow updates
+  })
+);
 
 // API Routes
 app.use('/api/auth', authRoutes);

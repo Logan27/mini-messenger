@@ -1,0 +1,677 @@
+﻿
+> messenger-backend@1.0.0 test
+> cross-env NODE_ENV=test DB_HOST=127.0.0.1 NODE_OPTIONS=--experimental-vm-modules jest tests/groups.test.js
+
+  console.log
+    ≡ƒöì Database config: {
+      host: '127.0.0.1',
+      port: 5432,
+      database: 'messenger',
+      username: 'messenger',
+      dialect: 'postgres'
+    }
+
+      at src/config/database.js:43:11
+
+  console.log
+    Γ£à Sequelize instance created for test environment
+
+      at src/config/database.js:51:11
+
+2025-12-22T14:19:57.813Z [[33mwarn[39m]: Firebase Admin SDK not initialized. Push notifications will not work. Please configure Firebase credentials in environment variables or service account file.
+2025-12-22T14:19:59.229Z [[32minfo[39m]: Queue service initialized with retry logic and scheduled jobs
+2025-12-22T14:19:59.236Z [[32minfo[39m]: Notification settings cache cleanup initialized
+2025-12-22T14:19:59.236Z [[32minfo[39m]: Auto cleanup for expired notifications started
+2025-12-22T14:19:59.246Z [[32minfo[39m]: Data retention job scheduled.
+  console.log
+    ≡ƒôÜ Swagger UI will be available at /api-docs
+
+      at src/app.js:186:11
+
+node.exe : (node:22568) ExperimentalWarning: VM Modules is 
+an experimental feature and might change at any time
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:22568)  
+   Ex...nge at any time:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(Use `node --trace-warnings ...` to show where the warning 
+was created)
+  console.log
+    Γ£à Test database connected
+
+      at initializeTestDatabase (tests/setup.js:39:13)
+
+2025-12-22T14:19:59.697Z [[32minfo[39m]: Authentication successful for user: testuser1766413199354qocyha (5d05ce6d-aa95-40c5-a135-09123d84452f)
+2025-12-22T14:19:59.698Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "5d05ce6d-aa95-40c5-a135-09123d84452f"
+}
+2025-12-22T14:19:59.706Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "edbb7e39-a529-44a9-bb3e-ab1f2005e22c"
+}
+2025-12-22T14:19:59.709Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T14:19:59.729Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "5d05ce6d-aa95-40c5-a135-09123d84452f",
+  "groupId": "edbb7e39-a529-44a9-bb3e-ab1f2005e22c",
+  "name": "Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+2025-12-22T14:19:59.730Z [[31merror[39m]: Error creating group:
+{
+  "error": "WebSocket server not initialized. Call initializeWebSocket() first.",
+  "stack": "Error: WebSocket server not initialized. Call initializeWebSocket() first.\n    at getIO (C:\\messenger\\backend\\src\\services\\websocket.js:1191:11)\n    at createGroup (C:\\messenger\\backend\\src\\controllers\\groupsController.js:165:20)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)",
+  "userId": "5d05ce6d-aa95-40c5-a135-09123d84452f",
+  "groupData": {
+    "name": "Test Group",
+    "groupType": "private"
+  }
+}
+[2025-12-22 15:19:59] [ab94d739-c664-4ac2-be54-feab16413f6f] POST /api/groups 500 - 45ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:14:19:59 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 15:20:00] [5250a831-7997-4e71-b659-63d2d8d1ef03] POST /api/groups 401 - 0ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:00 +0000] "POST /api/groups HTTP/1.1" 401 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:20:00.354Z [[32minfo[39m]: Authentication successful for user: testuser17664132000660u3nwt (c1d5e5be-8b1f-453b-b1e8-f63ce34f5de3)
+[2025-12-22 15:20:00] [466b79c3-d4b9-44d3-82ae-a71a7ddb531a] POST /api/groups 400 - 4ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:00 +0000] "POST /api/groups HTTP/1.1" 400 160 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:20:00.666Z [[32minfo[39m]: Authentication successful for user: testuser1766413200378j639ab (3e6ba220-f01b-4364-956b-d989e68c75d7)
+2025-12-22T14:20:00.666Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "3e6ba220-f01b-4364-956b-d989e68c75d7"
+}
+2025-12-22T14:20:00.671Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "a97df361-e229-4872-8078-3d99cadba4fd"
+}
+2025-12-22T14:20:00.673Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T14:20:00.682Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "3e6ba220-f01b-4364-956b-d989e68c75d7",
+  "groupId": "a97df361-e229-4872-8078-3d99cadba4fd",
+  "name": "AB",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+2025-12-22T14:20:00.683Z [[31merror[39m]: Error creating group:
+{
+  "error": "WebSocket server not initialized. Call initializeWebSocket() first.",
+  "stack": "Error: WebSocket server not initialized. Call initializeWebSocket() first.\n    at getIO (C:\\messenger\\backend\\src\\services\\websocket.js:1191:11)\n    at createGroup (C:\\messenger\\backend\\src\\controllers\\groupsController.js:165:20)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)",
+  "userId": "3e6ba220-f01b-4364-956b-d989e68c75d7",
+  "groupData": {
+    "name": "AB",
+    "groupType": "private"
+  }
+}
+[2025-12-22 15:20:00] [4f6ce712-9b8e-4c1a-b958-f09d3c5325a3] POST /api/groups 500 - 20ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:00 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:20:01.270Z [[32minfo[39m]: Authentication successful for user: testuser1766413200965b2xmqs (9af0e41e-7825-4e21-8792-5af2785e0cfc)
+2025-12-22T14:20:01.270Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "9af0e41e-7825-4e21-8792-5af2785e0cfc"
+}
+2025-12-22T14:20:01.275Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "784668d8-036c-4f9b-a2a5-22181b70d4d3"
+}
+2025-12-22T14:20:01.278Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T14:20:01.287Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "9af0e41e-7825-4e21-8792-5af2785e0cfc",
+  "groupId": "784668d8-036c-4f9b-a2a5-22181b70d4d3",
+  "name": "My Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+2025-12-22T14:20:01.287Z [[31merror[39m]: Error creating group:
+{
+  "error": "WebSocket server not initialized. Call initializeWebSocket() first.",
+  "stack": "Error: WebSocket server not initialized. Call initializeWebSocket() first.\n    at getIO (C:\\messenger\\backend\\src\\services\\websocket.js:1191:11)\n    at createGroup (C:\\messenger\\backend\\src\\controllers\\groupsController.js:165:20)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)",
+  "userId": "9af0e41e-7825-4e21-8792-5af2785e0cfc",
+  "groupData": {
+    "name": "My Group",
+    "groupType": "private"
+  }
+}
+[2025-12-22 15:20:01] [c8d363e0-f8dd-489f-bde9-45f762df09b5] POST /api/groups 500 - 22ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:01 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+2025-12-22T14:20:01.297Z [[32minfo[39m]: Authentication successful for user: testuser1766413200965b2xmqs (9af0e41e-7825-4e21-8792-5af2785e0cfc)
+[2025-12-22 15:20:01] [09896f10-ece1-43ed-b6f3-0d56d2a533dd] GET /api/groups 200 - 14ms - GET /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:01 +0000] "GET /api/groups HTTP/1.1" 200 620 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 15:20:01] [2186efa7-34fb-40da-b4e1-4c99e10da271] GET /api/groups 401 - 0ms - GET /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:01 +0000] "GET /api/groups HTTP/1.1" 401 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:20:01.917Z [[32minfo[39m]: Authentication successful for user: testuser17664132016093ue8j1v (45d3b241-201d-47de-8f49-208ce6f8f66d)
+[2025-12-22 15:20:01] [e0c5edc6-6a09-4896-b724-0c82aaa4f7f1] GET /api/groups?page=1&limit=10 200 - 10ms - GET /api/groups?page=1&limit=10
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:01 +0000] "GET /api/groups?page=1&limit=10 HTTP/1.1" 200 156 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:20:02.243Z [[32minfo[39m]: Authentication successful for user: testuser1766413201947exnbicm (5d416adf-cf5f-402a-9567-1c295eeef5c8)
+2025-12-22T14:20:02.243Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "5d416adf-cf5f-402a-9567-1c295eeef5c8"
+}
+2025-12-22T14:20:02.247Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "8db97b27-e218-4197-85aa-df9bc0ea5852"
+}
+2025-12-22T14:20:02.249Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T14:20:02.260Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "5d416adf-cf5f-402a-9567-1c295eeef5c8",
+  "groupId": "8db97b27-e218-4197-85aa-df9bc0ea5852",
+  "name": "Detail Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+2025-12-22T14:20:02.260Z [[31merror[39m]: Error creating group:
+{
+  "error": "WebSocket server not initialized. Call initializeWebSocket() first.",
+  "stack": "Error: WebSocket server not initialized. Call initializeWebSocket() first.\n    at getIO (C:\\messenger\\backend\\src\\services\\websocket.js:1191:11)\n    at createGroup (C:\\messenger\\backend\\src\\controllers\\groupsController.js:165:20)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)",
+  "userId": "5d416adf-cf5f-402a-9567-1c295eeef5c8",
+  "groupData": {
+    "name": "Detail Test Group",
+    "groupType": "private"
+  }
+}
+[2025-12-22 15:20:02] [d7ddd615-90c5-4c4d-84df-54fccd4e9101] POST /api/groups 500 - 22ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:02 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 15:20:02] [04fbb88c-90f2-4aab-90a9-77f9134b74a5] GET /api/groups/00000000-0000-0000-0000-000000000000 401 - 1ms - GET /api/groups/00000000-0000-0000-0000-000000000000
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:02 +0000] "GET /api/groups/00000000-0000-0000-0000-000000000000 HTTP/1.1" 401 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:20:02.830Z [[32minfo[39m]: Authentication successful for user: testuser1766413202549bmfc7t (10d69145-df85-411a-bd85-d6de29825fef)
+[2025-12-22 15:20:02] [9c7aadae-7abb-4525-b06a-1af303d44aa0] GET /api/groups/00000000-0000-0000-0000-000000000000 403 - 6ms - GET /api/groups/00000000-0000-0000-0000-000000000000
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:02 +0000] "GET /api/groups/00000000-0000-0000-0000-000000000000 HTTP/1.1" 403 103 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:20:03.132Z [[32minfo[39m]: Authentication successful for user: testuser1766413202844v9zs9h (b25b59da-812f-48d2-8ab0-b58219971d51)
+2025-12-22T14:20:03.132Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "b25b59da-812f-48d2-8ab0-b58219971d51"
+}
+2025-12-22T14:20:03.136Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "aee0e948-66a5-4712-9861-bec8f9c5e4b7"
+}
+2025-12-22T14:20:03.138Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T14:20:03.148Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "b25b59da-812f-48d2-8ab0-b58219971d51",
+  "groupId": "aee0e948-66a5-4712-9861-bec8f9c5e4b7",
+  "name": "Update Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+2025-12-22T14:20:03.149Z [[31merror[39m]: Error creating group:
+{
+  "error": "WebSocket server not initialized. Call initializeWebSocket() first.",
+  "stack": "Error: WebSocket server not initialized. Call initializeWebSocket() first.\n    at getIO (C:\\messenger\\backend\\src\\services\\websocket.js:1191:11)\n    at createGroup (C:\\messenger\\backend\\src\\controllers\\groupsController.js:165:20)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)",
+  "userId": "b25b59da-812f-48d2-8ab0-b58219971d51",
+  "groupData": {
+    "name": "Update Test Group",
+    "groupType": "private"
+  }
+}
+[2025-12-22 15:20:03] [a184e944-0fa6-473b-9424-cbd3b3d80980] POST /api/groups 500 - 21ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:03 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 15:20:03] [a9b24780-dfed-4141-9852-9ef325b011ad] PUT /api/groups/00000000-0000-0000-0000-000000000000 401 - 0ms - PUT /api/groups/00000000-0000-0000-0000-000000000000
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:03 +0000] "PUT /api/groups/00000000-0000-0000-0000-000000000000 HTTP/1.1" 401 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:20:03.727Z [[32minfo[39m]: Authentication successful for user: testuser17664132034431mtksq (ab144e40-a6d3-4e7b-96af-c0155fafd2a3)
+2025-12-22T14:20:03.727Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "ab144e40-a6d3-4e7b-96af-c0155fafd2a3"
+}
+2025-12-22T14:20:03.731Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "3a278e2c-7ee0-452d-9179-3c742dca0ad9"
+}
+2025-12-22T14:20:03.733Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T14:20:03.742Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "ab144e40-a6d3-4e7b-96af-c0155fafd2a3",
+  "groupId": "3a278e2c-7ee0-452d-9179-3c742dca0ad9",
+  "name": "Delete Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+2025-12-22T14:20:03.742Z [[31merror[39m]: Error creating group:
+{
+  "error": "WebSocket server not initialized. Call initializeWebSocket() first.",
+  "stack": "Error: WebSocket server not initialized. Call initializeWebSocket() first.\n    at getIO (C:\\messenger\\backend\\src\\services\\websocket.js:1191:11)\n    at createGroup (C:\\messenger\\backend\\src\\controllers\\groupsController.js:165:20)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)",
+  "userId": "ab144e40-a6d3-4e7b-96af-c0155fafd2a3",
+  "groupData": {
+    "name": "Delete Test Group",
+    "groupType": "private"
+  }
+}
+[2025-12-22 15:20:03] [6a0154c0-a50b-4c62-854c-109a08fd4a8d] POST /api/groups 500 - 19ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:03 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 15:20:04] [4b2decb0-c245-4221-a212-f713a2809dd8] DELETE /api/groups/00000000-0000-0000-0000-000000000000 401 - 0ms - DELETE /api/groups/00000000-0000-0000-0000-000000000000
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:04 +0000] "DELETE /api/groups/00000000-0000-0000-0000-000000000000 HTTP/1.1" 401 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:20:04.350Z [[32minfo[39m]: Authentication successful for user: testuser1766413204031axprjl (6045596e-44d7-41d9-b8fb-65d4c1046505)
+2025-12-22T14:20:04.350Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "6045596e-44d7-41d9-b8fb-65d4c1046505"
+}
+2025-12-22T14:20:04.355Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "1c00c41f-396b-4404-a8bc-3d911eea6e5f"
+}
+2025-12-22T14:20:04.357Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T14:20:04.368Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "6045596e-44d7-41d9-b8fb-65d4c1046505",
+  "groupId": "1c00c41f-396b-4404-a8bc-3d911eea6e5f",
+  "name": "Member Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+2025-12-22T14:20:04.369Z [[31merror[39m]: Error creating group:
+{
+  "error": "WebSocket server not initialized. Call initializeWebSocket() first.",
+  "stack": "Error: WebSocket server not initialized. Call initializeWebSocket() first.\n    at getIO (C:\\messenger\\backend\\src\\services\\websocket.js:1191:11)\n    at createGroup (C:\\messenger\\backend\\src\\controllers\\groupsController.js:165:20)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)",
+  "userId": "6045596e-44d7-41d9-b8fb-65d4c1046505",
+  "groupData": {
+    "name": "Member Test Group",
+    "groupType": "private"
+  }
+}
+[2025-12-22 15:20:04] [ee900533-d981-4084-a302-d44c51fa7261] POST /api/groups 500 - 23ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:04 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:20:04.941Z [[32minfo[39m]: Authentication successful for user: testuser1766413204643voairk (00087479-239f-4183-80e3-bce8a716037a)
+2025-12-22T14:20:04.941Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "00087479-239f-4183-80e3-bce8a716037a"
+}
+2025-12-22T14:20:04.946Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "1789ca94-9437-40a5-a70f-d2160e912f08"
+}
+2025-12-22T14:20:04.948Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T14:20:04.958Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "00087479-239f-4183-80e3-bce8a716037a",
+  "groupId": "1789ca94-9437-40a5-a70f-d2160e912f08",
+  "name": "Member Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+2025-12-22T14:20:04.958Z [[31merror[39m]: Error creating group:
+{
+  "error": "WebSocket server not initialized. Call initializeWebSocket() first.",
+  "stack": "Error: WebSocket server not initialized. Call initializeWebSocket() first.\n    at getIO (C:\\messenger\\backend\\src\\services\\websocket.js:1191:11)\n    at createGroup (C:\\messenger\\backend\\src\\controllers\\groupsController.js:165:20)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)",
+  "userId": "00087479-239f-4183-80e3-bce8a716037a",
+  "groupData": {
+    "name": "Member Test Group",
+    "groupType": "private"
+  }
+}
+[2025-12-22 15:20:04] [ee1496aa-ee6c-40b7-bb49-4f3eb0398655] POST /api/groups 500 - 20ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:04 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:20:05.551Z [[32minfo[39m]: Authentication successful for user: testuser1766413205240zmmxo9g (8d9ee86c-6586-4ae5-a746-701042ffa328)
+2025-12-22T14:20:05.551Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "8d9ee86c-6586-4ae5-a746-701042ffa328"
+}
+2025-12-22T14:20:05.554Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "6a41b73a-3b00-47bb-8ab7-182a0d1dadbf"
+}
+2025-12-22T14:20:05.556Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T14:20:05.564Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "8d9ee86c-6586-4ae5-a746-701042ffa328",
+  "groupId": "6a41b73a-3b00-47bb-8ab7-182a0d1dadbf",
+  "name": "Member Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+2025-12-22T14:20:05.564Z [[31merror[39m]: Error creating group:
+{
+  "error": "WebSocket server not initialized. Call initializeWebSocket() first.",
+  "stack": "Error: WebSocket server not initialized. Call initializeWebSocket() first.\n    at getIO (C:\\messenger\\backend\\src\\services\\websocket.js:1191:11)\n    at createGroup (C:\\messenger\\backend\\src\\controllers\\groupsController.js:165:20)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)",
+  "userId": "8d9ee86c-6586-4ae5-a746-701042ffa328",
+  "groupData": {
+    "name": "Member Test Group",
+    "groupType": "private"
+  }
+}
+[2025-12-22 15:20:05] [c5fc8fc1-87ac-47fa-a9d4-2f8c1385cb83] POST /api/groups 500 - 17ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:05 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:20:06.404Z [[32minfo[39m]: Authentication successful for user: testuser1766413205839ty1cpn (16506ffa-e811-4c96-8943-e3fc49e7faeb)
+2025-12-22T14:20:06.404Z [[32minfo[39m]: Create Group Debug - Phase 1:
+{
+  "userId": "16506ffa-e811-4c96-8943-e3fc49e7faeb"
+}
+2025-12-22T14:20:06.408Z [[32minfo[39m]: Create Group Debug - Phase 4 (Group Created):
+{
+  "groupId": "c5bb03a7-99ed-4492-8f86-1c964764d364"
+}
+2025-12-22T14:20:06.410Z [[32minfo[39m]: Create Group Debug - Phase 5 (Creating Creator Membership)
+2025-12-22T14:20:06.419Z [[32minfo[39m]: Group created successfully
+{
+  "userId": "16506ffa-e811-4c96-8943-e3fc49e7faeb",
+  "groupId": "c5bb03a7-99ed-4492-8f86-1c964764d364",
+  "name": "Leave Test Group",
+  "groupType": "private",
+  "initialMembersCount": 0
+}
+2025-12-22T14:20:06.419Z [[31merror[39m]: Error creating group:
+{
+  "error": "WebSocket server not initialized. Call initializeWebSocket() first.",
+  "stack": "Error: WebSocket server not initialized. Call initializeWebSocket() first.\n    at getIO (C:\\messenger\\backend\\src\\services\\websocket.js:1191:11)\n    at createGroup (C:\\messenger\\backend\\src\\controllers\\groupsController.js:165:20)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)",
+  "userId": "16506ffa-e811-4c96-8943-e3fc49e7faeb",
+  "groupData": {
+    "name": "Leave Test Group",
+    "groupType": "private"
+  }
+}
+[2025-12-22 15:20:06] [927c4d80-d02c-403d-98dd-67b48b5f82d3] POST /api/groups 500 - 18ms - POST /api/groups
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:06 +0000] "POST /api/groups HTTP/1.1" 500 86 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 15:20:06] [44b8913d-b41a-45e8-945c-0e58f095a372] POST /api/groups/00000000-0000-0000-0000-000000000000/leave 401 - 1ms - POST /api/groups/00000000-0000-0000-0000-000000000000/leave
+::ffff:127.0.0.1 - - [22/Dec/2025:14:20:06 +0000] "POST /api/groups/00000000-0000-0000-0000-000000000000/leave HTTP/1.1" 401 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+FAIL tests/groups.test.js (10.245 s)
+  Groups API
+    POST /api/groups
+      ├ù should create a new group (705 ms)
+      ΓêÜ should require authentication (8 ms)
+      ΓêÜ should require group name (312 ms)
+      ΓêÜ should validate name length (587 ms)
+    GET /api/groups
+      ├ù should get user groups (637 ms)
+      ΓêÜ should require authentication (5 ms)
+      ├ù should support pagination (338 ms)
+    GET /api/groups/:id
+      ΓêÜ should get group details (594 ms)
+      ΓêÜ should require authentication (8 ms)
+      ΓêÜ should return 404 or 403 for non-existent group 
+(296 ms)
+    PUT /api/groups/:id
+      ΓêÜ should update group as admin (592 ms)
+      ΓêÜ should require authentication (7 ms)
+    DELETE /api/groups/:id
+      ΓêÜ should delete group as creator (581 ms)
+      ΓêÜ should require authentication (7 ms)
+    Group Members
+      ΓêÜ should add member to group (612 ms)
+      ΓêÜ should get group members (597 ms)
+      ΓêÜ should remove member from group (598 ms)
+    POST /api/groups/:id/leave
+      ΓêÜ should leave a group (860 ms)
+      ΓêÜ should require authentication (5 ms)
+
+  ΓùÅ Groups API ΓÇ║ POST /api/groups ΓÇ║ should create a 
+new group
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 39 |[39m                     
+description[33m:[39m [32m'A test group'[39m[33m,[39m
+     [90m 40 |[39m                 })
+    [31m[1m>[22m[39m[90m 41 |[39m                 
+[33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 42 |[39m
+     [90m 43 |[39m             expect(response[33m.[39m
+body[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m
+;[39m
+     [90m 44 |[39m             expect(response[33m.[39m
+body[33m.[39mdata[33m.[39mname)[33m.[39mtoBe([32m'Te
+st Group'[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (tests/groups.test.js:41:18)
+      ----
+      at Test._assertStatus 
+(node_modules/supertest/lib/test.js:252:14)
+      at node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction 
+(node_modules/supertest/lib/test.js:285:13)
+      at Test.assert 
+(node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert 
+(node_modules/supertest/lib/test.js:120:14)
+
+  ΓùÅ Groups API ΓÇ║ GET /api/groups ΓÇ║ should get user 
+groups
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    [0m [90m 88 |[39m
+     [90m 89 |[39m             expect(response[33m.[39m
+body[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m
+;[39m
+    [31m[1m>[22m[39m[90m 90 |[39m             expect(
+[33mArray[39m[33m.[39misArray(response[33m.[39mbody[
+33m.[39mdata))[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m    |[39m                                       
+                [31m[1m^[22m[39m
+     [90m 91 |[39m         })[33m;[39m
+     [90m 92 |[39m
+     [90m 93 |[39m         it([32m'should require 
+authentication'[39m[33m,[39m [36masync[39m () 
+[33m=>[39m {[0m
+
+      at Object.<anonymous> (tests/groups.test.js:90:55)
+
+  ΓùÅ Groups API ΓÇ║ GET /api/groups ΓÇ║ should support 
+pagination
+
+    expect(received).toBeDefined()
+
+    Received: undefined
+
+    [0m [90m 105 |[39m                 
+[33m.[39mexpect([35m200[39m)[33m;[39m
+     [90m 106 |[39m
+    [31m[1m>[22m[39m[90m 107 |[39m             expect
+(response[33m.[39mbody[33m.[39mpagination)[33m.[39mto
+BeDefined()[33m;[39m
+     [90m     |[39m                                      
+        [31m[1m^[22m[39m
+     [90m 108 |[39m         })[33m;[39m
+     [90m 109 |[39m     })[33m;[39m
+     [90m 110 |[39m[0m
+
+      at Object.<anonymous> (tests/groups.test.js:107:46)
+
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 16 passed, 19 total
+Snapshots:   0 total
+Time:        10.304 s
+Ran all test suites matching /tests\\groups.test.js/i.
+Force exiting Jest: Have you considered using 
+`--detectOpenHandles` to detect async operations that kept 
+running after all tests finished?

@@ -6,6 +6,7 @@ export function useContacts(status?: 'accepted' | 'pending' | 'blocked') {
     queryKey: ['contacts', status],
     queryFn: () => contactService.getContacts({ status }),
     staleTime: 1000 * 60 * 5, // 5 minutes
+    placeholderData: (previousData) => previousData,
   });
 }
 

@@ -36,6 +36,7 @@ export const messageService = {
     page?: number;
     limit?: number;
     before?: string;
+    after?: string;  // For loading messages newer than a specific message ID
   }) {
     // Backend expects 'conversationWith' instead of 'recipientId' for GET /messages
     const apiParams = {

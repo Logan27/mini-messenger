@@ -67,7 +67,7 @@ export function useMessageListener(activeChat?: string) {
       // For direct messages: the other user's ID
       // For group messages: the group ID
       const messageChatId = message.groupId || message.senderId || message.recipientId;
-      
+
 
       // If this message is for the currently active chat, invalidate its messages
       if (activeChat && messageChatId === activeChat) {
@@ -76,8 +76,8 @@ export function useMessageListener(activeChat?: string) {
           queryClient.invalidateQueries({ queryKey: ['messages', undefined, message.groupId] });
         } else {
           // For direct messages - figure out which user
-          const otherUserId = message.senderId === message.recipientId ? message.senderId : 
-                             (activeChat === message.senderId ? message.senderId : message.recipientId);
+          const otherUserId = message.senderId === message.recipientId ? message.senderId :
+            (activeChat === message.senderId ? message.senderId : message.recipientId);
           queryClient.invalidateQueries({ queryKey: ['messages', otherUserId, undefined] });
         }
       }
@@ -92,14 +92,14 @@ export function useMessageListener(activeChat?: string) {
       // Update messages cache
       queryClient.setQueriesData({ queryKey: ['messages'] }, (old: any) => {
         if (!old) return old;
-        
+
         // Handle paginated data structure if necessary
         if (old.pages) {
           return {
             ...old,
             pages: old.pages.map((page: any) => ({
               ...page,
-              data: page.data.map((msg: any) => 
+              data: page.data.map((msg: any) =>
                 msg.id === data.messageId ? { ...msg, reactions: data.reactions } : msg
               )
             }))
@@ -110,7 +110,7 @@ export function useMessageListener(activeChat?: string) {
         if (Array.isArray(old.data)) {
           return {
             ...old,
-            data: old.data.map((msg: any) => 
+            data: old.data.map((msg: any) =>
               msg.id === data.messageId ? { ...msg, reactions: data.reactions } : msg
             )
           };
@@ -122,8 +122,6 @@ export function useMessageListener(activeChat?: string) {
 
     return () => {
       unsubscribeNew();
-      unsubscribeSoftDeleted();
-      unsubscribeHardDeleted();
       unsubscribeReaction();
     };
   }, [activeChat, queryClient]);

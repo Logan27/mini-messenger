@@ -1,0 +1,443 @@
+﻿
+> messenger-backend@1.0.0 test
+> cross-env NODE_ENV=test DB_HOST=127.0.0.1 NODE_OPTIONS=--experimental-vm-modules jest tests/files.test.js
+
+  console.log
+    ≡ƒöì Database config: {
+      host: '127.0.0.1',
+      port: 5432,
+      database: 'messenger',
+      username: 'messenger',
+      dialect: 'postgres'
+    }
+
+      at src/config/database.js:43:11
+
+  console.log
+    Γ£à Sequelize instance created for test environment
+
+      at src/config/database.js:51:11
+
+2025-12-22T14:33:48.186Z [[33mwarn[39m]: Firebase Admin SDK not initialized. Push notifications will not work. Please configure Firebase credentials in environment variables or service account file.
+2025-12-22T14:33:49.251Z [[32minfo[39m]: Notification settings cache cleanup initialized
+2025-12-22T14:33:49.252Z [[32minfo[39m]: Auto cleanup for expired notifications started
+2025-12-22T14:33:49.259Z [[32minfo[39m]: Data retention job scheduled.
+  console.log
+    ≡ƒôÜ Swagger UI will be available at /api-docs
+
+      at src/app.js:186:11
+
+node.exe : (node:40056) ExperimentalWarning: VM Modules is 
+an experimental feature and might change at any time
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:40056)  
+   Ex...nge at any time:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(Use `node --trace-warnings ...` to show where the warning 
+was created)
+  console.log
+    Γ£à Test database connected
+
+      at initializeTestDatabase (tests/setup.js:39:13)
+
+2025-12-22T14:33:49.658Z [[32minfo[39m]: Authentication successful for user: testuser1766414029334elx8nb (a8a5b8fd-8528-4203-9047-3562023bbcaa)
+[2025-12-22 15:33:49] [9c61534c-80b8-465c-baac-769f2adb71bf] POST /api/files/upload/messages 404 - 16ms - POST /api/files/upload/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:14:33:49 +0000] "POST /api/files/upload/messages HTTP/1.1" 404 66 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 15:33:49] [daddb3a2-f254-4e11-aaa3-5611d14e62d7] POST /api/files/upload/messages 401 - 1ms - POST /api/files/upload/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:14:33:49 +0000] "POST /api/files/upload/messages HTTP/1.1" 401 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:33:49.981Z [[32minfo[39m]: Authentication successful for user: testuser1766414029704726kya (8a1c461a-3588-4934-8ac3-589fa765f75a)
+[2025-12-22 15:33:49] [e7979df7-5a95-4358-80b4-2ddf9ce4b4d1] POST /api/files/upload/messages 404 - 5ms - POST /api/files/upload/messages
+::ffff:127.0.0.1 - - [22/Dec/2025:14:33:49 +0000] "POST /api/files/upload/messages HTTP/1.1" 404 66 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:33:50.273Z [[32minfo[39m]: Authentication successful for user: testuser1766414029992tl3agc (bf55ea5a-2bec-4451-b550-1e4fe44ca2bb)
+2025-12-22T14:33:50.306Z [[32minfo[39m]: Audit service initialized successfully
+2025-12-22T14:33:50.332Z [[31merror[39m]: Failed to log security event: notNull Violation: AuditLog.action cannot be null
+{
+  "name": "SequelizeValidationError",
+  "errors": [
+    {
+      "message": "AuditLog.action cannot be null",
+      "type": "notNull Violation",
+      "path": "action",
+      "value": null,
+      "origin": "CORE",
+      "instance": {
+        "id": "aecb84dd-d0af-4200-a22e-717c6fb6ad3a",
+        "oldValues": null,
+        "newValues": null,
+        "createdAt": "2025-12-22T14:33:50.306Z",
+        "userId": "bf55ea5a-2bec-4451-b550-1e4fe44ca2bb"
+      },
+      "validatorKey": "is_null",
+      "validatorName": null,
+      "validatorArgs": []
+    }
+  ],
+  "stack": "SequelizeValidationError: notNull Violation: AuditLog.action cannot be null\n    at InstanceValidator._validate (C:\\messenger\\backend\\node_modules\\sequelize\\src\\instance-validator.js:78:13)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at InstanceValidator._validateAndRunHooks (C:\\messenger\\backend\\node_modules\\sequelize\\src\\instance-validator.js:111:7)\n    at InstanceValidator.validate (C:\\messenger\\backend\\node_modules\\sequelize\\src\\instance-validator.js:93:12)\n    at model.save (C:\\messenger\\backend\\node_modules\\sequelize\\src\\model.js:4077:7)\n    at Function.create (C:\\messenger\\backend\\node_modules\\sequelize\\src\\model.js:2305:12)\n    at AuditService.logSecurityEvent (C:\\messenger\\backend\\src\\services\\auditService.js:205:24)\n    at C:\\messenger\\backend\\src\\routes\\files.js:519:5"
+}
+2025-12-22T14:33:50.332Z [[31merror[39m]: Path traversal attempt detected
+{
+  "userId": "bf55ea5a-2bec-4451-b550-1e4fe44ca2bb",
+  "fileId": "2391de86-a150-4c7a-a78e-2388692687b6",
+  "requestedPath": "/uploads/test-file-1766414030263.txt",
+  "resolvedPath": "C:\\uploads\\test-file-1766414030263.txt",
+  "allowedBasePath": "C:\\messenger\\backend\\uploads",
+  "severity": "CRITICAL"
+}
+2025-12-22T14:33:50.333Z [[31merror[39m]: Failed to log security event: notNull Violation: AuditLog.action cannot be null
+{
+  "name": "SequelizeValidationError",
+  "errors": [
+    {
+      "message": "AuditLog.action cannot be null",
+      "type": "notNull Violation",
+      "path": "action",
+      "value": null,
+      "origin": "CORE",
+      "instance": {
+        "id": "6279a09d-6405-45c1-b9c5-a85c7d9fb517",
+        "oldValues": null,
+        "newValues": null,
+        "createdAt": "2025-12-22T14:33:50.333Z",
+        "userId": "bf55ea5a-2bec-4451-b550-1e4fe44ca2bb"
+      },
+      "validatorKey": "is_null",
+      "validatorName": null,
+      "validatorArgs": []
+    }
+  ],
+  "stack": "SequelizeValidationError: notNull Violation: AuditLog.action cannot be null\n    at InstanceValidator._validate (C:\\messenger\\backend\\node_modules\\sequelize\\src\\instance-validator.js:78:13)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at InstanceValidator._validateAndRunHooks (C:\\messenger\\backend\\node_modules\\sequelize\\src\\instance-validator.js:111:7)\n    at InstanceValidator.validate (C:\\messenger\\backend\\node_modules\\sequelize\\src\\instance-validator.js:93:12)\n    at model.save (C:\\messenger\\backend\\node_modules\\sequelize\\src\\model.js:4077:7)\n    at Function.create (C:\\messenger\\backend\\node_modules\\sequelize\\src\\model.js:2305:12)\n    at AuditService.logSecurityEvent (C:\\messenger\\backend\\src\\services\\auditService.js:205:24)\n    at C:\\messenger\\backend\\src\\routes\\files.js:551:7"
+}
+[2025-12-22 15:33:50] [c30be65b-077a-4886-8871-957e0a5cf116] GET /api/files/2391de86-a150-4c7a-a78e-2388692687b6 403 - 64ms - GET /api/files/2391de86-a150-4c7a-a78e-2388692687b6
+::ffff:127.0.0.1 - - [22/Dec/2025:14:33:50 +0000] "GET /api/files/2391de86-a150-4c7a-a78e-2388692687b6 HTTP/1.1" 403 25 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+[2025-12-22 15:33:50] [295c3613-86f1-47bf-81c3-97cd9be5c5c8] GET /api/files/08de8817-f47f-4e33-9566-6fa670df9016 401 - 2ms - GET /api/files/08de8817-f47f-4e33-9566-6fa670df9016
+::ffff:127.0.0.1 - - [22/Dec/2025:14:33:50 +0000] "GET /api/files/08de8817-f47f-4e33-9566-6fa670df9016 HTTP/1.1" 401 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:33:50.962Z [[32minfo[39m]: Authentication successful for user: testuser1766414030655a7rd9d (f430f3d5-a804-40db-bea2-c46b728fe1b6)
+[2025-12-22 15:33:50] [6e0ee08a-3d11-4f4a-955b-6fd8f2832698] GET /api/files/00000000-0000-0000-0000-000000000000 404 - 8ms - GET /api/files/00000000-0000-0000-0000-000000000000
+::ffff:127.0.0.1 - - [22/Dec/2025:14:33:50 +0000] "GET /api/files/00000000-0000-0000-0000-000000000000 HTTP/1.1" 404 26 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:33:51.253Z [[32minfo[39m]: Authentication successful for user: testuser1766414030978qf975 (c8cf45f3-a861-4b84-a89f-26e0d632d329)
+[2025-12-22 15:33:51] [2ee15c14-23a2-4924-a8d5-27def4e1a2d2] DELETE /api/files/152f8fdb-603f-4206-809d-885659cc4e75 404 - 3ms - DELETE /api/files/152f8fdb-603f-4206-809d-885659cc4e75
+::ffff:127.0.0.1 - - [22/Dec/2025:14:33:51 +0000] "DELETE /api/files/152f8fdb-603f-4206-809d-885659cc4e75 HTTP/1.1" 404 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:33:51.813Z [[32minfo[39m]: Authentication successful for user: testuser1766414031536p67ca9r (d4286097-64dc-4f9b-af05-47d631dde6c6)
+[2025-12-22 15:33:51] [cd73e679-7de7-4098-b882-09a5ef3ae9b5] DELETE /api/files/8feed432-fc0f-4a37-9ba4-e25daedc6663 404 - 4ms - DELETE /api/files/8feed432-fc0f-4a37-9ba4-e25daedc6663
+::ffff:127.0.0.1 - - [22/Dec/2025:14:33:51 +0000] "DELETE /api/files/8feed432-fc0f-4a37-9ba4-e25daedc6663 HTTP/1.1" 404 87 "-" "-"
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+2025-12-22T14:33:52.106Z [[32minfo[39m]: Authentication successful for user: testuser1766414031828bc9o4v (6ce93cfd-90d9-4196-a770-7d0e6728c78c)
+[2025-12-22 15:33:52] [9c7e758f-ba80-4180-bbd5-5d7fd8b84520] GET /api/files/95719a25-37c6-455f-b451-3397d8ffe4a8/download 404 - 4ms - GET /api/files/95719a25-37c6-455f-b451-3397d8ffe4a8/download
+::ffff:127.0.0.1 - - [22/Dec/2025:14:33:52 +0000] "GET /api/files/95719a25-37c6-455f-b451-3397d8ffe4a8/download HTTP/1.1" 404 96 "-" "-"
+  console.log
+    Download Error: {
+      "success": false,
+      "error": "Not found - /api/files/95719a25-37c6-455f-b451-3397d8ffe4a8/download"
+    }
+
+      at Object.<anonymous> (tests/files.test.js:162:25)
+
+  console.log
+    ≡ƒº╣ Cleaning up test data...
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:253:13)
+
+  console.log
+    Γ£à Test data cleanup completed
+
+      at TestDatabaseSeeder.cleanup (tests/testDatabaseSeeder.js:302:15)
+
+FAIL tests/files.test.js (5.206 s)
+  Files API
+    POST /api/files/upload/messages
+      ├ù should upload a file successfully (361 ms)
+      ├ù should require authentication (9 ms)
+      ├ù should validate file presence (288 ms)
+    GET /api/files/:id
+      ├ù should get file details (358 ms)
+      ΓêÜ should require authentication (304 ms)
+      ΓêÜ should return 404 for non-existent file (322 ms)
+    DELETE /api/files/:id
+      ├ù should delete file (288 ms)
+      ├ù should prevent deleting other users files (561 ms)
+    GET /api/files/:id/download
+      ├ù should download file (293 ms)
+
+  ΓùÅ Files API ΓÇ║ POST /api/files/upload/messages ΓÇ║ 
+should upload a file successfully
+
+    expected 201 "Created", got 404 "Not Found"
+
+    [0m [90m 51 |[39m                 [33m.[39m[36mse
+t[39m([32m'Authorization'[39m[33m,[39m 
+userAuth[33m.[39mauthHeader)
+     [90m 52 |[39m                 
+[33m.[39mattach([32m'file'[39m[33m,[39m testFilePath)
+    [31m[1m>[22m[39m[90m 53 |[39m                 
+[33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 54 |[39m
+     [90m 55 |[39m             expect(response[33m.[39m
+body[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m
+;[39m
+     [90m 56 |[39m             expect(response[33m.[39m
+body[33m.[39mdata[33m.[39mfilename)[33m.[39mtoBeDefin
+ed()[33m;[39m[0m
+
+      at Object.<anonymous> (tests/files.test.js:53:18)
+      ----
+      at Test._assertStatus 
+(node_modules/supertest/lib/test.js:252:14)
+      at node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction 
+(node_modules/supertest/lib/test.js:285:13)
+      at Test.assert 
+(node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert 
+(node_modules/supertest/lib/test.js:120:14)
+
+  ΓùÅ Files API ΓÇ║ POST /api/files/upload/messages ΓÇ║ 
+should require authentication
+
+    read ECONNRESET
+
+
+
+  ΓùÅ Files API ΓÇ║ POST /api/files/upload/messages ΓÇ║ 
+should validate file presence
+
+    expected 400 "Bad Request", got 404 "Not Found"
+
+    [0m [90m 71 |[39m                 
+[33m.[39mpost([32m'/api/files/upload/messages'[39m)
+     [90m 72 |[39m                 [33m.[39m[36mset[3
+9m([32m'Authorization'[39m[33m,[39m 
+userAuth[33m.[39mauthHeader)
+    [31m[1m>[22m[39m[90m 73 |[39m                 
+[33m.[39mexpect([35m400[39m)[33m;[39m
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 74 |[39m
+     [90m 75 |[39m             expect(response[33m.[39m
+body[33m.[39msuccess)[33m.[39mtoBe([36mfalse[39m)[33
+m;[39m
+     [90m 76 |[39m         })[33m;[39m[0m
+
+      at Object.<anonymous> (tests/files.test.js:73:18)
+      ----
+      at Test._assertStatus 
+(node_modules/supertest/lib/test.js:252:14)
+      at node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction 
+(node_modules/supertest/lib/test.js:285:13)
+      at Test.assert 
+(node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert 
+(node_modules/supertest/lib/test.js:120:14)
+
+  ΓùÅ Files API ΓÇ║ GET /api/files/:id ΓÇ║ should get file 
+details
+
+    expected 200 "OK", got 403 "Forbidden"
+
+    [0m [90m 85 |[39m                 
+[33m.[39m[36mget[39m([32m`/api/files/${file.id}`[39m)
+     [90m 86 |[39m                 [33m.[39m[36mset[3
+9m([32m'Authorization'[39m[33m,[39m 
+userAuth[33m.[39mauthHeader)
+    [31m[1m>[22m[39m[90m 87 |[39m                 
+[33m.[39mexpect([35m200[39m)[33m;[39m
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 88 |[39m
+     [90m 89 |[39m             expect(response[33m.[39m
+body[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m
+;[39m
+     [90m 90 |[39m             expect(response[33m.[39m
+body[33m.[39mdata[33m.[39mid)[33m.[39mtoBe(file[33m.
+[39mid)[33m;[39m[0m
+
+      at Object.<anonymous> (tests/files.test.js:87:18)
+      ----
+      at Test._assertStatus 
+(node_modules/supertest/lib/test.js:252:14)
+      at node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction 
+(node_modules/supertest/lib/test.js:285:13)
+      at Test.assert 
+(node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert 
+(node_modules/supertest/lib/test.js:120:14)
+
+  ΓùÅ Files API ΓÇ║ DELETE /api/files/:id ΓÇ║ should 
+delete file
+
+    expected 200 "OK", got 404 "Not Found"
+
+    [0m [90m 118 |[39m                 [33m.[39m[36md
+elete[39m([32m`/api/files/${file.id}`[39m)
+     [90m 119 |[39m                 [33m.[39m[36mset[
+39m([32m'Authorization'[39m[33m,[39m 
+userAuth[33m.[39mauthHeader)
+    [31m[1m>[22m[39m[90m 120 |[39m                 
+[33m.[39mexpect([35m200[39m)[33m;[39m
+     [90m     |[39m                  [31m[1m^[22m[39m
+     [90m 121 |[39m
+     [90m 122 |[39m             expect(response[33m.[39
+mbody[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33
+m;[39m
+     [90m 123 |[39m         })[33m;[39m[0m
+
+      at Object.<anonymous> (tests/files.test.js:120:18)
+      ----
+      at Test._assertStatus 
+(node_modules/supertest/lib/test.js:252:14)
+      at node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction 
+(node_modules/supertest/lib/test.js:285:13)
+      at Test.assert 
+(node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert 
+(node_modules/supertest/lib/test.js:120:14)
+
+  ΓùÅ Files API ΓÇ║ DELETE /api/files/:id ΓÇ║ should 
+prevent deleting other users files
+
+    expected 403 "Forbidden", got 404 "Not Found"
+
+    [0m [90m 131 |[39m                 [33m.[39m[36md
+elete[39m([32m`/api/files/${file.id}`[39m)
+     [90m 132 |[39m                 [33m.[39m[36mset[
+39m([32m'Authorization'[39m[33m,[39m 
+attacker[33m.[39mauthHeader)
+    [31m[1m>[22m[39m[90m 133 |[39m                 
+[33m.[39mexpect([35m403[39m)[33m;[39m
+     [90m     |[39m                  [31m[1m^[22m[39m
+     [90m 134 |[39m         })[33m;[39m
+     [90m 135 |[39m     })[33m;[39m
+     [90m 136 |[39m[0m
+
+      at Object.<anonymous> (tests/files.test.js:133:18)
+      ----
+      at Test._assertStatus 
+(node_modules/supertest/lib/test.js:252:14)
+      at node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction 
+(node_modules/supertest/lib/test.js:285:13)
+      at Test.assert 
+(node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert 
+(node_modules/supertest/lib/test.js:120:14)
+
+  ΓùÅ Files API ΓÇ║ GET /api/files/:id/download ΓÇ║ should 
+download file
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 404
+
+    [0m [90m 162 |[39m                 
+console[33m.[39mlog([32m'Download 
+Error:'[39m[33m,[39m [33mJSON[39m[33m.[39mstringify(
+response[33m.[39mbody[33m,[39m 
+[36mnull[39m[33m,[39m [35m2[39m))[33m;[39m
+     [90m 163 |[39m             }
+    [31m[1m>[22m[39m[90m 164 |[39m             expect
+(response[33m.[39mstatus)[33m.[39mtoBe([35m200[39m)[
+33m;[39m
+     [90m     |[39m                                     
+[31m[1m^[22m[39m
+     [90m 165 |[39m
+     [90m 166 |[39m             expect(response[33m.[39
+mheaders[[32m'content-type'[39m])[33m.[39mtoBeDefined()
+[33m;[39m
+     [90m 167 |[39m[0m
+
+      at Object.<anonymous> (tests/files.test.js:164:37)
+
+Test Suites: 1 failed, 1 total
+Tests:       7 failed, 2 passed, 9 total
+Snapshots:   0 total
+Time:        5.261 s, estimated 6 s
+Ran all test suites matching /tests\\files.test.js/i.
+Force exiting Jest: Have you considered using 
+`--detectOpenHandles` to detect async operations that kept 
+running after all tests finished?

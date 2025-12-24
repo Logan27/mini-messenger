@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { contactService } from '@/services/contact.service';
+import { Contact, contactService } from '@/services/contact.service';
 
 export function useContacts(status?: 'accepted' | 'pending' | 'blocked') {
-  return useQuery({
+  return useQuery<Contact[]>({
     queryKey: ['contacts', status],
     queryFn: () => contactService.getContacts({ status }),
     staleTime: 1000 * 60 * 5, // 5 minutes

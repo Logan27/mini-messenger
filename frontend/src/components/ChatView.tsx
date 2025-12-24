@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useReducer, lazy, Suspense, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Message } from "@/types/chat";
+import { Contact } from "@/services/contact.service";
 import { MessageBubble } from "./MessageBubble";
 import { CallMessage } from "./CallMessage";
 import { TypingIndicator } from "./TypingIndicator";
@@ -47,6 +48,17 @@ const EMPTY_ARRAY: any[] = [];
 
 // Lazy load heavy WebRTC component - only loaded when user starts a call
 const ActiveCall = lazy(() => import("./ActiveCall").then(module => ({ default: module.ActiveCall })));
+
+interface SearchResultMessage {
+  id: string;
+  sender: {
+    username: string;
+    firstName?: string;
+    avatar?: string;
+  };
+  content: string;
+  createdAt: string;
+}
 
 interface ChatViewProps {
   chatName: string;
@@ -116,7 +128,7 @@ export const ChatView = ({
   const [dropdownOpen, setDropdownOpen] = useState(false); // Track dropdown state for re-render
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false); // Track mobile search dialog
   const [mobileSearchQuery, setMobileSearchQuery] = useState('');
-  const [mobileSearchResults, setMobileSearchResults] = useState([]);
+  const [mobileSearchResults, setMobileSearchResults] = useState<SearchResultMessage[]>([]);
   const [mobileSearchLoading, setMobileSearchLoading] = useState(false);
   const [recipientPublicKey, setRecipientPublicKey] = useState<string | null>(null); // State for E2E key
 
@@ -384,7 +396,7 @@ export const ChatView = ({
 
   // Listen for incoming calls
   useEffect(() => {
-    const handleIncomingCall = (data: unknown) => {
+    const handleIncomingCall = (data: any) => {
 
       const call = data.call;
       if (!call) return;
@@ -623,7 +635,7 @@ export const ChatView = ({
     }
   }, [addReaction, toast]);
 
-  const handleFileUploaded = async (fileData: unknown) => {
+  const handleFileUploaded = async (fileData: any) => {
     if (!recipientId && !groupId) return;
 
     try {
@@ -818,7 +830,7 @@ export const ChatView = ({
               <DropdownMenuContent align="end" className="w-48">
                 {(() => {
                   // Find contact once at render time
-                  const contact = contacts?.find((c: unknown) => {
+                  const contact = contacts?.find((c: Contact) => {
                     // Contact can be stored with either userId or contactUserId depending on who initiated
                     return c.contactUserId === recipientId || c.userId === recipientId;
                   });
@@ -883,7 +895,7 @@ export const ChatView = ({
                 })()}
                 <DropdownMenuItem
                   onClick={async () => {
-                    const contact = contacts?.find((c: unknown) => (c as Record<string, unknown>).contactUserId === recipientId || (c as Record<string, unknown>).userId === recipientId);
+                    const contact = contacts?.find((c: Contact) => c.contactUserId === recipientId || c.userId === recipientId);
                     if (!contact) {
                       toast({
                         title: "Error",
@@ -915,7 +927,7 @@ export const ChatView = ({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
-                    const contact = contacts?.find((c: unknown) => (c as Record<string, unknown>).contactUserId === recipientId || (c as Record<string, unknown>).userId === recipientId);
+                    const contact = contacts?.find((c: Contact) => c.contactUserId === recipientId || c.userId === recipientId);
                     if (!contact) {
                       toast({
                         title: "Error",
@@ -1011,7 +1023,7 @@ export const ChatView = ({
               {!isGroup && recipientId && (
                 (() => {
                   // Find contact once at render time
-                  const contact = contacts?.find((c: unknown) => {
+                  const contact = contacts?.find((c: Contact) => {
                     // Contact can be stored with either userId or contactUserId depending on who initiated
                     return c.contactUserId === recipientId || c.userId === recipientId;
                   });
@@ -1123,7 +1135,7 @@ export const ChatView = ({
               {!isGroup && recipientId && (
                 (() => {
                   // Find contact once at render time for delete functionality
-                  const contact = contacts?.find((c: unknown) => {
+                  const contact = contacts?.find((c: Contact) => {
                     return c.contactUserId === recipientId || c.userId === recipientId;
                   });
 
@@ -1573,11 +1585,11 @@ export const ChatView = ({
                         <p className="text-sm text-muted-foreground mb-2">
                           Found {mobileSearchResults.length} result{mobileSearchResults.length !== 1 ? 's' : ''}
                         </p>
-                        {mobileSearchResults.map((result: Record<string, unknown>) => (
+                        {mobileSearchResults.map((result: SearchResultMessage) => (
                           <div
-                            key={result.id as string}
+                            key={result.id}
                             onClick={() => {
-                              const messageId = result.id as string;
+                              const messageId = result.id;
 
                               // Check if the message exists in the current loaded messages
                               const messageExists = messages.some(msg => msg.id === messageId);
@@ -1599,25 +1611,24 @@ export const ChatView = ({
                           >
                             <div className="flex items-start gap-3">
                               <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center text-xs font-medium">
-                                {((result.sender as Record<string, unknown>)?.firstName as string)?.[0]?.toUpperCase() ||
-                                  ((result.sender as Record<string, unknown>)?.username as string)?.[0]?.toUpperCase() ||
+                                {result.sender?.firstName?.[0]?.toUpperCase() ||
+                                  result.sender?.username?.[0]?.toUpperCase() ||
                                   '?'}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <span className="font-medium text-sm">
-                                    {((result.sender as Record<string, unknown>)?.firstName as string) ||
-                                      ((result.sender as Record<string, unknown>)?.username as string)}
+                                    {result.sender?.firstName || result.sender?.username}
                                   </span>
                                   <span className="text-xs text-muted-foreground">
-                                    {new Date(result.createdAt as string).toLocaleTimeString('en-US', {
+                                    {new Date(result.createdAt).toLocaleTimeString('en-US', {
                                       hour: '2-digit',
                                       minute: '2-digit'
                                     })}
                                   </span>
                                 </div>
                                 <p className="text-sm text-muted-foreground truncate">
-                                  {result.content as string}
+                                  {result.content}
                                 </p>
                               </div>
                             </div>

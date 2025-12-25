@@ -832,14 +832,20 @@ export function ActiveCall({
 
   const handleEndCall = async () => {
     try {
-      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/calls/${callId}/end`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/calls/${callId}/end`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
           'Content-Type': 'application/json',
         },
       });
+
+      // 403/404 means call was already ended or not found - this is normal
+      if (!response.ok && response.status !== 403 && response.status !== 404) {
+        console.warn('Failed to end call via API:', response.status);
+      }
     } catch (err) {
+      // Network errors are common during call cleanup, don't show to user
       console.error('Failed to end call:', err);
     } finally {
       onOpenChange(false);

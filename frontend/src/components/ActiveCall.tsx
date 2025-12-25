@@ -65,6 +65,7 @@ export function ActiveCall({
   const webrtcListenersRef = useRef<(() => void)[]>([]);
   const audioContextRef = useRef<AudioContext | null>(null);
   const noiseGateRef = useRef<GainNode | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
 
   // WebRTC configuration
   const rtcConfig = {
@@ -79,7 +80,7 @@ export function ActiveCall({
 
   useEffect(() => {
     console.log(`🔄 ActiveCall useEffect: open=${open}, isInitiator=${isInitiator}`);
-    
+
     if (!open) {
       console.log('❌ ActiveCall closed, running cleanup');
       cleanupCall();
@@ -87,7 +88,7 @@ export function ActiveCall({
     }
 
     console.log('🚀 ActiveCall opened, preparing WebRTC...');
-    
+
     // Cleanup any previous call first
     cleanupCall();
 
@@ -96,7 +97,7 @@ export function ActiveCall({
     console.log('🔌 Registering WebRTC signal listeners (EARLY)...');
     setupWebRTCListeners();
     console.log('✅ WebRTC signal listeners ready');
-    
+
     // Wait for device enumeration to complete before initializing call
     // This ensures selectedMicrophone is set before getUserMedia is called
     const initializeWithDevices = async () => {
@@ -104,23 +105,23 @@ export function ActiveCall({
         // Enumerate devices first
         console.log('🎙️ Enumerating audio devices before call initialization...');
         const devices = await navigator.mediaDevices.enumerateDevices();
-        
+
         // Filter and deduplicate audio devices by deviceId
         const audioInputs = devices
           .filter(d => d.kind === 'audioinput' && d.deviceId)
-          .filter((device, index, self) => 
+          .filter((device, index, self) =>
             index === self.findIndex(d => d.deviceId === device.deviceId)
           );
-        
+
         const audioOutputs = devices
           .filter(d => d.kind === 'audiooutput' && d.deviceId)
-          .filter((device, index, self) => 
+          .filter((device, index, self) =>
             index === self.findIndex(d => d.deviceId === device.deviceId)
           );
-        
+
         // Set devices immediately before initializing call
         setAudioDevices([...audioInputs, ...audioOutputs]);
-        
+
         // Determine which microphone to use
         let micToUse = selectedMicrophone;
         if (!micToUse && audioInputs.length > 0) {
@@ -128,29 +129,29 @@ export function ActiveCall({
           console.log('🎤 Will use default microphone:', audioInputs[0].label || micToUse.slice(0, 10));
           setSelectedMicrophone(micToUse);
         }
-        
+
         // Set default speaker
         if (audioOutputs.length > 0 && !selectedSpeaker) {
           const defaultSpeaker = audioOutputs[0].deviceId;
           console.log('🔊 Setting default speaker:', audioOutputs[0].label || defaultSpeaker.slice(0, 10));
           setSelectedSpeaker(defaultSpeaker);
         }
-        
+
         console.log('✅ Devices enumerated:', {
           inputs: audioInputs.length,
           outputs: audioOutputs.length,
           microphoneToUse: micToUse || 'default'
         });
-        
+
         // For RECEIVER: Initialize peer connection immediately
         // For INITIATOR: Add delay to ensure browser releases devices from previous call
         const delay = isInitiator ? 1000 : 0;
-        
+
         if (delay > 0) {
           console.log(`⏱️ Waiting ${delay}ms before initializing call (initiator)`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
-        
+
         console.log('⏰ Initializing call now with microphone:', micToUse || 'default');
         initializeCall(micToUse);
         setCallDuration(0);
@@ -159,7 +160,7 @@ export function ActiveCall({
         toast.error('Failed to access audio devices');
       }
     };
-    
+
     initializeWithDevices();
 
     return () => {
@@ -200,26 +201,26 @@ export function ActiveCall({
   // Listen for device changes (hot-plug)
   useEffect(() => {
     if (!open) return;
-    
+
     const getDevices = async () => {
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
-        
+
         // Filter and deduplicate audio devices by deviceId
         const audioInputs = devices
           .filter(d => d.kind === 'audioinput' && d.deviceId)
-          .filter((device, index, self) => 
+          .filter((device, index, self) =>
             index === self.findIndex(d => d.deviceId === device.deviceId)
           );
-        
+
         const audioOutputs = devices
           .filter(d => d.kind === 'audiooutput' && d.deviceId)
-          .filter((device, index, self) => 
+          .filter((device, index, self) =>
             index === self.findIndex(d => d.deviceId === device.deviceId)
           );
-        
+
         setAudioDevices([...audioInputs, ...audioOutputs]);
-        
+
         console.log('🔄 Device list updated (hot-plug):', {
           inputs: audioInputs.length,
           outputs: audioOutputs.length
@@ -236,9 +237,72 @@ export function ActiveCall({
     };
   }, [open]);
 
+  // Helper function to attach remote stream to video element
+  const attachRemoteStream = () => {
+    if (!remoteStreamRef.current || !remoteVideoRef.current) {
+      console.log('⏳ Stream or video element not ready, will retry on next render');
+      return;
+    }
+
+    const videoElement = remoteVideoRef.current;
+    const stream = remoteStreamRef.current;
+
+    // Only attach if not already attached
+    if (videoElement.srcObject === stream) {
+      console.log('✅ Stream already attached');
+      return;
+    }
+
+    videoElement.srcObject = stream;
+
+    // Critical: Ensure the element is NOT muted
+    videoElement.muted = false;
+    videoElement.volume = 1.0;
+
+    console.log('✅ Remote stream attached to video element');
+    console.log('🎵 Remote stream tracks:', stream.getTracks().map(t => `${t.kind}: ${t.enabled}`));
+    console.log('🔊 Video element audio settings:', {
+      muted: videoElement.muted,
+      volume: videoElement.volume,
+      paused: videoElement.paused
+    });
+
+    // Force play to ensure audio/video starts
+    videoElement.play()
+      .then(() => {
+        console.log('✅ Remote media playback started successfully');
+      })
+      .catch(err => {
+        console.error('❌ Autoplay failed:', err);
+        toast.error('Please click anywhere to enable audio', {
+          duration: 5000
+        });
+
+        // Add click handler to enable audio on user interaction
+        const enableAudio = () => {
+          videoElement.play().then(() => {
+            console.log('✅ Audio enabled after user interaction');
+            document.removeEventListener('click', enableAudio);
+          });
+        };
+        document.addEventListener('click', enableAudio, { once: true });
+      });
+  };
+
+  // Re-attach remote stream when hasRemoteVideo changes (video element switches)
+  useEffect(() => {
+    if (open && remoteStreamRef.current) {
+      // Small delay to ensure the new video element is mounted
+      const timer = setTimeout(() => {
+        attachRemoteStream();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [hasRemoteVideo, open]);
+
   const setupWebRTCListeners = () => {
     console.log('🔧 setupWebRTCListeners called, participantId:', participantId);
-    
+
     // Clean up any existing listeners first
     webrtcListenersRef.current.forEach(unsub => unsub());
     webrtcListenersRef.current = [];
@@ -249,7 +313,7 @@ export function ActiveCall({
         console.log('⚠️ Ignoring offer from wrong participant:', data.from);
         return;
       }
-      
+
       // Extract offer from either signal or offer property (for backward compatibility)
       const offerData = data.signal || data.offer;
       if (!offerData || !offerData.type || !offerData.sdp) {
@@ -257,7 +321,7 @@ export function ActiveCall({
         toast.error('Received invalid call offer');
         return;
       }
-      
+
       console.log('📥 Received WebRTC offer from', data.from);
       try {
         // Wait for peer connection to be ready (with timeout)
@@ -269,7 +333,7 @@ export function ActiveCall({
             await new Promise(resolve => setTimeout(resolve, 100));
             peerConnection = peerConnectionRef.current;
           }
-          
+
           if (!peerConnection) {
             console.error('❌ Peer connection still not available after waiting!');
             toast.error('Failed to establish call connection');
@@ -281,13 +345,13 @@ export function ActiveCall({
         console.log('⚙️ Setting remote description (offer)...');
         await peerConnection.setRemoteDescription(new RTCSessionDescription(offerData));
         console.log('✅ Remote description set');
-        
+
         console.log('⚙️ Creating answer...');
         const answer = await peerConnection.createAnswer();
         console.log('⚙️ Setting local description (answer)...');
         await peerConnection.setLocalDescription(answer);
         console.log('✅ Local description set');
-        
+
         sendSignal('answer', answer);
         console.log('📤 Answer sent');
       } catch (err) {
@@ -301,7 +365,7 @@ export function ActiveCall({
         console.log('⚠️ Ignoring answer from wrong participant:', data.from);
         return;
       }
-      
+
       console.log('📥 Received WebRTC answer from', data.from);
       try {
         const peerConnection = peerConnectionRef.current;
@@ -323,7 +387,7 @@ export function ActiveCall({
         console.log('⚠️ Ignoring ICE candidate from wrong participant:', data.from);
         return;
       }
-      
+
       console.log('📥 Received ICE candidate from', data.from, '- type:', data.signal.candidate?.split(' ')[7]);
       try {
         const peerConnection = peerConnectionRef.current;
@@ -370,19 +434,19 @@ export function ActiveCall({
       // Set noiseSuppression to false to avoid overly aggressive noise cancellation that reduces voice quality
       const audioConstraints: MediaTrackConstraints = {
         echoCancellation: true,
-        noiseSuppression: false, // Disabled to prevent voice suppression - use hardware/OS level instead
+        noiseSuppression: true, // Re-enabled to help with laptop echo
         autoGainControl: true,
         sampleRate: { ideal: 48000 },
         channelCount: { ideal: 1 },
         ...(micToUse && micToUse !== 'default' ? { deviceId: { ideal: micToUse } } : {}),
       };
-      
-      console.log('🎥 Requesting media devices...', { 
-        video: callType === 'video', 
+
+      console.log('🎥 Requesting media devices...', {
+        video: callType === 'video',
         audio: audioConstraints,
         microphone: micToUse || 'default'
       });
-      
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: callType === 'video' ? {
           width: { ideal: 1280 },
@@ -418,7 +482,7 @@ export function ActiveCall({
       console.log('🎤 Audio tracks:', audioTracks.length);
       audioTracks.forEach(track => {
         console.log(`  - ${track.label}: enabled=${track.enabled}, muted=${track.muted}, readyState=${track.readyState}`);
-        
+
         // Check actual applied settings
         const settings = track.getSettings();
         console.log('  🎛️ Applied audio settings:', {
@@ -454,50 +518,18 @@ export function ActiveCall({
       // Handle remote stream
       peerConnection.ontrack = (event) => {
         console.log('🎵 Received remote track:', event.track.kind);
-        
+
+        // Store the remote stream in a ref so we can re-attach it after state changes
+        remoteStreamRef.current = event.streams[0];
+
         // Check if this is a video track
         if (event.track.kind === 'video') {
           console.log('📹 Video track detected - enabling video view');
           setHasRemoteVideo(true);
         }
-        
-        if (remoteVideoRef.current) {
-          const videoElement = remoteVideoRef.current;
-          videoElement.srcObject = event.streams[0];
-          
-          // Critical: Ensure the element is NOT muted
-          videoElement.muted = false;
-          videoElement.volume = 1.0;
-          
-          console.log('✅ Remote stream attached to video element');
-          console.log('🎵 Remote stream tracks:', event.streams[0].getTracks().map(t => `${t.kind}: ${t.enabled}`));
-          console.log('🔊 Video element audio settings:', {
-            muted: videoElement.muted,
-            volume: videoElement.volume,
-            paused: videoElement.paused
-          });
-          
-          // Force play to ensure audio starts
-          videoElement.play()
-            .then(() => {
-              console.log('✅ Remote media playback started successfully');
-            })
-            .catch(err => {
-              console.error('❌ Autoplay failed:', err);
-              toast.error('Please click anywhere to enable audio', {
-                duration: 5000
-              });
-              
-              // Add click handler to enable audio on user interaction
-              const enableAudio = () => {
-                videoElement.play().then(() => {
-                  console.log('✅ Audio enabled after user interaction');
-                  document.removeEventListener('click', enableAudio);
-                });
-              };
-              document.addEventListener('click', enableAudio, { once: true });
-            });
-        }
+
+        // Attach stream to video element
+        attachRemoteStream();
       };
 
       // Handle ICE candidates
@@ -566,12 +598,12 @@ export function ActiveCall({
         track.stop();
         console.log(`🛑 Stopped ${track.kind} track`);
       });
-      
+
       // Clear video element srcObject
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = null;
       }
-      
+
       localStreamRef.current = null;
     }
 
@@ -600,10 +632,10 @@ export function ActiveCall({
   const enhanceSDP = (sdp: string): string => {
     // Increase audio bitrate to 128kbps (default is ~32kbps)
     let enhancedSdp = sdp.replace(
-      /(m=audio.*\r\n)/g, 
+      /(m=audio.*\r\n)/g,
       '$1b=AS:128\r\n'
     );
-    
+
     // Set Opus codec parameters for high quality
     // maxaveragebitrate: 128000 (128kbps)
     // stereo: 0 (mono for calls)
@@ -612,7 +644,7 @@ export function ActiveCall({
       /(a=fmtp:\d+ .*)(minptime=\d+)/g,
       '$1$2;maxaveragebitrate=128000;stereo=0;usedtx=0'
     );
-    
+
     // Increase video bitrate to 2.5 Mbps if video call
     if (callType === 'video') {
       enhancedSdp = enhancedSdp.replace(
@@ -620,7 +652,7 @@ export function ActiveCall({
         '$1b=AS:2500\r\n'
       );
     }
-    
+
     console.log('🎚️ Enhanced SDP with higher bitrates');
     return enhancedSdp;
   };
@@ -631,7 +663,7 @@ export function ActiveCall({
       ...signal,
       sdp: signal.sdp ? enhanceSDP(signal.sdp) : signal.sdp
     };
-    
+
     const eventType = type === 'offer' ? 'webrtc_offer' : 'webrtc_answer';
     socketService.send(eventType, {
       targetUserId: participantId,
@@ -684,7 +716,7 @@ export function ActiveCall({
     if (audioTrack) {
       audioTrack.enabled = !audioTrack.enabled;
       setIsMuted(!audioTrack.enabled);
-      
+
       // Notify remote peer via call control events
       const event = audioTrack.enabled ? 'call_unmute' : 'call_mute';
       socketService.send(event, { targetUserId: participantId });
@@ -695,18 +727,18 @@ export function ActiveCall({
     if (!localStreamRef.current || !peerConnectionRef.current) return;
 
     const videoTrack = localStreamRef.current.getVideoTracks()[0];
-    
+
     if (videoTrack) {
       // If video track exists, just toggle it on/off
       const newState = !videoTrack.enabled;
       videoTrack.enabled = newState;
       setIsVideoOff(!newState);
-      
+
       // Update local video element
       if (newState && localVideoRef.current) {
         localVideoRef.current.srcObject = localStreamRef.current;
       }
-      
+
       // Notify remote peer via call control events
       const event = newState ? 'call_video_on' : 'call_video_off';
       socketService.send(event, { targetUserId: participantId });
@@ -714,7 +746,7 @@ export function ActiveCall({
       // No video track exists - upgrade audio call to video call
       try {
         console.log('📹 Upgrading audio call to video call');
-        
+
         // Check if camera is available
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(device => device.kind === 'videoinput');
@@ -722,7 +754,7 @@ export function ActiveCall({
           toast.error('No camera found');
           return;
         }
-        
+
         // Request camera access
         const videoStream = await navigator.mediaDevices.getUserMedia({
           video: {
@@ -731,34 +763,34 @@ export function ActiveCall({
             frameRate: { ideal: 30 }
           }
         });
-        
+
         const videoTrack = videoStream.getVideoTracks()[0];
         if (!videoTrack) {
           throw new Error('Failed to get video track');
         }
-        
+
         // Add video track to local stream
         localStreamRef.current.addTrack(videoTrack);
-        
+
         // Add video track to peer connection
         const sender = peerConnectionRef.current.addTrack(videoTrack, localStreamRef.current);
         console.log('✅ Video track added to peer connection:', sender);
-        
+
         // Display local video
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = localStreamRef.current;
         }
-        
+
         setIsVideoOff(false);
-        
+
         // CRITICAL: Trigger renegotiation to inform remote peer about the new track
         console.log('🔄 Starting renegotiation to add video track...');
-        
+
         if (isInitiator) {
           // If we're the initiator, create a new offer
           const offer = await peerConnectionRef.current.createOffer();
           await peerConnectionRef.current.setLocalDescription(offer);
-          
+
           console.log('📤 Sending renegotiation offer');
           socketService.send('webrtc_offer', {
             targetUserId: participantId,
@@ -771,7 +803,7 @@ export function ActiveCall({
           // But for simplicity, we'll just create an offer anyway
           const offer = await peerConnectionRef.current.createOffer();
           await peerConnectionRef.current.setLocalDescription(offer);
-          
+
           console.log('📤 Sending renegotiation offer (as answerer)');
           socketService.send('webrtc_offer', {
             targetUserId: participantId,
@@ -779,11 +811,11 @@ export function ActiveCall({
             callId: callId,
           });
         }
-        
+
         toast.success('Camera enabled');
       } catch (error) {
         console.error('❌ Failed to enable camera:', error);
-        
+
         // Provide specific error messages
         if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
           toast.error('Camera is already in use by another application');
@@ -818,13 +850,13 @@ export function ActiveCall({
     try {
       console.log('🎙️ Switching microphone to:', deviceId);
       setSelectedMicrophone(deviceId);
-      
+
       if (!localStreamRef.current || !peerConnectionRef.current) return;
 
       // Get new stream with selected microphone
       const audioConstraints: MediaTrackConstraints = {
         echoCancellation: true,
-        noiseSuppression: false, // Disabled to prevent voice suppression
+        noiseSuppression: true, // Re-enabled to help with laptop echo
         autoGainControl: true,
         sampleRate: { ideal: 48000 },
         channelCount: { ideal: 1 },
@@ -905,8 +937,8 @@ export function ActiveCall({
   };
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onOpenChange={(newOpen) => {
         console.log(`🔔 Dialog onOpenChange: ${open} → ${newOpen}`);
         if (!newOpen) {
@@ -917,7 +949,7 @@ export function ActiveCall({
         onOpenChange(newOpen);
       }}
     >
-      <DialogContent 
+      <DialogContent
         className={`${isFullscreen ? 'max-w-full h-screen' : 'max-w-4xl'} p-0 bg-black [&>button]:hidden`}
         onPointerDownOutside={(e) => {
           console.log('🛑 Prevented pointerDownOutside');
@@ -964,13 +996,13 @@ export function ActiveCall({
                 <Avatar className="h-32 w-32">
                   <AvatarImage src={getAvatarUrl(participantAvatar)} />
                   <AvatarFallback className="text-4xl bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                  {participantName.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <h2 className="text-2xl font-semibold text-white">{participantName}</h2>
-              <p className="text-sm text-gray-400">
-                {connectionStatus === 'connecting' ? 'Connecting...' : 'Connected'}
-              </p>
+                    {participantName.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <h2 className="text-2xl font-semibold text-white">{participantName}</h2>
+                <p className="text-sm text-gray-400">
+                  {connectionStatus === 'connecting' ? 'Connecting...' : 'Connected'}
+                </p>
               </div>
             </>
           )}
@@ -1010,7 +1042,7 @@ export function ActiveCall({
           {showDeviceSettings && (
             <div className="absolute bottom-32 left-1/2 -translate-x-1/2 bg-black/95 border border-gray-700 rounded-lg p-4 w-96 space-y-4 shadow-xl">
               <h3 className="text-sm font-semibold text-white mb-2">Audio Devices</h3>
-              
+
               <div className="space-y-2">
                 <label className="text-xs text-gray-300 font-medium">Microphone</label>
                 <Select value={selectedMicrophone} onValueChange={handleMicrophoneChange}>
@@ -1021,8 +1053,8 @@ export function ActiveCall({
                     {audioDevices
                       .filter(d => d.kind === 'audioinput')
                       .map(device => (
-                        <SelectItem 
-                          key={device.deviceId} 
+                        <SelectItem
+                          key={device.deviceId}
                           value={device.deviceId}
                           className="text-white hover:bg-gray-700"
                         >
@@ -1043,8 +1075,8 @@ export function ActiveCall({
                     {audioDevices
                       .filter(d => d.kind === 'audiooutput')
                       .map(device => (
-                        <SelectItem 
-                          key={device.deviceId} 
+                        <SelectItem
+                          key={device.deviceId}
                           value={device.deviceId}
                           className="text-white hover:bg-gray-700"
                         >

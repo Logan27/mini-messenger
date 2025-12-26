@@ -1,4 +1,5 @@
 import callService from '../services/callService.js';
+import turnService from '../services/turnService.js';
 
 // FIX BUG-C001: Standardized API response format to match application standard
 
@@ -71,9 +72,26 @@ const endCall = async (req, res, next) => {
   }
 };
 
+/**
+ * Get TURN server credentials for WebRTC
+ * Returns time-limited credentials for the TURN server
+ */
+const getTurnCredentials = async (req, res, next) => {
+  try {
+    const credentials = turnService.generateTurnCredentials(req.user.id);
+    res.json({
+      success: true,
+      data: credentials,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   initiateCall,
   respondToCall,
   getCallDetails,
   endCall,
+  getTurnCredentials,
 };

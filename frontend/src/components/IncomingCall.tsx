@@ -110,7 +110,7 @@ export function IncomingCall({
       }
 
       // Listen for call.ended event (caller cancelled)
-      const unsubscribeEnded = socketService.on('call.ended', (data: unknown) => {
+      const unsubscribeEnded = socketService.on('call.ended', (data: { callId: string }) => {
         if (data.callId === callId) {
           stopRingtone();
           onOpenChange(false);
@@ -238,7 +238,7 @@ export function IncomingCall({
 
   return (
     <Dialog open={open} onOpenChange={(newOpen) => !isProcessing && onOpenChange(newOpen)}>
-      <DialogContent 
+      <DialogContent
         className="max-w-md"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
@@ -252,12 +252,18 @@ export function IncomingCall({
         <div className="flex flex-col items-center gap-6 py-8">
           {/* Caller Avatar with pulse animation */}
           <div className="relative">
-            <Avatar className="h-32 w-32 ring-4 ring-primary/20">
-              <AvatarImage src={getAvatarUrl(callerAvatar)} alt={callerName} />
-              <AvatarFallback className="text-3xl">
-                {callerName.substring(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            {(() => {
+              const avatarUrl = getAvatarUrl(callerAvatar);
+              console.log('🖼️ IncomingCall Avatar:', { callerAvatar, avatarUrl });
+              return (
+                <Avatar className="h-32 w-32 ring-4 ring-primary/20">
+                  <AvatarImage src={avatarUrl} alt={callerName} />
+                  <AvatarFallback className="text-3xl">
+                    {callerName.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              );
+            })()}
             <div className="absolute inset-0 rounded-full border-4 border-primary animate-ping opacity-20" />
           </div>
 

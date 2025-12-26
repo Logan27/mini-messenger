@@ -283,11 +283,11 @@ File.beforeCreate(async file => {
   }
 
   // Set expiration for non-permanent files (24 hours for download links)
-  if (!file.expiresAt) {
-    const expirationDate = new Date();
-    expirationDate.setHours(expirationDate.getHours() + 24);
-    file.expiresAt = expirationDate;
-  }
+  // if (!file.expiresAt) {
+  //   const expirationDate = new Date();
+  //   expirationDate.setHours(expirationDate.getHours() + 24);
+  //   file.expiresAt = expirationDate;
+  // }
 });
 
 export default File;

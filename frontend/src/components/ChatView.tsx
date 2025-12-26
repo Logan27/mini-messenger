@@ -1450,9 +1450,9 @@ export const ChatView = ({
                 queryClient.invalidateQueries({ queryKey: ['conversations'] });
               }
             }}
-            recipientId={recipientId}
-            recipientName={chatName}
-            recipientAvatar={chatAvatar}
+            recipientId={activeCallData?.participantId || recipientId || ''}
+            recipientName={activeCallData?.participantName || chatName}
+            recipientAvatar={activeCallData?.participantAvatar || chatAvatar}
             callType={callType}
             onCallAccepted={(callId) => {
               setShowOutgoingCall(false);

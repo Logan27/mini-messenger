@@ -126,6 +126,65 @@ router.post(
 
 /**
  * @swagger
+ * /api/calls/turn-credentials:
+ *   get:
+ *     summary: Get TURN server credentials
+ *     description: Get time-limited credentials for the STUN/TURN server for WebRTC connections
+ *     tags: [Calls]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: TURN credentials retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     iceServers:
+ *                       type: array
+ *                       description: ICE server configurations for WebRTC
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           urls:
+ *                             oneOf:
+ *                               - type: string
+ *                               - type: array
+ *                                 items:
+ *                                   type: string
+ *                           username:
+ *                             type: string
+ *                             description: TURN username (only for TURN servers)
+ *                           credential:
+ *                             type: string
+ *                             description: TURN credential (only for TURN servers)
+ *                     expiresAt:
+ *                       type: integer
+ *                       description: Unix timestamp when credentials expire
+ *                     ttl:
+ *                       type: integer
+ *                       description: Time-to-live in seconds
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
+// IMPORTANT: This route must be BEFORE /:callId to avoid being matched as a callId
+router.get(
+  '/turn-credentials',
+  auth.authenticate,
+  callController.getTurnCredentials
+);
+
+/**
+ * @swagger
  * /api/calls/{callId}:
  *   get:
  *     summary: Get call details

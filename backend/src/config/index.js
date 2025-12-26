@@ -138,6 +138,19 @@ export const config = {
     typingIndicators: process.env.FEATURE_TYPING_INDICATORS === 'true',
   },
 
+  webrtc: {
+    stunServers: process.env.STUN_SERVERS?.split(',') || [
+      'stun:stun.l.google.com:19302',
+      'stun:stun1.l.google.com:19302',
+    ],
+    turn: {
+      serverUrl: process.env.TURN_SERVER_URL || 'turn:localhost:3478',
+      secret: process.env.TURN_SECRET || 'messenger_turn_secret_change_in_production',
+      realm: process.env.TURN_REALM || 'messenger.local',
+      credentialTTL: parseInt(process.env.TURN_CREDENTIAL_TTL, 10) || 3600,
+    },
+  },
+
   messageRetention: {
     days: parseInt(process.env.MESSAGE_RETENTION_DAYS, 10) || 30,
     cleanupSchedule: process.env.CLEANUP_SCHEDULE || '0 2 * * *',

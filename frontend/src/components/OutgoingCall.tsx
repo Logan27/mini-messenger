@@ -41,7 +41,7 @@ export function OutgoingCall({
       setCallEnded(false);
       setCallInitiated(true);
     }
-    
+
     if (!open) {
       // Reset state when dialog closes
       setCallId(null);
@@ -55,12 +55,12 @@ export function OutgoingCall({
   useEffect(() => {
     if (!open || !callId) return;
 
-    const unsubscribeResponse = socketService.on('call.response', (data: unknown) => {
-      
+    const unsubscribeResponse = socketService.on('call.response', (data: { callId: string; response: 'accept' | 'reject'; call: any }) => {
+
       if (data.callId === callId) {
         const { response, call } = data;
         const recipientName = call?.recipient?.username || call?.recipient?.firstName || 'User';
-        
+
         if (response === 'accept') {
           toast.success(`${recipientName} accepted your call`);
           setCallEnded(true);
@@ -109,14 +109,19 @@ export function OutgoingCall({
       });
 
       setCallId(response.data.data.id);
-      
+
       // Listen for call status updates via WebSocket
       // This would be handled by a useSocket hook
       // For now, we'll just wait for the call to be accepted
-      
+
     } catch (err) {
+      console.error('❌ Call initiation failed:', {
+        data: err.response?.data,
+        status: err.response?.status,
+        err
+      });
       const errorMsg = err.response?.data?.message || 'Failed to initiate call';
-      toast.error(errorMsg);
+      toast.error(`Call failed: ${errorMsg}`);
       onOpenChange(false);
     } finally {
       setIsCalling(false);

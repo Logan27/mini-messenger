@@ -155,19 +155,38 @@ services:
     profiles:
       - dev
 
-  # Coturn STUN/TURN Server
-  # coturn:
-  #   image: coturn/coturn
-  #   container_name: messenger-coturn
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ./docker/coturn/turnserver.conf:/etc/coturn/turnserver.conf
-  #   ports:
-  #     - "3478:3478"
-  #     - "3478:3478/udp"
-  #     - "49152-65535:49152-65535/udp"
-  #   networks:
-  #     - messenger-network
+  # Coturn STUN/TURN Server for WebRTC NAT traversal
+  coturn:
+    image: coturn/coturn:latest
+    container_name: messenger-coturn
+    restart: unless-stopped
+    volumes:
+      - ./docker/coturn/turnserver.conf:/etc/coturn/turnserver.conf:ro
+    ports:
+      # STUN/TURN main port (TCP and UDP)
+      - "3478:3478"
+      - "3478:3478/udp"
+      # TLS port (if enabled in production)
+      - "5349:5349"
+      - "5349:5349/udp"
+      # Alternative ports
+      - "3479:3479"
+      - "3479:3479/udp"
+      # Media relay ports (UDP range for actual media)
+      # Note: Using a smaller range for development to avoid resource issues
+      # In production, consider using host networking or a larger range
+      - "49152-49252:49152-49252/udp"
+    environment:
+      - TURN_SECRET=${TURN_SECRET:-messenger_turn_secret_change_in_production}
+      - TURN_REALM=${TURN_REALM:-messenger.local}
+    networks:
+      - messenger-network
+    healthcheck:
+      test: ["CMD", "turnutils_uclient", "-T", "-u", "test", "-w", "test", "127.0.0.1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 volumes:
   postgres_data:

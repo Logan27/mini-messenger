@@ -104,6 +104,11 @@ services:
       AUTO_VERIFY_EMAIL: ${AUTO_VERIFY_EMAIL:-true}
       TRUST_PROXY: "true"
       RATE_LIMIT_MAX_REQUESTS: 1000
+      # TURN Server configuration
+      TURN_SERVER_URL: ${TURN_SERVER_URL:-turn:host.docker.internal:3478}
+      TURN_SECRET: ${TURN_SECRET:-messenger_turn_secret_change_in_production}
+      TURN_REALM: ${TURN_REALM:-messenger.local}
+      TURN_CREDENTIAL_TTL: ${TURN_CREDENTIAL_TTL:-3600}
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/logs:/app/logs
@@ -118,12 +123,30 @@ services:
         condition: service_started
     networks:
       - messenger-network
-    # healthcheck:
-    #   test: ["CMD-SHELL", "curl -f http://localhost:4000/health || exit 1"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 3
-    #   start_period: 40s
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Coturn STUN/TURN Server for WebRTC NAT traversal
+  coturn:
+    image: coturn/coturn:latest
+    container_name: messenger-coturn
+    restart: unless-stopped
+    volumes:
+      - ./backend/docker/coturn/turnserver.conf:/etc/coturn/turnserver.conf:ro
+    ports:
+      - "3478:3478"
+      - "3478:3478/udp"
+      - "5349:5349"
+      - "5349:5349/udp"
+      - "3479:3479"
+      - "3479:3479/udp"
+      - "49152-49252:49152-49252/udp"
+    networks:
+      - messenger-network
 
   # Frontend Application
   frontend:

@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { socketService } from '@/services/socket.service';
+import { callService } from '@/services/call.service';
 import { getAvatarUrl } from '@/lib/avatar-utils';
 
 interface ActiveCallProps {
@@ -66,16 +67,17 @@ export function ActiveCall({
   const audioContextRef = useRef<AudioContext | null>(null);
   const noiseGateRef = useRef<GainNode | null>(null);
   const remoteStreamRef = useRef<MediaStream | null>(null);
+  const pendingIceCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
+  const pendingOfferRef = useRef<RTCSessionDescriptionInit | null>(null);
+  const rtcConfigRef = useRef<RTCConfiguration | null>(null);
 
-  // WebRTC configuration
-  const rtcConfig = {
+  // Fallback WebRTC configuration (used if TURN credential fetch fails)
+  const fallbackRtcConfig: RTCConfiguration = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' },
-      { urls: 'stun:stun3.l.google.com:19302' },
-      { urls: 'stun:stun4.l.google.com:19302' },
     ],
+    iceCandidatePoolSize: 10,
   };
 
   useEffect(() => {
@@ -180,21 +182,24 @@ export function ActiveCall({
     return () => clearInterval(timer);
   }, [open, connectionStatus]);
 
-  // Listen for call.ended event
+  // Listen for call.ended event (from backend) and call_ended (from frontend peer)
   useEffect(() => {
     if (!open) return;
 
-    const handleCallEnded = (data: { callId: string; endedBy: string }) => {
+    const handleCallEnded = (data: { callId: string; endedBy?: string; to?: string }) => {
       if (data.callId === callId) {
+        console.log('📞 Received call ended event:', data);
         toast.info('Call ended by other participant');
         onOpenChange(false);
       }
     };
 
-    const unsubscribe = socketService.on('call.ended', handleCallEnded);
+    const unsubscribe1 = socketService.on('call.ended', handleCallEnded);
+    const unsubscribe2 = socketService.on('call_ended', handleCallEnded);
 
     return () => {
-      unsubscribe();
+      unsubscribe1();
+      unsubscribe2();
     };
   }, [open, callId, onOpenChange]);
 
@@ -327,19 +332,9 @@ export function ActiveCall({
         // Wait for peer connection to be ready (with timeout)
         let peerConnection = peerConnectionRef.current;
         if (!peerConnection) {
-          console.warn('⏳ Peer connection not ready, waiting up to 3 seconds...');
-          const startTime = Date.now();
-          while (!peerConnectionRef.current && Date.now() - startTime < 3000) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            peerConnection = peerConnectionRef.current;
-          }
-
-          if (!peerConnection) {
-            console.error('❌ Peer connection still not available after waiting!');
-            toast.error('Failed to establish call connection');
-            return;
-          }
-          console.log('✅ Peer connection became available');
+          console.log('⏳ Peer connection not ready, storing offer for later...');
+          pendingOfferRef.current = offerData;
+          return;
         }
 
         console.log('⚙️ Setting remote description (offer)...');
@@ -389,13 +384,15 @@ export function ActiveCall({
       }
 
       console.log('📥 Received ICE candidate from', data.from, '- type:', data.signal.candidate?.split(' ')[7]);
-      try {
-        const peerConnection = peerConnectionRef.current;
-        if (!peerConnection) {
-          console.error('❌ No peer connection available! Waiting for initialization...');
-          return;
-        }
 
+      const peerConnection = peerConnectionRef.current;
+      if (!peerConnection) {
+        console.log('📦 Queuing ICE candidate (peer connection not ready)');
+        pendingIceCandidatesRef.current.push(data.signal);
+        return;
+      }
+
+      try {
         await peerConnection.addIceCandidate(new RTCIceCandidate(data.signal));
         console.log('✅ ICE candidate added');
       } catch (err) {
@@ -424,6 +421,21 @@ export function ActiveCall({
         // Wait longer if we had to force cleanup to ensure devices are released
         console.log('⏳ Waiting for device release...');
         await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      // Fetch TURN credentials from the server (with STUN fallback)
+      console.log('🔑 Fetching TURN credentials...');
+      try {
+        rtcConfigRef.current = await callService.getRTCConfiguration();
+        console.log('✅ TURN credentials fetched:', {
+          iceServers: rtcConfigRef.current.iceServers?.length || 0,
+          hasTurn: rtcConfigRef.current.iceServers?.some(s =>
+            (typeof s.urls === 'string' ? s.urls : s.urls?.[0])?.startsWith('turn:')
+          ),
+        });
+      } catch (err) {
+        console.warn('⚠️ Failed to fetch TURN credentials, using fallback:', err);
+        rtcConfigRef.current = fallbackRtcConfig;
       }
 
       // Use provided microphone ID or fall back to selected state
@@ -503,7 +515,11 @@ export function ActiveCall({
         localVideoRef.current.srcObject = stream;
       }
 
-      // Create peer connection
+      // Create peer connection with fetched TURN credentials (or fallback)
+      const rtcConfig = rtcConfigRef.current || fallbackRtcConfig;
+      console.log('🔧 Creating peer connection with config:', {
+        iceServers: rtcConfig.iceServers?.length || 0,
+      });
       const peerConnection = new RTCPeerConnection(rtcConfig);
       peerConnectionRef.current = peerConnection;
 
@@ -567,6 +583,37 @@ export function ActiveCall({
       // WebRTC listeners already registered early (before this function was called)
       console.log('✅ Using pre-registered WebRTC listeners');
 
+      // Process any pending offer that arrived before peer connection was ready
+      if (pendingOfferRef.current) {
+        console.log('📦 Processing pending offer...');
+        const pendingOffer = pendingOfferRef.current;
+        pendingOfferRef.current = null;
+        try {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(pendingOffer));
+          console.log('✅ Pending offer processed, creating answer...');
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+          sendSignal('answer', answer);
+          console.log('✅ Answer sent for pending offer');
+        } catch (err) {
+          console.error('❌ Failed to process pending offer:', err);
+        }
+      }
+
+      // Process any pending ICE candidates
+      if (pendingIceCandidatesRef.current.length > 0) {
+        console.log(`📦 Processing ${pendingIceCandidatesRef.current.length} pending ICE candidates...`);
+        for (const candidate of pendingIceCandidatesRef.current) {
+          try {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            console.log('✅ Pending ICE candidate added');
+          } catch (err) {
+            console.error('❌ Failed to add pending ICE candidate:', err);
+          }
+        }
+        pendingIceCandidatesRef.current = [];
+      }
+
       // If initiator, create and send offer
       if (isInitiator) {
         console.log('📞 I am the initiator, creating and sending offer...');
@@ -587,6 +634,10 @@ export function ActiveCall({
 
   const cleanupCall = () => {
     console.log('🧹 Cleaning up call resources...');
+
+    // Clear pending signal queues
+    pendingOfferRef.current = null;
+    pendingIceCandidatesRef.current = [];
 
     // Unsubscribe from WebRTC listeners
     webrtcListenersRef.current.forEach(unsub => unsub());
@@ -832,24 +883,26 @@ export function ActiveCall({
 
   const handleEndCall = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/calls/${callId}/end`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      await callService.endCall(callId);
 
-      // 403/404 means call was already ended or not found - this is normal
-      if (!response.ok && response.status !== 403 && response.status !== 404) {
-        console.warn('Failed to end call via API:', response.status);
-      }
+
     } catch (err) {
       // Network errors are common during call cleanup, don't show to user
       console.error('Failed to end call:', err);
-    } finally {
-      onOpenChange(false);
     }
+
+    // Always emit socket event to notify other user (workaround for API issues)
+    try {
+      socketService.send('call_ended', {
+        callId,
+        to: participantId,
+      });
+      console.log('📤 Sent call_ended event to', participantId);
+    } catch (err) {
+      console.error('Failed to send call_ended:', err);
+    }
+
+    onOpenChange(false);
   };
 
   const handleMicrophoneChange = async (deviceId: string) => {

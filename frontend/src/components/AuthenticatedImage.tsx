@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '@/lib/api-client';
 
 interface AuthenticatedImageProps {
   src: string;
@@ -32,11 +32,7 @@ export const AuthenticatedImage = ({ src, alt, className, onClick }: Authenticat
           }
         }
 
-        const token = localStorage.getItem('accessToken');
-        const response = await axios.get(imageUrl, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        const response = await apiClient.get(imageUrl, {
           responseType: 'blob',
         });
 

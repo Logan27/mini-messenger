@@ -505,6 +505,21 @@ class WebSocketService {
       }
     });
 
+    // Handle call_ended event (relay to other user when API call fails)
+    socket.on('call_ended', data => {
+      const { callId, to } = data;
+      console.log(`📞 WS_CALL_ENDED: User ${socket.userId} ended call ${callId}, notifying ${to}`);
+
+      if (to) {
+        socket.to(`user:${to}`).emit('call.ended', {
+          callId,
+          endedBy: socket.userId,
+          timestamp: new Date().toISOString(),
+        });
+        console.log(`✅ WS_CALL_ENDED: Notification sent to user ${to}`);
+      }
+    });
+
     // Handle heartbeat
     socket.on(WS_EVENTS.HEARTBEAT, () => {
       socket.emit(WS_EVENTS.PONG);
